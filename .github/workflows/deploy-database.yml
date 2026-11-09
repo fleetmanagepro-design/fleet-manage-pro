@@ -39,11 +39,12 @@ jobs:
             if [ -z "${!name}" ]; then echo "::error::Missing repository secret $name"; exit 1; fi
           done
 
+      # Supabase CLI v3: commands target the local database unless --remote is passed.
       - name: Link project
-        run: supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
 
       - name: Show pending migrations
-        run: supabase migration list --password "$SUPABASE_DB_PASSWORD"
+        run: supabase migration list --remote --password "$SUPABASE_DB_PASSWORD"
 
       - name: Apply migrations
-        run: supabase db push --password "$SUPABASE_DB_PASSWORD"
+        run: supabase db push --remote --password "$SUPABASE_DB_PASSWORD"
