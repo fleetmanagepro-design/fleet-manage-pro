@@ -100,6 +100,11 @@ Each module lists screens, key fields, business rules and **acceptance criteria 
 - Owner invites users by email with a role.
 - A user may belong to multiple organizations and switch between them.
 
+**Rules** (decided 11/09/2026)
+- Only an Owner can grant the Owner role (invite an owner or promote a member). Admins can invite and manage every other role, but cannot change or remove an Owner.
+- An organization must always have at least one Owner: the last Owner cannot be demoted, removed or leave.
+- Invitations expire after 7 days, are single-use, and can only be accepted by a signed-in user whose verified email matches the invitation. Accepting an invitation to an org the user already belongs to keeps their current role.
+
 **AC**
 - A user from Org A cannot see, query or modify any record of Org B (verified by automated tests per table).
 - Removing a user immediately revokes access.
