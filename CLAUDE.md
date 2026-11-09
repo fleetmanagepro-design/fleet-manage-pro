@@ -29,6 +29,7 @@ Do not add new dependencies without saying why and asking first.
 - `npm run dev` — start local dev server
 - `npm run lint` / `npm run typecheck` — must pass before any task is considered done
 - `npm run test` — unit tests
+- `npm run test:db` — database tests (pgTAP, `supabase/tests/database/`), incl. RLS isolation tests
 - `npm run test:e2e` — Playwright tests
 - `npx supabase migration new <name>` — create a migration
 - `npx supabase db reset` — rebuild local DB from migrations + seed
