@@ -31,6 +31,17 @@ Status of the MVP build. Updated at the end of every task.
 - 78 unit tests, 63 database tests, 5 end-to-end tests (full sign-up → org → invite → join flow,
   redirect after sign-in, wrong password, role-based menu, password reset).
 
+### Task 3a — Trucks & trailers (11/09/2026)
+- Migration `0003_fleet`: `trucks`, `trailers`, `odometer_readings` with RLS per role matrix,
+  composite FKs against cross-tenant references, audit triggers, meter-reading triggers
+  (readings only go up; corrections owner/admin with reason), sold = read-only, archive instead of delete.
+- Screens: trucks and trailers lists (status filter, show archived, compliance badge), add/edit forms,
+  detail pages with Overview (details, compliance, status, meter readings + history) and
+  honest "not built yet" tabs for Loads / Expenses / Maintenance / Documents.
+- Seed: Lakeside 12 trucks / 18 trailers, Prairie Haul 3 / 4, with reading history and expiring dates.
+- Tests: 53 new pgTAP tests (116 total), 42 new unit tests (120 total), 5 new e2e tests (10 total).
+- Spec: fleet business rules added to PRODUCT_SPEC.md §4.5.
+
 ## Known gaps / follow-ups
 - No CI pipeline yet (lint, typecheck, unit, db and e2e tests should run on every PR).
 - Production email: verify `fleetmanagepro.com` in Resend (DNS records) and set `RESEND_API_KEY`
@@ -39,12 +50,18 @@ Status of the MVP build. Updated at the end of every task.
 - Organization settings screen (edit name, USDOT, address, time zone, overhead allocation) — not built yet.
 - A page the user may not open shows "not found" but returns HTTP 200 (pages stream with Cache Components).
   Data is never sent; consider moving role gates into `proxy.ts` later if real status codes matter.
+- Next 16 keeps recently visited pages mounted but hidden; form field ids repeat across them.
+  Labels still work in tests, but switch `FormField` to `useId`-based ids if it ever causes trouble.
+- Compliance expirations are shown on assets; the alert center and daily email digest come with Task 8.
 
 ## Next
 
-### Task 3 — Master data (`0003_master_data`)
-Customers, trucks, trailers, drivers, driver pay rules, odometer readings: tables + RLS + isolation tests,
-list/detail/create/edit screens, role rules from DATABASE_SCHEMA.md §5.
+### Task 3b — Drivers & pay rules (`0003b_drivers`)
+Drivers (CDL, medical card, status), pay rules (per mile / percent / flat + extras) with effective dates,
+`trucks.default_driver_id`, CDL/medical expiry warnings at 60/30 days, driver detail and forms.
+
+### Task 3c — Customers (`0003c_customers`)
+Brokers/shippers, contacts, payment terms, do-not-use status.
 
 ### After that (in order)
 4. `0004_loads` — loads, stops, drivers, accessorials, events; load list + detail + dispatch board

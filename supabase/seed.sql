@@ -62,3 +62,97 @@ insert into public.organization_members (organization_id, user_id, role) values
   ('a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000005', 'accounting'),
   ('a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000006', 'viewer'),
   ('b0000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001', 'owner');
+
+-- ---------------------------------------------------------------------------
+-- Fleet (0003): Lakeside 12 trucks / 18 trailers, Prairie Haul 3 / 4.
+-- Dates are relative to today so compliance warnings always show something.
+-- ---------------------------------------------------------------------------
+
+-- VIN check digit (position 9), so seeded VINs are realistic.
+create function pg_temp.vin_with_check(base text) returns text language plpgsql as $$
+declare
+  map constant text := 'A1B2C3D4E5F6G7H8J1K2L3M4N5P7R9S2T3U4V5W6X7Y8Z9';
+  weights constant int[] := array[8,7,6,5,4,3,2,10,0,9,8,7,6,5,4,3,2];
+  total int := 0; ch text; val int; i int; r int;
+begin
+  for i in 1..17 loop
+    ch := substr(base, i, 1);
+    val := case when ch ~ '[0-9]' then ch::int else substr(map, strpos(map, ch) + 1, 1)::int end;
+    total := total + val * weights[i];
+  end loop;
+  r := total % 11;
+  return overlay(base placing (case when r = 10 then 'X' else r::text end) from 9 for 1);
+end $$;
+
+insert into public.trucks
+  (organization_id, unit_number, vin, year, make, model, plate, plate_state, ownership,
+   purchase_date, purchase_price_cents, status, registration_expires_on, annual_inspection_on, insurance_expires_on)
+select
+  'a0000000-0000-4000-8000-000000000001',
+  (100 + n)::text,
+  pg_temp.vin_with_check((array['1FUJHHDR','1XKYD49X','1XPBD49X','4V4NC9EH'])[1 + n % 4] || '0' ||
+                         (array['J','K','L','M','N','P'])[1 + n % 6] || 'P' || lpad((48210 + n * 137)::text, 6, '0')),
+  2017 + n % 8,
+  (array['Freightliner','Kenworth','Peterbilt','Volvo'])[1 + n % 4],
+  (array['Cascadia','T680','579','VNL 760'])[1 + n % 4],
+  'P' || lpad((731000 + n)::text, 6, '0'), 'IL',
+  (array['owned','financed','leased']::public.ownership_type[])[1 + n % 3],
+  current_date - (400 * (1 + n % 5)), (8900000 + n * 125000)::bigint,
+  case n when 4 then 'in_shop' when 9 then 'out_of_service' else 'active' end::public.asset_status,
+  case n when 2 then current_date + 12 when 7 then current_date - 3 else current_date + 90 + n * 17 end,
+  case n when 5 then current_date - 350 else current_date - 30 * n end,
+  current_date + 120 + n * 5
+from generate_series(1, 12) n;
+
+insert into public.trucks
+  (organization_id, unit_number, vin, year, make, model, plate, plate_state, status,
+   registration_expires_on, annual_inspection_on, insurance_expires_on)
+select 'b0000000-0000-4000-8000-000000000001', 'PH' || n,
+  pg_temp.vin_with_check('3AKJHHDR0' || chr(ascii('K') + n) || 'S' || lpad((10500 + n)::text, 6, '0')),
+  2019 + n, 'Freightliner', 'Cascadia', 'NE' || lpad(n::text, 5, '0'), 'NE', 'active',
+  current_date + 200, current_date - 60, current_date + 180
+from generate_series(1, 3) n;
+
+-- Odometer history: three readings over the last six months per truck.
+insert into public.odometer_readings (organization_id, asset_type, truck_id, reading, reading_type, read_on, source)
+select t.organization_id, 'truck', t.id,
+  (180000 + (row_number() over (order by t.unit_number)) * 41000 + k * 9500)::numeric(10, 1),
+  'odometer', current_date - (180 - k * 60), 'manual'
+from public.trucks t, generate_series(0, 2) k
+order by t.unit_number, k;
+
+insert into public.trailers
+  (organization_id, unit_number, vin, year, make, trailer_type, length_ft, plate, plate_state, ownership,
+   purchase_date, purchase_price_cents, status, registration_expires_on, annual_inspection_on)
+select
+  'a0000000-0000-4000-8000-000000000001',
+  (5300 + n)::text,
+  pg_temp.vin_with_check((array['1UYVS253','1JJV532D','1GRAA062'])[1 + n % 3] || '0' ||
+                         (array['J','K','L','M','N','P'])[1 + n % 6] || 'M' || lpad((70100 + n * 53)::text, 6, '0')),
+  2014 + n % 10,
+  (array['Utility','Wabash','Great Dane'])[1 + n % 3],
+  case when n <= 10 then 'dry_van' when n <= 16 then 'reefer' else 'flatbed' end::public.trailer_type,
+  case when n % 5 = 0 then 48 else 53 end,
+  'T' || lpad((88000 + n)::text, 6, '0'), 'IL',
+  (array['owned','leased']::public.ownership_type[])[1 + n % 2],
+  current_date - (300 * (1 + n % 6)), (3200000 + n * 90000)::bigint,
+  case n when 6 then 'in_shop' else 'active' end::public.asset_status,
+  case n when 3 then current_date + 20 when 14 then current_date - 10 else current_date + 60 + n * 11 end,
+  case n when 11 then current_date - 355 else current_date - 20 * n end
+from generate_series(1, 18) n;
+
+insert into public.trailers (organization_id, unit_number, year, make, trailer_type, length_ft, status,
+  registration_expires_on, annual_inspection_on)
+select 'b0000000-0000-4000-8000-000000000001', 'PHT' || n, 2016 + n, 'Wabash',
+  case when n = 4 then 'reefer' else 'dry_van' end::public.trailer_type, 53, 'active',
+  current_date + 150, current_date - 90
+from generate_series(1, 4) n;
+
+-- Reefer hours and hubodometer for some Lakeside trailers.
+insert into public.odometer_readings (organization_id, asset_type, trailer_id, reading, reading_type, read_on)
+select organization_id, 'trailer', id, (4200 + unit_number::int % 100 * 310)::numeric(10, 1), 'reefer_hours', current_date - 14
+from public.trailers where trailer_type = 'reefer' and organization_id = 'a0000000-0000-4000-8000-000000000001';
+
+insert into public.odometer_readings (organization_id, asset_type, trailer_id, reading, reading_type, read_on)
+select organization_id, 'trailer', id, (95000 + unit_number::int % 100 * 7300)::numeric(10, 1), 'hubodometer', current_date - 30
+from public.trailers where unit_number in ('5301', '5302', '5303', '5304');

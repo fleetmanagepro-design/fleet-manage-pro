@@ -116,8 +116,12 @@ Role matrix per table is defined in §5. Financial visibility for dispatchers (c
 
 **trailers**: id, organization_id, unit_number (unique per org), vin, year, make, trailer_type (`dry_van`/`reefer`/`flatbed`/`step_deck`/`other`), length_ft, plate, plate_state, ownership, purchase_date, purchase_price_cents, hubodometer numeric(10,1), reefer_hours numeric(10,1), status, registration_expires_on, annual_inspection_on, notes, archived_at
 
-**odometer_readings**: id, organization_id, asset_type (`truck`/`trailer`), truck_id, trailer_id, reading numeric(10,1), reading_type (`odometer`/`hubodometer`/`reefer_hours`), read_on date, source (`manual`/`fuel`/`work_order`/`load`)
+**odometer_readings**: id, organization_id, asset_type (`truck`/`trailer`), truck_id, trailer_id, reading numeric(10,1), reading_type (`odometer`/`hubodometer`/`reefer_hours`), read_on date, source (`manual`/`fuel`/`work_order`/`load`), is_correction bool, note — insert-only
 — check: exactly one of truck_id / trailer_id is set (same pattern used below wherever an asset is referenced)
+— the asset's current meter values are maintained from these readings by triggers; users can't write them directly
+
+**Cross-tenant references**: every table that references another tenant-owned row uses a composite foreign key `(organization_id, x_id) → x(organization_id, id)` so a row can never point at another organization's record (implemented from `0003_fleet` on; `trucks`/`trailers` carry `unique (organization_id, id)` for this).
+`trucks.default_driver_id` is added with the drivers migration.
 
 ### Drivers
 **drivers**: id, organization_id, first_name, last_name, phone, email, driver_type (`company`/`owner_operator`/`team`), hire_date, status (`active`/`inactive`/`terminated`), cdl_number, cdl_state, cdl_class, cdl_expires_on, medical_card_expires_on, default_truck_id, emergency_contact, archived_at
@@ -201,7 +205,9 @@ One user per role in Lakeside; one owner in Prairie Haul.
 ## 7. Migration order
 1. `0001_tenancy` — organizations, members, invitations, helper functions, audit trigger function ✅
 2. `0002_member_directory` — `list_organization_members(org)`, `get_invitation_preview(token)` ✅
-3. `0003_master_data` — customers, contacts, trucks, trailers, drivers, pay rules, odometer readings
+3. `0003_fleet` — trucks, trailers, odometer readings ✅
+3b. `0003b_drivers` — drivers, pay rules, `trucks.default_driver_id`
+3c. `0003c_customers` — customers, contacts
 4. `0004_loads` — loads, stops, drivers, accessorials, events
 5. `0005_expenses` — categories, expenses, fuel details, recurring costs
 6. `0006_maintenance` — work orders, lines, PM, tires
