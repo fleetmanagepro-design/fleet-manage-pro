@@ -51,7 +51,17 @@ Status of the MVP build. Updated at the end of every task.
 - Shared `src/lib/expiry.ts` for expiry warnings (fleet now uses it too).
 - Tests: 37 new pgTAP (155 total), 22 new unit (146 total), 4 new e2e (14 total).
 
+### Task 3c — Customers (11/09/2026)
+- Migration `0003c_customers`: `customers`, `customer_contacts` with RLS (owner/admin/dispatcher/accounting edit,
+  everyone reads), composite FK, audit, MC unique per org, do-not-use requires a reason, archive only.
+- Screens: customer list (search by name or MC, type/status filters, show archived), add/edit, detail with
+  contacts (add/remove) and "not built yet" cards for loads and invoices.
+- Fixed a form bug found by the e2e test: after a failed submit, dropdowns snapped back to their first
+  value (React applies a select's defaultValue only on mount). `NativeSelect` now remounts when its default changes.
+- Tests: 22 new pgTAP (177 total), 12 new unit (158 total), 2 new e2e (16 total).
+
 ## Known gaps / follow-ups
+- Customer contacts can be added and removed but not edited in place.
 - No CI pipeline yet (lint, typecheck, unit, db and e2e tests should run on every PR).
 - Production email: verify `fleetmanagepro.com` in Resend (DNS records) and set `RESEND_API_KEY`
   and `EMAIL_FROM` in Vercel. Paste `supabase/templates/*.html` into Supabase → Auth → Email Templates
@@ -65,8 +75,9 @@ Status of the MVP build. Updated at the end of every task.
 
 ## Next
 
-### Task 3c — Customers (`0003c_customers`)
-Brokers/shippers, contacts, payment terms, do-not-use status.
+### Next up — Put the app online (before Task 4)
+Supabase cloud project + Vercel deployment at `app.fleetmanagepro.com`, environment variables,
+auth email templates, Resend domain. Needs the owner's Supabase, Vercel and DNS accounts.
 
 ### After that (in order)
 4. `0004_loads` — loads, stops, drivers, accessorials, events; load list + detail + dispatch board

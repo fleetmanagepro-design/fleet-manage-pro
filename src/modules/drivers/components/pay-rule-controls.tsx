@@ -22,6 +22,13 @@ export function PayRuleForm({ driverId, today }: { driverId: string; today: stri
   const formRef = useRef<HTMLFormElement>(null);
   const v = state.status === "error" ? (state.values ?? {}) : {};
   const [payType, setPayType] = useState<PayType>((v.payType as PayType) || "per_mile");
+  // After a successful save the form is reset to defaults, so the visible pay-type fields must follow.
+  // (Adjusting state during render when the action result changes: react.dev/learn/you-might-not-need-an-effect)
+  const [seenState, setSeenState] = useState(state);
+  if (state !== seenState) {
+    setSeenState(state);
+    if (state.status === "success") setPayType("per_mile");
+  }
   useEffect(() => {
     if (state.status === "success") formRef.current?.reset();
   }, [state]);
@@ -33,7 +40,7 @@ export function PayRuleForm({ driverId, today }: { driverId: string; today: stri
       <input type="hidden" name="driverId" value={driverId} />
       <div className="grid gap-3 sm:grid-cols-2">
         <FormField id="payType" label="Pay type" errors={e.payType}>
-          <NativeSelect id="payType" name="payType" value={payType} className="w-full"
+          <NativeSelect id="payType" name="payType" defaultValue={v.payType || "per_mile"} className="w-full"
             onChange={(ev) => setPayType(ev.target.value as PayType)}>
             {PAY_TYPES.map((t) => (
               <NativeSelectOption key={t} value={t}>{PAY_TYPE_LABELS[t]}</NativeSelectOption>

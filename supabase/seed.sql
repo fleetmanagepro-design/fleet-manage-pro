@@ -219,3 +219,36 @@ insert into public.driver_pay_rules (organization_id, driver_id, effective_from,
   stop_pay_cents, detention_pay_cents_per_hour, notes)
 select d.organization_id, d.id, current_date + 21, 'per_mile', 60, 'loaded', 5000, 2500, 'Annual raise'
 from public.drivers d where d.last_name = 'Carter' and d.organization_id = 'a0000000-0000-4000-8000-000000000001';
+
+-- ---------------------------------------------------------------------------
+-- Customers (0003c): invented brokers and shippers. Lakeside 10, Prairie Haul 3.
+-- ---------------------------------------------------------------------------
+
+insert into public.customers
+  (organization_id, name, customer_type, mc_number, billing_email, phone, city, state, zip, payment_terms_days, status, do_not_use_reason)
+values
+  ('a0000000-0000-4000-8000-000000000001', 'Northline Freight Brokerage', 'broker', '610233', 'ap@northline-freight.test', '(312) 555-0140', 'Chicago', 'IL', '60607', 30, 'active', null),
+  ('a0000000-0000-4000-8000-000000000001', 'Blue Prairie Logistics', 'broker', '702118', 'billing@blueprairie.test', '(402) 555-0177', 'Omaha', 'NE', '68102', 30, 'active', null),
+  ('a0000000-0000-4000-8000-000000000001', 'Keystone Cargo Partners', 'broker', '583340', 'invoices@keystonecargo.test', '(717) 555-0123', 'Harrisburg', 'PA', '17101', 45, 'active', null),
+  ('a0000000-0000-4000-8000-000000000001', 'Riverbend Foods', 'shipper', null, 'payables@riverbendfoods.test', '(563) 555-0188', 'Davenport', 'IA', '52801', 21, 'active', null),
+  ('a0000000-0000-4000-8000-000000000001', 'Great Lakes Paper Co.', 'shipper', null, 'ap@glpaper.test', '(920) 555-0102', 'Green Bay', 'WI', '54301', 30, 'active', null),
+  ('a0000000-0000-4000-8000-000000000001', 'Summit Ridge Transport Brokers', 'broker', '644871', 'ar@summitridge.test', '(303) 555-0165', 'Denver', 'CO', '80202', 15, 'active', null),
+  ('a0000000-0000-4000-8000-000000000001', 'Heartland Building Supply', 'both', '691002', 'accounts@heartlandbuild.test', '(317) 555-0119', 'Indianapolis', 'IN', '46204', 30, 'active', null),
+  ('a0000000-0000-4000-8000-000000000001', 'Cornerstone Load Exchange', 'broker', '577410', 'pay@cornerstone-lx.test', '(614) 555-0150', 'Columbus', 'OH', '43215', 60, 'inactive', null),
+  ('a0000000-0000-4000-8000-000000000001', 'Quickturn Freight Solutions', 'broker', '699854', 'billing@quickturn.test', '(214) 555-0133', 'Dallas', 'TX', '75201', 30, 'do_not_use',
+   'Paid 90+ days late on three loads in 2026; double-brokered a load in August.'),
+  ('a0000000-0000-4000-8000-000000000001', 'Maple Valley Dairy', 'shipper', null, 'ap@maplevalleydairy.test', '(608) 555-0171', 'Madison', 'WI', '53703', 30, 'active', null),
+  ('b0000000-0000-4000-8000-000000000001', 'Platte River Grain', 'shipper', null, 'ap@platteriver.test', '(308) 555-0144', 'Kearney', 'NE', '68847', 30, 'active', null),
+  ('b0000000-0000-4000-8000-000000000001', 'Sandhills Freight Brokers', 'broker', '610233', 'billing@sandhills.test', '(308) 555-0156', 'North Platte', 'NE', '69101', 30, 'active', null),
+  ('b0000000-0000-4000-8000-000000000001', 'Cattle Country Feed', 'shipper', null, null, '(308) 555-0163', 'Lexington', 'NE', '68850', 15, 'active', null);
+
+insert into public.customer_contacts (organization_id, customer_id, name, email, phone, role)
+select c.organization_id, c.id, v.name, v.email, v.phone, v.role
+from public.customers c
+join (values
+  ('Northline Freight Brokerage', 'Kelly Morgan', 'kelly.morgan@northline-freight.test', '(312) 555-0141', 'Carrier sales'),
+  ('Northline Freight Brokerage', 'Accounts Payable', 'ap@northline-freight.test', '(312) 555-0149', 'Billing'),
+  ('Blue Prairie Logistics', 'Sam Whitfield', 'sam@blueprairie.test', '(402) 555-0178', 'Dispatch'),
+  ('Riverbend Foods', 'Dock office', null, '(563) 555-0189', 'Shipping'),
+  ('Platte River Grain', 'Jo Anders', 'jo@platteriver.test', '(308) 555-0145', 'Logistics')
+) as v(customer, name, email, phone, role) on v.customer = c.name;

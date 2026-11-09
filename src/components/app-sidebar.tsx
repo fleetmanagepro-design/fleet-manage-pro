@@ -12,6 +12,7 @@ type NavItem = { href: string; label: string; visible: (role: OrgRole) => boolea
 /** Only modules that exist are listed; more appear as they are built. */
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", visible: () => true },
+  { href: "/customers", label: "Customers", visible: () => true },
   { href: "/trucks", label: "Trucks", visible: () => true },
   { href: "/trailers", label: "Trailers", visible: () => true },
   { href: "/drivers", label: "Drivers", visible: canViewDrivers },

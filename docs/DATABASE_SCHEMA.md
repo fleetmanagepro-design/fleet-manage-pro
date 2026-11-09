@@ -108,8 +108,8 @@ Role matrix per table is defined in §5. Financial visibility for dispatchers (c
 ## 3. Tables by module
 
 ### Customers
-**customers**: id, organization_id, name, type (`broker`/`shipper`/`both`), mc_number, billing_email, phone, payment_terms_days int default 30, address fields, notes, status (`active`/`do_not_use`), archived_at
-**customer_contacts**: id, organization_id, customer_id, name, email, phone, role
+**customers**: id, organization_id, name, customer_type (`broker`/`shipper`/`both`), mc_number (unique per org among non-archived), billing_email, phone, payment_terms_days int 0–180 default 30, address fields, notes, status (`active`/`inactive`/`do_not_use`), do_not_use_reason (required for do_not_use), archived_at
+**customer_contacts**: id, organization_id, customer_id (composite FK), name, email, phone, role
 
 ### Fleet
 **trucks**: id, organization_id, unit_number (unique per org), vin, year, make, model, plate, plate_state, ownership (`owned`/`financed`/`leased`), purchase_date, purchase_price_cents, current_odometer numeric(10,1), status (`active`/`in_shop`/`out_of_service`/`sold`), registration_expires_on, annual_inspection_on, annual_inspection_valid_months (3/6/9/12, default 12), insurance_expires_on, notes, archived_at
@@ -207,7 +207,7 @@ One user per role in Lakeside; one owner in Prairie Haul.
 2. `0002_member_directory` — `list_organization_members(org)`, `get_invitation_preview(token)` ✅
 3. `0003_fleet` — trucks, trailers, odometer readings ✅
 3b. `0003b_drivers` — drivers, pay rules, `org_today()` ✅
-3c. `0003c_customers` — customers, contacts
+3c. `0003c_customers` — customers, contacts ✅
 4. `0004_loads` — loads, stops, drivers, accessorials, events
 5. `0005_expenses` — categories, expenses, fuel details, recurring costs
 6. `0006_maintenance` — work orders, lines, PM, tires

@@ -25,6 +25,52 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"customer_contacts": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"customer_id": string,"email": string | null,"id": string,"name": string,"organization_id": string,"phone": string | null,"role": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"customer_id": string,"email"?: string | null,"id"?: string,"name": string,"organization_id": string,"phone"?: string | null,"role"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"customer_id"?: string,"email"?: string | null,"id"?: string,"name"?: string,"organization_id"?: string,"phone"?: string | null,"role"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "customer_contacts_organization_id_customer_id_fkey"
+      columns: ["organization_id","customer_id"]
+isOneToOne: false
+      referencedRelation: "customers"
+      referencedColumns: ["organization_id","id"]
+    },{
+      foreignKeyName: "customer_contacts_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"customers": {
+                  Row: {
+                    "address_line1": string | null,"archived_at": string | null,"archived_by": string | null,"billing_email": string | null,"city": string | null,"created_at": string,"created_by": string | null,"customer_type": Database["public"]['Enums']["customer_type"],"do_not_use_reason": string | null,"id": string,"mc_number": string | null,"name": string,"notes": string | null,"organization_id": string,"payment_terms_days": number,"phone": string | null,"state": string | null,"status": Database["public"]['Enums']["customer_status"],"updated_at": string,"zip": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "address_line1"?: string | null,"archived_at"?: string | null,"archived_by"?: string | null,"billing_email"?: string | null,"city"?: string | null,"created_at"?: string,"created_by"?: string | null,"customer_type"?: Database["public"]['Enums']["customer_type"],"do_not_use_reason"?: string | null,"id"?: string,"mc_number"?: string | null,"name": string,"notes"?: string | null,"organization_id": string,"payment_terms_days"?: number,"phone"?: string | null,"state"?: string | null,"status"?: Database["public"]['Enums']["customer_status"],"updated_at"?: string,"zip"?: string | null
+                  }
+                  Update: {
+                    "address_line1"?: string | null,"archived_at"?: string | null,"archived_by"?: string | null,"billing_email"?: string | null,"city"?: string | null,"created_at"?: string,"created_by"?: string | null,"customer_type"?: Database["public"]['Enums']["customer_type"],"do_not_use_reason"?: string | null,"id"?: string,"mc_number"?: string | null,"name"?: string,"notes"?: string | null,"organization_id"?: string,"payment_terms_days"?: number,"phone"?: string | null,"state"?: string | null,"status"?: Database["public"]['Enums']["customer_status"],"updated_at"?: string,"zip"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "customers_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"driver_pay_rules": {
                   Row: {
                     "created_at": string,"created_by": string | null,"detention_pay_cents_per_hour": number,"driver_id": string,"effective_from": string,"flat_cents": number | null,"id": string,"miles_basis": Database["public"]['Enums']["miles_basis"] | null,"notes": string | null,"organization_id": string,"pay_type": Database["public"]['Enums']["pay_type"],"percent": number | null,"percent_basis": Database["public"]['Enums']["percent_basis"] | null,"rate_cents_per_mile": number | null,"stop_pay_cents": number,"updated_at": string
@@ -236,7 +282,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "asset_status": "active"|"in_shop"|"out_of_service"|"sold","asset_type": "truck"|"trailer","audit_action": "insert"|"update"|"void"|"delete","cdl_class": "A"|"B"|"C","driver_status": "active"|"inactive"|"terminated","driver_type": "company"|"owner_operator"|"team","meter_source": "manual"|"fuel"|"work_order"|"load","meter_type": "odometer"|"hubodometer"|"reefer_hours","miles_basis": "loaded"|"all","org_role": "owner"|"admin"|"dispatcher"|"maintenance"|"accounting"|"viewer","ownership_type": "owned"|"financed"|"leased","pay_type": "per_mile"|"percent"|"flat","percent_basis": "linehaul"|"linehaul_fsc"|"total","trailer_type": "dry_van"|"reefer"|"flatbed"|"step_deck"|"other"
+            "asset_status": "active"|"in_shop"|"out_of_service"|"sold","asset_type": "truck"|"trailer","audit_action": "insert"|"update"|"void"|"delete","cdl_class": "A"|"B"|"C","customer_status": "active"|"inactive"|"do_not_use","customer_type": "broker"|"shipper"|"both","driver_status": "active"|"inactive"|"terminated","driver_type": "company"|"owner_operator"|"team","meter_source": "manual"|"fuel"|"work_order"|"load","meter_type": "odometer"|"hubodometer"|"reefer_hours","miles_basis": "loaded"|"all","org_role": "owner"|"admin"|"dispatcher"|"maintenance"|"accounting"|"viewer","ownership_type": "owned"|"financed"|"leased","pay_type": "per_mile"|"percent"|"flat","percent_basis": "linehaul"|"linehaul_fsc"|"total","trailer_type": "dry_van"|"reefer"|"flatbed"|"step_deck"|"other"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -352,7 +398,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "asset_status": ["active", "in_shop", "out_of_service", "sold"],"asset_type": ["truck", "trailer"],"audit_action": ["insert", "update", "void", "delete"],"cdl_class": ["A", "B", "C"],"driver_status": ["active", "inactive", "terminated"],"driver_type": ["company", "owner_operator", "team"],"meter_source": ["manual", "fuel", "work_order", "load"],"meter_type": ["odometer", "hubodometer", "reefer_hours"],"miles_basis": ["loaded", "all"],"org_role": ["owner", "admin", "dispatcher", "maintenance", "accounting", "viewer"],"ownership_type": ["owned", "financed", "leased"],"pay_type": ["per_mile", "percent", "flat"],"percent_basis": ["linehaul", "linehaul_fsc", "total"],"trailer_type": ["dry_van", "reefer", "flatbed", "step_deck", "other"]
+            "asset_status": ["active", "in_shop", "out_of_service", "sold"],"asset_type": ["truck", "trailer"],"audit_action": ["insert", "update", "void", "delete"],"cdl_class": ["A", "B", "C"],"customer_status": ["active", "inactive", "do_not_use"],"customer_type": ["broker", "shipper", "both"],"driver_status": ["active", "inactive", "terminated"],"driver_type": ["company", "owner_operator", "team"],"meter_source": ["manual", "fuel", "work_order", "load"],"meter_type": ["odometer", "hubodometer", "reefer_hours"],"miles_basis": ["loaded", "all"],"org_role": ["owner", "admin", "dispatcher", "maintenance", "accounting", "viewer"],"ownership_type": ["owned", "financed", "leased"],"pay_type": ["per_mile", "percent", "flat"],"percent_basis": ["linehaul", "linehaul_fsc", "total"],"trailer_type": ["dry_van", "reefer", "flatbed", "step_deck", "other"]
           }
         }
 } as const
