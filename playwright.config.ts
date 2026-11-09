@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 3100;
+// Must match NEXT_PUBLIC_SITE_URL and Supabase `site_url`: email links point there.
+const PORT = 3000;
 
 export default defineConfig({
   testDir: "./tests/e2e",

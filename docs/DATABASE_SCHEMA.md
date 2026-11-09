@@ -199,11 +199,12 @@ Two organizations for isolation tests:
 One user per role in Lakeside; one owner in Prairie Haul.
 
 ## 7. Migration order
-1. `0001_tenancy` — organizations, members, invitations, helper functions, audit trigger function
-2. `0002_master_data` — customers, contacts, trucks, trailers, drivers, pay rules, odometer readings
-3. `0003_loads` — loads, stops, drivers, accessorials, events
-4. `0004_expenses` — categories, expenses, fuel details, recurring costs
-5. `0005_maintenance` — work orders, lines, PM, tires
-6. `0006_invoicing` — invoices, lines, payments
-7. `0007_documents_alerts` — documents, links, alerts, import jobs, storage policies
-8. `0008_reporting` — views and functions
+1. `0001_tenancy` — organizations, members, invitations, helper functions, audit trigger function ✅
+2. `0002_member_directory` — `list_organization_members(org)`, `get_invitation_preview(token)` ✅
+3. `0003_master_data` — customers, contacts, trucks, trailers, drivers, pay rules, odometer readings
+4. `0004_loads` — loads, stops, drivers, accessorials, events
+5. `0005_expenses` — categories, expenses, fuel details, recurring costs
+6. `0006_maintenance` — work orders, lines, PM, tires
+7. `0007_invoicing` — invoices, lines, payments
+8. `0008_documents_alerts` — documents, links, alerts, import jobs, storage policies
+9. `0009_reporting` — views and functions
