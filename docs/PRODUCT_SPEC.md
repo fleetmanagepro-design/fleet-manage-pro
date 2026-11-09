@@ -125,6 +125,12 @@ Lists: Top 5 and bottom 5 trucks by profit · Top 5 costliest trailers by mainte
 ### 4.3 Customers
 Fields: name, type (broker / shipper / both), MC number, contact(s), billing email, payment terms (days), notes, status (active / do-not-use).
 
+**Rules** (decided 11/09/2026)
+- Status: Active, Inactive (not working with them now), Do not use (requires a reason; such a customer can't be put on new loads).
+- MC number is unique within the company among non-archived customers; names may repeat.
+- Customers are never deleted, only archived. Contacts (name, role, email or phone) can be added and removed.
+- Owner, Admin, Dispatcher and Accounting edit customers; Maintenance and Viewer read them.
+
 **AC**: cannot delete a customer with loads; can mark inactive.
 
 ### 4.4 Loads & dispatch

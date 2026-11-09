@@ -179,7 +179,7 @@ export function TrailerForm({ trailer }: { trailer?: Trailer }) {
       </div>
       <div className="grid gap-3 sm:grid-cols-4">
         <FormField id="trailerType" label="Type" errors={e.trailerType}>
-          <NativeSelect id="trailerType" name="trailerType" value={type} onChange={(ev) => setType(ev.target.value)} className="w-full">
+          <NativeSelect id="trailerType" name="trailerType" defaultValue={v.trailerType || "dry_van"} onChange={(ev) => setType(ev.target.value)} className="w-full">
             {TRAILER_TYPES.map((t) => (
               <NativeSelectOption key={t} value={t}>{TRAILER_TYPE_LABELS[t]}</NativeSelectOption>
             ))}
