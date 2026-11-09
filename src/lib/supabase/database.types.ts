@@ -91,11 +91,21 @@ isOneToOne: false
 "create_organization":
 { Args: { "p_address_line1"?: string,"p_city"?: string,"p_mc_number"?: string,"p_name": string,"p_state"?: string,"p_timezone"?: string,"p_usdot_number"?: string,"p_zip"?: string }; Returns: string
                            },
+"get_invitation_preview":
+{ Args: { "p_token": string }; Returns: {
+              "email": string,"organization_name": string,"role": Database["public"]['Enums']["org_role"],"status": string
+            }[]
+                           },
 "has_org_role":
 { Args: { "org": string,"roles": (Database["public"]['Enums']["org_role"])[] }; Returns: boolean
                            },
 "is_org_member":
 { Args: { "org": string }; Returns: boolean
+                           },
+"list_organization_members":
+{ Args: { "p_org": string }; Returns: {
+              "email": string,"first_name": string,"joined_at": string,"last_name": string,"role": Database["public"]['Enums']["org_role"],"user_id": string
+            }[]
                            }
           }
           Enums: {
