@@ -45,6 +45,38 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"odometer_readings": {
+                  Row: {
+                    "asset_type": Database["public"]['Enums']["asset_type"],"created_at": string,"created_by": string | null,"id": string,"is_correction": boolean,"note": string | null,"organization_id": string,"read_on": string,"reading": number,"reading_type": Database["public"]['Enums']["meter_type"],"source": Database["public"]['Enums']["meter_source"],"trailer_id": string | null,"truck_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "asset_type": Database["public"]['Enums']["asset_type"],"created_at"?: string,"created_by"?: string | null,"id"?: string,"is_correction"?: boolean,"note"?: string | null,"organization_id": string,"read_on"?: string,"reading": number,"reading_type": Database["public"]['Enums']["meter_type"],"source"?: Database["public"]['Enums']["meter_source"],"trailer_id"?: string | null,"truck_id"?: string | null
+                  }
+                  Update: {
+                    "asset_type"?: Database["public"]['Enums']["asset_type"],"created_at"?: string,"created_by"?: string | null,"id"?: string,"is_correction"?: boolean,"note"?: string | null,"organization_id"?: string,"read_on"?: string,"reading"?: number,"reading_type"?: Database["public"]['Enums']["meter_type"],"source"?: Database["public"]['Enums']["meter_source"],"trailer_id"?: string | null,"truck_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "odometer_readings_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "odometer_readings_organization_id_trailer_id_fkey"
+      columns: ["organization_id","trailer_id"]
+isOneToOne: false
+      referencedRelation: "trailers"
+      referencedColumns: ["organization_id","id"]
+    },{
+      foreignKeyName: "odometer_readings_organization_id_truck_id_fkey"
+      columns: ["organization_id","truck_id"]
+isOneToOne: false
+      referencedRelation: "trucks"
+      referencedColumns: ["organization_id","id"]
+    }
+                  ]
                 },"organization_members": {
                   Row: {
                     "created_at": string,"organization_id": string,"role": Database["public"]['Enums']["org_role"],"user_id": string
@@ -79,6 +111,46 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"trailers": {
+                  Row: {
+                    "annual_inspection_on": string | null,"annual_inspection_valid_months": number,"archived_at": string | null,"archived_by": string | null,"created_at": string,"created_by": string | null,"hubodometer": number | null,"id": string,"length_ft": number | null,"make": string | null,"notes": string | null,"organization_id": string,"ownership": Database["public"]['Enums']["ownership_type"],"plate": string | null,"plate_state": string | null,"purchase_date": string | null,"purchase_price_cents": number | null,"reefer_hours": number | null,"registration_expires_on": string | null,"status": Database["public"]['Enums']["asset_status"],"trailer_type": Database["public"]['Enums']["trailer_type"],"unit_number": string,"updated_at": string,"vin": string | null,"year": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "annual_inspection_on"?: string | null,"annual_inspection_valid_months"?: number,"archived_at"?: string | null,"archived_by"?: string | null,"created_at"?: string,"created_by"?: string | null,"hubodometer"?: number | null,"id"?: string,"length_ft"?: number | null,"make"?: string | null,"notes"?: string | null,"organization_id": string,"ownership"?: Database["public"]['Enums']["ownership_type"],"plate"?: string | null,"plate_state"?: string | null,"purchase_date"?: string | null,"purchase_price_cents"?: number | null,"reefer_hours"?: number | null,"registration_expires_on"?: string | null,"status"?: Database["public"]['Enums']["asset_status"],"trailer_type": Database["public"]['Enums']["trailer_type"],"unit_number": string,"updated_at"?: string,"vin"?: string | null,"year"?: number | null
+                  }
+                  Update: {
+                    "annual_inspection_on"?: string | null,"annual_inspection_valid_months"?: number,"archived_at"?: string | null,"archived_by"?: string | null,"created_at"?: string,"created_by"?: string | null,"hubodometer"?: number | null,"id"?: string,"length_ft"?: number | null,"make"?: string | null,"notes"?: string | null,"organization_id"?: string,"ownership"?: Database["public"]['Enums']["ownership_type"],"plate"?: string | null,"plate_state"?: string | null,"purchase_date"?: string | null,"purchase_price_cents"?: number | null,"reefer_hours"?: number | null,"registration_expires_on"?: string | null,"status"?: Database["public"]['Enums']["asset_status"],"trailer_type"?: Database["public"]['Enums']["trailer_type"],"unit_number"?: string,"updated_at"?: string,"vin"?: string | null,"year"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "trailers_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"trucks": {
+                  Row: {
+                    "annual_inspection_on": string | null,"annual_inspection_valid_months": number,"archived_at": string | null,"archived_by": string | null,"created_at": string,"created_by": string | null,"current_odometer": number | null,"id": string,"insurance_expires_on": string | null,"make": string | null,"model": string | null,"notes": string | null,"organization_id": string,"ownership": Database["public"]['Enums']["ownership_type"],"plate": string | null,"plate_state": string | null,"purchase_date": string | null,"purchase_price_cents": number | null,"registration_expires_on": string | null,"status": Database["public"]['Enums']["asset_status"],"unit_number": string,"updated_at": string,"vin": string,"year": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "annual_inspection_on"?: string | null,"annual_inspection_valid_months"?: number,"archived_at"?: string | null,"archived_by"?: string | null,"created_at"?: string,"created_by"?: string | null,"current_odometer"?: number | null,"id"?: string,"insurance_expires_on"?: string | null,"make"?: string | null,"model"?: string | null,"notes"?: string | null,"organization_id": string,"ownership"?: Database["public"]['Enums']["ownership_type"],"plate"?: string | null,"plate_state"?: string | null,"purchase_date"?: string | null,"purchase_price_cents"?: number | null,"registration_expires_on"?: string | null,"status"?: Database["public"]['Enums']["asset_status"],"unit_number": string,"updated_at"?: string,"vin": string,"year"?: number | null
+                  }
+                  Update: {
+                    "annual_inspection_on"?: string | null,"annual_inspection_valid_months"?: number,"archived_at"?: string | null,"archived_by"?: string | null,"created_at"?: string,"created_by"?: string | null,"current_odometer"?: number | null,"id"?: string,"insurance_expires_on"?: string | null,"make"?: string | null,"model"?: string | null,"notes"?: string | null,"organization_id"?: string,"ownership"?: Database["public"]['Enums']["ownership_type"],"plate"?: string | null,"plate_state"?: string | null,"purchase_date"?: string | null,"purchase_price_cents"?: number | null,"registration_expires_on"?: string | null,"status"?: Database["public"]['Enums']["asset_status"],"unit_number"?: string,"updated_at"?: string,"vin"?: string,"year"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "trucks_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 }
           }
           Views: {
@@ -109,7 +181,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "audit_action": "insert"|"update"|"void"|"delete","org_role": "owner"|"admin"|"dispatcher"|"maintenance"|"accounting"|"viewer"
+            "asset_status": "active"|"in_shop"|"out_of_service"|"sold","asset_type": "truck"|"trailer","audit_action": "insert"|"update"|"void"|"delete","meter_source": "manual"|"fuel"|"work_order"|"load","meter_type": "odometer"|"hubodometer"|"reefer_hours","org_role": "owner"|"admin"|"dispatcher"|"maintenance"|"accounting"|"viewer","ownership_type": "owned"|"financed"|"leased","trailer_type": "dry_van"|"reefer"|"flatbed"|"step_deck"|"other"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -225,7 +297,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "audit_action": ["insert", "update", "void", "delete"],"org_role": ["owner", "admin", "dispatcher", "maintenance", "accounting", "viewer"]
+            "asset_status": ["active", "in_shop", "out_of_service", "sold"],"asset_type": ["truck", "trailer"],"audit_action": ["insert", "update", "void", "delete"],"meter_source": ["manual", "fuel", "work_order", "load"],"meter_type": ["odometer", "hubodometer", "reefer_hours"],"org_role": ["owner", "admin", "dispatcher", "maintenance", "accounting", "viewer"],"ownership_type": ["owned", "financed", "leased"],"trailer_type": ["dry_van", "reefer", "flatbed", "step_deck", "other"]
           }
         }
 } as const

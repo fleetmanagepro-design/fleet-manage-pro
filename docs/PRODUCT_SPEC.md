@@ -154,6 +154,15 @@ Fields: unit #, VIN, year, make, model, plate + state, ownership (owned / financ
 
 Truck detail tabs: Overview (profit, RPM, CPM, maintenance CPM for selected period) · Loads · Expenses · Maintenance · Documents.
 
+**Rules** (decided 11/09/2026)
+- Unit numbers are unique per company among non-archived trucks; trucks and trailers have separate numbering (truck 101 and trailer 101 may both exist). VINs are unique among non-archived trucks.
+- Trucks and trailers are never deleted, only archived (history and costs stay). Archiving frees the unit number and VIN.
+- VIN: 17 characters, no I/O/Q (required for trucks, optional for trailers). A wrong check digit is shown as a warning only.
+- Sold assets are read-only and will not be offered for load assignment. Only an Owner or Admin can mark an asset sold or change a sold status.
+- Dispatchers can change the status of trucks and trailers, nothing else.
+- Inspections: the user enters the date of the last inspection and how long it is valid (3, 6, 9 or 12 months; default 12). The due date is computed from those two and flagged 30 days ahead.
+- Odometer, hubodometer and reefer hours are kept as a history of readings. A reading lower than the current value is a correction: Owner/Admin only, with a reason, and audited.
+
 **AC**: odometer can only increase (correction requires Admin and is audited); expirations within 30 days create alerts.
 
 ### 4.6 Trailers
