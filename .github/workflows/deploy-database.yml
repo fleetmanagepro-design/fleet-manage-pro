@@ -47,4 +47,4 @@ jobs:
         run: supabase migration list --remote --password "$SUPABASE_DB_PASSWORD"
 
       - name: Apply migrations
-        run: supabase db push --remote --password "$SUPABASE_DB_PASSWORD"
+        run: supabase db push --remote --yes --password "$SUPABASE_DB_PASSWORD"
