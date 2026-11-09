@@ -60,12 +60,14 @@ Status of the MVP build. Updated at the end of every task.
   value (React applies a select's defaultValue only on mount). `NativeSelect` now remounts when its default changes.
 - Tests: 22 new pgTAP (177 total), 12 new unit (158 total), 2 new e2e (16 total).
 
+### Online (11/09/2026)
+- Production on Vercel + Supabase (East US); see `docs/DEPLOYMENT.md`.
+- CI on every PR; migrations deploy to production from `main` via GitHub Actions; seed never runs in production.
+
 ## Known gaps / follow-ups
 - Customer contacts can be added and removed but not edited in place.
-- No CI pipeline yet (lint, typecheck, unit, db and e2e tests should run on every PR).
-- Production email: verify `fleetmanagepro.com` in Resend (DNS records) and set `RESEND_API_KEY`
-  and `EMAIL_FROM` in Vercel. Paste `supabase/templates/*.html` into Supabase → Auth → Email Templates
-  and configure Supabase Auth SMTP (Resend SMTP works) so confirmation emails come from the domain too.
+- Production email: Supabase only emails its own team members until custom SMTP (Resend) is set; invitation
+  emails fail over to the copyable link until `RESEND_API_KEY` is set.
 - Organization settings screen (edit name, USDOT, address, time zone, overhead allocation) — not built yet.
 - A page the user may not open shows "not found" but returns HTTP 200 (pages stream with Cache Components).
   Data is never sent; consider moving role gates into `proxy.ts` later if real status codes matter.
@@ -75,12 +77,15 @@ Status of the MVP build. Updated at the end of every task.
 
 ## Next
 
-### Next up — Put the app online (before Task 4)
-Supabase cloud project + Vercel deployment at `app.fleetmanagepro.com`, environment variables,
-auth email templates, Resend domain. Needs the owner's Supabase, Vercel and DNS accounts.
+### Next up — Email and domain
+Resend: verify `fleetmanagepro.com`, set `RESEND_API_KEY`/`EMAIL_FROM` in Vercel, and use Resend as Supabase Auth SMTP
+so sign-up emails reach everyone. Then move the app to `app.fleetmanagepro.com` (docs/DEPLOYMENT.md).
+
+### Task 4 — Loads & dispatch (`0004_loads`)
+Loads, stops, load drivers, accessorials, status events; load list, load detail with profitability box,
+dispatch board; driver pay calculated on delivery (team drivers: each their own rule on the load's miles).
 
 ### After that (in order)
-4. `0004_loads` — loads, stops, drivers, accessorials, events; load list + detail + dispatch board
 5. `0005_expenses` — categories, expenses, fuel, recurring costs
 6. `0006_maintenance` — work orders, PM, tires
 7. `0007_invoicing` — invoices, payments, aging
