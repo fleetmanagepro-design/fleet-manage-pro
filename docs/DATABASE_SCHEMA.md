@@ -112,9 +112,9 @@ Role matrix per table is defined in §5. Financial visibility for dispatchers (c
 **customer_contacts**: id, organization_id, customer_id, name, email, phone, role
 
 ### Fleet
-**trucks**: id, organization_id, unit_number (unique per org), vin, year, make, model, plate, plate_state, ownership (`owned`/`financed`/`leased`), purchase_date, purchase_price_cents, current_odometer numeric(10,1), status (`active`/`in_shop`/`out_of_service`/`sold`), default_driver_id, registration_expires_on, annual_inspection_on, insurance_expires_on, notes, archived_at
+**trucks**: id, organization_id, unit_number (unique per org), vin, year, make, model, plate, plate_state, ownership (`owned`/`financed`/`leased`), purchase_date, purchase_price_cents, current_odometer numeric(10,1), status (`active`/`in_shop`/`out_of_service`/`sold`), default_driver_id, registration_expires_on, annual_inspection_on, annual_inspection_valid_months (3/6/9/12, default 12), insurance_expires_on, notes, archived_at
 
-**trailers**: id, organization_id, unit_number (unique per org), vin, year, make, trailer_type (`dry_van`/`reefer`/`flatbed`/`step_deck`/`other`), length_ft, plate, plate_state, ownership, purchase_date, purchase_price_cents, hubodometer numeric(10,1), reefer_hours numeric(10,1), status, registration_expires_on, annual_inspection_on, notes, archived_at
+**trailers**: id, organization_id, unit_number (unique per org), vin, year, make, trailer_type (`dry_van`/`reefer`/`flatbed`/`step_deck`/`other`), length_ft, plate, plate_state, ownership, purchase_date, purchase_price_cents, hubodometer numeric(10,1), reefer_hours numeric(10,1), status, registration_expires_on, annual_inspection_on, annual_inspection_valid_months, notes, archived_at
 
 **odometer_readings**: id, organization_id, asset_type (`truck`/`trailer`), truck_id, trailer_id, reading numeric(10,1), reading_type (`odometer`/`hubodometer`/`reefer_hours`), read_on date, source (`manual`/`fuel`/`work_order`/`load`), is_correction bool, note — insert-only
 — check: exactly one of truck_id / trailer_id is set (same pattern used below wherever an asset is referenced)

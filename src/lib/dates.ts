@@ -47,12 +47,19 @@ export function daysBetween(from: string, to: string): number {
   return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86_400_000);
 }
 
+/** Add whole months, clamping to the end of a shorter month (08/31 + 6 months → 02/28). */
+export function addMonths(value: string, months: number): string {
+  const [y, m, d] = parseIsoDate(value);
+  const index = y * 12 + (m - 1) + months;
+  const ty = Math.floor(index / 12);
+  const tm = (index % 12) + 1;
+  const lastDay = new Date(Date.UTC(ty, tm, 0)).getUTCDate();
+  return `${ty}-${String(tm).padStart(2, "0")}-${String(Math.min(d, lastDay)).padStart(2, "0")}`;
+}
+
 /** Add whole years; Feb 29 becomes Feb 28 in non-leap years. */
 export function addYears(value: string, years: number): string {
-  const [y, m, d] = parseIsoDate(value);
-  const target = y + years;
-  const lastDay = new Date(Date.UTC(target, m, 0)).getUTCDate();
-  return `${target}-${String(m).padStart(2, "0")}-${String(Math.min(d, lastDay)).padStart(2, "0")}`;
+  return addMonths(value, years * 12);
 }
 
 /** Validate a "YYYY-MM-DD" string (form input type="date"). */

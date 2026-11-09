@@ -44,8 +44,11 @@ create table public.trucks (
   current_odometer numeric(10, 1) check (current_odometer >= 0),
   status public.asset_status not null default 'active',
   registration_expires_on date,
-  -- date of the last annual (DOT) inspection; next one is due 12 months later
+  -- date of the last periodic (DOT) inspection; the next one is due
+  -- annual_inspection_valid_months later (entered by the user: 3, 6, 9 or 12)
   annual_inspection_on date,
+  annual_inspection_valid_months smallint not null default 12
+    check (annual_inspection_valid_months in (3, 6, 9, 12)),
   insurance_expires_on date,
   notes text check (length(notes) <= 5000),
   archived_at timestamptz,
@@ -80,6 +83,8 @@ create table public.trailers (
   status public.asset_status not null default 'active',
   registration_expires_on date,
   annual_inspection_on date,
+  annual_inspection_valid_months smallint not null default 12
+    check (annual_inspection_valid_months in (3, 6, 9, 12)),
   notes text check (length(notes) <= 5000),
   archived_at timestamptz,
   archived_by uuid references auth.users (id) on delete set null,
@@ -402,12 +407,12 @@ revoke all on public.trucks, public.trailers, public.odometer_readings from anon
 
 revoke update, delete, truncate on public.trucks from authenticated;
 grant update (unit_number, vin, year, make, model, plate, plate_state, ownership, purchase_date,
-  purchase_price_cents, status, registration_expires_on, annual_inspection_on, insurance_expires_on,
-  notes, archived_at) on public.trucks to authenticated;
+  purchase_price_cents, status, registration_expires_on, annual_inspection_on, annual_inspection_valid_months,
+  insurance_expires_on, notes, archived_at) on public.trucks to authenticated;
 
 revoke update, delete, truncate on public.trailers from authenticated;
 grant update (unit_number, vin, year, make, trailer_type, length_ft, plate, plate_state, ownership,
   purchase_date, purchase_price_cents, status, registration_expires_on, annual_inspection_on,
-  notes, archived_at) on public.trailers to authenticated;
+  annual_inspection_valid_months, notes, archived_at) on public.trailers to authenticated;
 
 revoke update, delete, truncate on public.odometer_readings from authenticated;

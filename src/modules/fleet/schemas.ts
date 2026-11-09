@@ -11,7 +11,7 @@ import {
   optionalUsState,
 } from "@/lib/form-fields";
 import { isValidVinFormat, normalizeVin } from "@/lib/vin";
-import { ASSET_STATUSES, OWNERSHIP_TYPES, TRAILER_TYPES } from "./labels";
+import { ASSET_STATUSES, INSPECTION_VALIDITY_MONTHS, OWNERSHIP_TYPES, TRAILER_TYPES } from "./labels";
 
 const unitNumber = z.string().trim().min(1, { error: "Enter a unit number" }).max(20, { error: "Keep it under 20 characters" });
 
@@ -44,6 +44,11 @@ const assetCommon = {
   purchasePriceCents: optionalDollarsAsCents,
   registrationExpiresOn: optionalCalendarDate,
   annualInspectionOn: optionalCalendarDate,
+  inspectionValidMonths: z.coerce
+    .number()
+    .refine((n) => (INSPECTION_VALIDITY_MONTHS as readonly number[]).includes(n), {
+      error: "Choose 3, 6, 9 or 12 months",
+    }),
   notes: optionalText(5000),
 };
 

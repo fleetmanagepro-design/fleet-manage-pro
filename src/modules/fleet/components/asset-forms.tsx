@@ -15,6 +15,7 @@ import { US_STATES } from "@/lib/us";
 import { createTrailer, createTruck, updateTrailer, updateTruck } from "../actions";
 import {
   ASSET_STATUSES,
+  INSPECTION_VALIDITY_MONTHS,
   OWNERSHIP_LABELS,
   OWNERSHIP_TYPES,
   STATUS_LABELS,
@@ -53,6 +54,7 @@ function SelectField({ id, label, value, options, errors, allowEmpty }: {
 
 const STATE_OPTIONS = US_STATES.map(([code]) => [code, code] as const);
 const OWNERSHIP_OPTIONS = OWNERSHIP_TYPES.map((o) => [o, OWNERSHIP_LABELS[o]] as const);
+const VALIDITY_OPTIONS = INSPECTION_VALIDITY_MONTHS.map((m) => [String(m), `${m} months`] as const);
 const STATUS_OPTIONS = ASSET_STATUSES.filter((s) => s !== "sold").map((s) => [s, STATUS_LABELS[s]] as const);
 
 function CommonFields({ v, e }: { v: Record<string, string>; e: Errors }) {
@@ -76,15 +78,19 @@ function ComplianceFields({ v, e, insurance }: { v: Record<string, string>; e: E
   return (
     <fieldset className="grid gap-3">
       <legend className="mb-1 text-sm font-medium">Compliance dates</legend>
-      <div className={`grid gap-3 ${insurance ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+      <div className="grid gap-3 sm:grid-cols-2">
         <FormField id="registrationExpiresOn" label="Registration expires" type="date"
           defaultValue={v.registrationExpiresOn} errors={e.registrationExpiresOn} />
-        <FormField id="annualInspectionOn" label="Last annual inspection" type="date"
-          defaultValue={v.annualInspectionOn} errors={e.annualInspectionOn} hint="Next one is due 12 months later." />
         {insurance && (
           <FormField id="insuranceExpiresOn" label="Insurance expires" type="date"
             defaultValue={v.insuranceExpiresOn} errors={e.insuranceExpiresOn} />
         )}
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <FormField id="annualInspectionOn" label="Last inspection" type="date"
+          defaultValue={v.annualInspectionOn} errors={e.annualInspectionOn} />
+        <SelectField id="inspectionValidMonths" label="Inspection valid for" value={v.inspectionValidMonths || "12"}
+          options={VALIDITY_OPTIONS} errors={e.inspectionValidMonths} />
       </div>
     </fieldset>
   );
@@ -106,7 +112,7 @@ function truckToForm(t: Truck) {
     plate: t.plate, plateState: t.plate_state, ownership: t.ownership, purchaseDate: t.purchase_date,
     purchasePriceCents: t.purchase_price_cents === null ? null : formatCents(t.purchase_price_cents).replace("$", ""),
     status: t.status, registrationExpiresOn: t.registration_expires_on, annualInspectionOn: t.annual_inspection_on,
-    insuranceExpiresOn: t.insurance_expires_on, notes: t.notes,
+    inspectionValidMonths: t.annual_inspection_valid_months, insuranceExpiresOn: t.insurance_expires_on, notes: t.notes,
   };
 }
 
@@ -117,7 +123,7 @@ function trailerToForm(t: Trailer) {
     purchaseDate: t.purchase_date,
     purchasePriceCents: t.purchase_price_cents === null ? null : formatCents(t.purchase_price_cents).replace("$", ""),
     status: t.status, registrationExpiresOn: t.registration_expires_on, annualInspectionOn: t.annual_inspection_on,
-    notes: t.notes,
+    inspectionValidMonths: t.annual_inspection_valid_months, notes: t.notes,
   };
 }
 

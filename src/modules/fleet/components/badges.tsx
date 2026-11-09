@@ -48,6 +48,7 @@ export function ComplianceList({ items }: { items: ComplianceItem[] }) {
           <span>
             {i.label}
             {i.key === "annual_inspection" ? " due" : ""}: {formatCalendarDate(i.dueOn)}
+            {i.note && <span className="ml-1 text-muted-foreground">({i.note})</span>}
           </span>
           <span
             className={

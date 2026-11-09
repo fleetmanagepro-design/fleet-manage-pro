@@ -1,4 +1,4 @@
-import { addYears, daysBetween } from "@/lib/dates";
+import { addMonths, daysBetween, formatCalendarDate } from "@/lib/dates";
 
 /** Expirations within this many days are flagged (PRODUCT_SPEC.md §4.5 AC). */
 export const DUE_SOON_DAYS = 30;
@@ -13,12 +13,16 @@ export type ComplianceItem = {
   /** Days from today until dueOn (negative when past). */
   daysLeft: number | null;
   state: ComplianceState;
+  /** Extra context, e.g. "last 03/01/2026, valid 6 months". */
+  note?: string;
 };
 
 export type ComplianceInput = {
   registration_expires_on: string | null;
-  /** Date of the last annual inspection; the next one is due 12 months later. */
+  /** Date of the last periodic inspection. */
   annual_inspection_on: string | null;
+  /** How long that inspection is valid: 3, 6, 9 or 12 months (entered by the user). */
+  annual_inspection_valid_months: number;
   /** Trucks only. */
   insurance_expires_on?: string | null;
 };
@@ -33,15 +37,12 @@ function item(key: ComplianceItem["key"], label: string, dueOn: string | null, t
 
 /** Registration, annual inspection and (trucks) insurance status as of `today`. */
 export function complianceItems(asset: ComplianceInput, today: string): ComplianceItem[] {
-  const items = [
-    item("registration", "Registration", asset.registration_expires_on, today),
-    item(
-      "annual_inspection",
-      "Annual inspection",
-      asset.annual_inspection_on ? addYears(asset.annual_inspection_on, 1) : null,
-      today,
-    ),
-  ];
+  const last = asset.annual_inspection_on;
+  const months = asset.annual_inspection_valid_months;
+  const inspection = item("annual_inspection", "Inspection", last ? addMonths(last, months) : null, today);
+  if (last) inspection.note = `last ${formatCalendarDate(last)}, valid ${months} months`;
+
+  const items = [item("registration", "Registration", asset.registration_expires_on, today), inspection];
   if (asset.insurance_expires_on !== undefined) {
     items.push(item("insurance", "Insurance", asset.insurance_expires_on, today));
   }

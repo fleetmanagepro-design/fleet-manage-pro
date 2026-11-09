@@ -83,6 +83,7 @@ function truckColumns(t: z.infer<typeof truckSchema>) {
     status: t.status,
     registration_expires_on: nullable(t.registrationExpiresOn),
     annual_inspection_on: nullable(t.annualInspectionOn),
+    annual_inspection_valid_months: t.inspectionValidMonths,
     insurance_expires_on: nullable(t.insuranceExpiresOn),
     notes: nullable(t.notes),
   };
@@ -104,6 +105,7 @@ function trailerColumns(t: z.infer<typeof trailerSchema>) {
     status: t.status,
     registration_expires_on: nullable(t.registrationExpiresOn),
     annual_inspection_on: nullable(t.annualInspectionOn),
+    annual_inspection_valid_months: t.inspectionValidMonths,
     notes: nullable(t.notes),
   };
 }

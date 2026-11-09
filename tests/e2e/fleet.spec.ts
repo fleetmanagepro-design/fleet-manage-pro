@@ -27,6 +27,9 @@ test("maintenance adds a truck, edits it and records odometer readings", async (
   await page.getByLabel("Purchase price (USD)").fill("142,500.00");
   await page.getByLabel("Current odometer (mi)").fill("250,000");
   await page.getByLabel("Registration expires").fill(new Date(Date.now() + 10 * 86_400_000).toISOString().slice(0, 10));
+  // inspection 5 months ago, valid 6 months → due in about a month
+  await page.getByLabel("Last inspection").fill(new Date(Date.now() - 150 * 86_400_000).toISOString().slice(0, 10));
+  await page.getByLabel("Inspection valid for").selectOption("6");
   await page.getByRole("button", { name: "Add truck" }).click();
 
   await expect(page.getByRole("heading", { name: new RegExp(`Truck ${unit}`) })).toBeVisible();
@@ -34,6 +37,7 @@ test("maintenance adds a truck, edits it and records odometer readings", async (
   await expect(page.getByText("2022 Kenworth T680").filter({ visible: true })).toBeVisible();
   await expect(page.getByText("$142,500.00").filter({ visible: true })).toBeVisible();
   await expect(page.getByTestId("compliance-registration")).toContainText(/Due in \d+ days/);
+  await expect(page.getByTestId("compliance-annual_inspection")).toContainText("valid 6 months");
   await expect(page.getByRole("cell", { name: "Initial reading" })).toBeVisible();
 
   // Edit

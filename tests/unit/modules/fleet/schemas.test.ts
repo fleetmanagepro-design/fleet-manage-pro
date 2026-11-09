@@ -5,7 +5,7 @@ const truck = (o: Record<string, string> = {}) =>
   createTruckSchema.safeParse({
     unitNumber: "101", vin: "1xkyd49x5kp048347", year: "", make: "", model: "", plate: "", plateState: "",
     ownership: "owned", purchaseDate: "", purchasePriceCents: "", status: "active", currentOdometer: "",
-    registrationExpiresOn: "", annualInspectionOn: "", insuranceExpiresOn: "", notes: "", ...o,
+    registrationExpiresOn: "", annualInspectionOn: "", inspectionValidMonths: "12", insuranceExpiresOn: "", notes: "", ...o,
   });
 
 describe("createTruckSchema", () => {
@@ -15,6 +15,7 @@ describe("createTruckSchema", () => {
     expect(r.data).toMatchObject({ unitNumber: "101", vin: "1XKYD49X5KP048347", ownership: "owned", status: "active" });
     expect(r.data?.year).toBeUndefined();
     expect(r.data?.currentOdometer).toBeUndefined();
+    expect(r.data?.inspectionValidMonths).toBe(12);
   });
 
   it("parses money as cents and miles exactly", () => {
@@ -33,6 +34,8 @@ describe("createTruckSchema", () => {
     [{ currentOdometer: "12.34" }, "currentOdometer"],
     [{ status: "sold" }, "status"],
     [{ registrationExpiresOn: "2026-02-30" }, "registrationExpiresOn"],
+    [{ inspectionValidMonths: "5" }, "inspectionValidMonths"],
+    [{ inspectionValidMonths: "" }, "inspectionValidMonths"],
   ])("rejects %j", (o, field) => {
     const r = truck(o);
     expect(r.success).toBe(false);
@@ -42,7 +45,9 @@ describe("createTruckSchema", () => {
 
 describe("createTrailerSchema", () => {
   const trailer = (o: Record<string, string> = {}) =>
-    createTrailerSchema.safeParse({ unitNumber: "5301", vin: "", trailerType: "dry_van", ownership: "owned", status: "active", ...o });
+    createTrailerSchema.safeParse({
+      unitNumber: "5301", vin: "", trailerType: "dry_van", ownership: "owned", status: "active", inspectionValidMonths: "6", ...o,
+    });
 
   it("allows a trailer without VIN", () => {
     expect(trailer().success).toBe(true);

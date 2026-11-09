@@ -86,7 +86,8 @@ end $$;
 
 insert into public.trucks
   (organization_id, unit_number, vin, year, make, model, plate, plate_state, ownership,
-   purchase_date, purchase_price_cents, status, registration_expires_on, annual_inspection_on, insurance_expires_on)
+   purchase_date, purchase_price_cents, status, registration_expires_on, annual_inspection_on,
+   annual_inspection_valid_months, insurance_expires_on)
 select
   'a0000000-0000-4000-8000-000000000001',
   (100 + n)::text,
@@ -100,7 +101,8 @@ select
   current_date - (400 * (1 + n % 5)), (8900000 + n * 125000)::bigint,
   case n when 4 then 'in_shop' when 9 then 'out_of_service' else 'active' end::public.asset_status,
   case n when 2 then current_date + 12 when 7 then current_date - 3 else current_date + 90 + n * 17 end,
-  case n when 5 then current_date - 350 else current_date - 30 * n end,
+  case n when 5 then current_date - 350 when 11 then current_date - 170 else current_date - 30 * n end,
+  case n when 11 then 6 else 12 end,  -- truck 111: 6-month inspection, due soon
   current_date + 120 + n * 5
 from generate_series(1, 12) n;
 

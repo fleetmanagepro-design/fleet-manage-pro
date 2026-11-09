@@ -160,7 +160,7 @@ Truck detail tabs: Overview (profit, RPM, CPM, maintenance CPM for selected peri
 - VIN: 17 characters, no I/O/Q (required for trucks, optional for trailers). A wrong check digit is shown as a warning only.
 - Sold assets are read-only and will not be offered for load assignment. Only an Owner or Admin can mark an asset sold or change a sold status.
 - Dispatchers can change the status of trucks and trailers, nothing else.
-- "Annual inspection date" is the date of the last annual inspection; the next one is due 12 months later.
+- Inspections: the user enters the date of the last inspection and how long it is valid (3, 6, 9 or 12 months; default 12). The due date is computed from those two and flagged 30 days ahead.
 - Odometer, hubodometer and reefer hours are kept as a history of readings. A reading lower than the current value is a correction: Owner/Admin only, with a reason, and audited.
 
 **AC**: odometer can only increase (correction requires Admin and is audited); expirations within 30 days create alerts.

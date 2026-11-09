@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addYears, daysBetween, formatCalendarDate, formatDate, isCalendarDate, todayIn } from "@/lib/dates";
+import { addMonths, addYears, daysBetween, formatCalendarDate, formatDate, isCalendarDate, todayIn } from "@/lib/dates";
 
 describe("formatDate", () => {
   it("formats MM/DD/YYYY in the organization's time zone", () => {
@@ -33,6 +33,14 @@ describe("calendar dates", () => {
     expect(daysBetween("2026-03-07", "2026-03-09")).toBe(2); // DST starts 03/08
     expect(daysBetween("2026-12-31", "2027-01-01")).toBe(1);
     expect(daysBetween("2026-01-10", "2026-01-01")).toBe(-9);
+  });
+
+  it("adds months, clamping to the end of shorter months", () => {
+    expect(addMonths("2026-01-15", 3)).toBe("2026-04-15");
+    expect(addMonths("2026-08-31", 6)).toBe("2027-02-28");
+    expect(addMonths("2027-08-31", 6)).toBe("2028-02-29");
+    expect(addMonths("2026-11-30", 9)).toBe("2027-08-30");
+    expect(addMonths("2026-03-31", -1)).toBe("2026-02-28");
   });
 
   it("adds years, clamping Feb 29", () => {

@@ -109,6 +109,10 @@ select throws_ok($$ insert into public.trucks (organization_id, unit_number, vin
 select throws_ok($$ insert into public.trailers (organization_id, unit_number, trailer_type, reefer_hours)
                     values ('a0000000-0000-4000-8000-000000000001', '204', 'dry_van', 100) $$,
   '23514', null, 'reefer hours only on reefer trailers');
+select throws_ok($$ update public.trucks set annual_inspection_valid_months = 5 where unit_number = '201' $$,
+  '23514', null, 'inspection validity must be 3, 6, 9 or 12 months');
+select lives_ok($$ update public.trucks set annual_inspection_valid_months = 6 where unit_number = '201' $$,
+  'maintenance can set the inspection validity');
 select throws_ok($$ update public.trucks set current_odometer = 1 where unit_number = '201' $$,
   '42501', null, 'current odometer is not directly writable');
 select throws_ok($$ update public.trucks set status = 'sold' where unit_number = '201' $$,

@@ -24,6 +24,9 @@ export const TRAILER_TYPE_LABELS: Record<TrailerType, string> = {
   step_deck: "Step deck",
   other: "Other",
 };
+/** Inspection validity periods offered in forms (months). */
+export const INSPECTION_VALIDITY_MONTHS = [3, 6, 9, 12] as const;
+
 export const METER_LABELS: Record<MeterType, { label: string; unit: string }> = {
   odometer: { label: "Odometer", unit: "mi" },
   hubodometer: { label: "Hubodometer", unit: "mi" },
