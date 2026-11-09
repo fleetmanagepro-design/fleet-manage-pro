@@ -158,3 +158,64 @@ from public.trailers where trailer_type = 'reefer' and organization_id = 'a00000
 insert into public.odometer_readings (organization_id, asset_type, trailer_id, reading, reading_type, read_on)
 select organization_id, 'trailer', id, (95000 + unit_number::int % 100 * 7300)::numeric(10, 1), 'hubodometer', current_date - 30
 from public.trailers where unit_number in ('5301', '5302', '5303', '5304');
+
+-- ---------------------------------------------------------------------------
+-- Drivers (0003b): Lakeside 14, Prairie Haul 3, each with pay-rule history.
+-- Drivers 1–12 run trucks 101–112; 13 is a team partner on truck 105; 14 is inactive.
+-- ---------------------------------------------------------------------------
+
+with names (n, first_name, last_name) as (
+  values (1, 'James', 'Carter'), (2, 'Maria', 'Gonzalez'), (3, 'Robert', 'Hill'), (4, 'Linda', 'Brooks'),
+         (5, 'Michael', 'Reed'), (6, 'Patricia', 'Ward'), (7, 'David', 'Foster'), (8, 'Jennifer', 'Price'),
+         (9, 'William', 'Hayes'), (10, 'Elizabeth', 'Myers'), (11, 'Richard', 'Long'), (12, 'Susan', 'Coleman'),
+         (13, 'Thomas', 'Reed'), (14, 'Karen', 'Bishop')
+)
+insert into public.drivers
+  (organization_id, first_name, last_name, phone, email, driver_type, hire_date, status,
+   cdl_number, cdl_state, cdl_class, cdl_expires_on, medical_card_expires_on, default_truck_id,
+   emergency_contact_name, emergency_contact_phone)
+select
+  'a0000000-0000-4000-8000-000000000001', first_name, last_name,
+  '(815) 555-' || lpad((100 + n)::text, 4, '0'),
+  lower(first_name) || '.' || lower(last_name) || '@drivers.lakesidefreight.test',
+  case when n in (5, 13) then 'team' when n in (11, 12) then 'owner_operator' else 'company' end::public.driver_type,
+  current_date - (200 + n * 90),
+  case when n = 14 then 'inactive' else 'active' end::public.driver_status,
+  'L' || lpad((40002000 + n * 731)::text, 11, '0'), 'IL', 'A',
+  case n when 3 then current_date + 20 when 6 then current_date + 45 when 9 then current_date - 5
+         else current_date + 400 + n * 30 end,
+  case n when 4 then current_date + 25 when 8 then current_date + 55 else current_date + 300 + n * 10 end,
+  (select id from public.trucks t
+    where t.organization_id = 'a0000000-0000-4000-8000-000000000001'
+      and t.unit_number = (case when n = 13 then 105 when n <= 12 then 100 + n end)::text),
+  'Emergency contact ' || n, '(815) 555-' || lpad((900 + n)::text, 4, '0')
+from names;
+
+insert into public.drivers (organization_id, first_name, last_name, phone, driver_type, hire_date, status,
+  cdl_number, cdl_state, cdl_class, cdl_expires_on, medical_card_expires_on, default_truck_id)
+select 'b0000000-0000-4000-8000-000000000001', f, l, '(308) 555-01' || n, 'company', current_date - 500, 'active',
+  'H' || lpad((5100 + n)::text, 8, '0'), 'NE', 'A', current_date + 600, current_date + 200,
+  (select id from public.trucks where organization_id = 'b0000000-0000-4000-8000-000000000001' and unit_number = 'PH' || n)
+from (values (1, 'Gary', 'Olsen'), (2, 'Ruth', 'Lindgren'), (3, 'Dale', 'Becker')) v(n, f, l);
+
+-- Pay rules: company drivers per mile (with a raise this year), team drivers per mile on all miles,
+-- owner-operators a percentage of linehaul + FSC; one future raise to show an editable rule.
+insert into public.driver_pay_rules (organization_id, driver_id, effective_from, pay_type, rate_cents_per_mile, miles_basis,
+  stop_pay_cents, detention_pay_cents_per_hour)
+select d.organization_id, d.id, d.hire_date, 'per_mile', case when d.driver_type = 'team' then 32 else 55 end,
+  case when d.driver_type = 'team' then 'all' else 'loaded' end::public.miles_basis, 5000, 2000
+from public.drivers d where d.driver_type in ('company', 'team');
+
+insert into public.driver_pay_rules (organization_id, driver_id, effective_from, pay_type, rate_cents_per_mile, miles_basis,
+  stop_pay_cents, detention_pay_cents_per_hour)
+select d.organization_id, d.id, current_date - 60, 'per_mile', 58, 'loaded', 5000, 2500
+from public.drivers d where d.driver_type = 'company' and d.status = 'active' and d.hire_date < current_date - 60;
+
+insert into public.driver_pay_rules (organization_id, driver_id, effective_from, pay_type, percent, percent_basis)
+select d.organization_id, d.id, d.hire_date, 'percent', 72.00, 'linehaul_fsc'
+from public.drivers d where d.driver_type = 'owner_operator';
+
+insert into public.driver_pay_rules (organization_id, driver_id, effective_from, pay_type, rate_cents_per_mile, miles_basis,
+  stop_pay_cents, detention_pay_cents_per_hour, notes)
+select d.organization_id, d.id, current_date + 21, 'per_mile', 60, 'loaded', 5000, 2500, 'Annual raise'
+from public.drivers d where d.last_name = 'Carter' and d.organization_id = 'a0000000-0000-4000-8000-000000000001';

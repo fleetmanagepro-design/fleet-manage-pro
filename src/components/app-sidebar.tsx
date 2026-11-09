@@ -5,6 +5,7 @@ import { requireOrg } from "@/lib/auth";
 import { signOut } from "@/modules/accounts/actions";
 import { OrganizationSwitcher } from "@/modules/accounts/components/organization-switcher";
 import { ROLE_LABELS, canManageMembers, type OrgRole } from "@/modules/accounts/permissions";
+import { canViewDrivers } from "@/modules/drivers/permissions";
 
 type NavItem = { href: string; label: string; visible: (role: OrgRole) => boolean };
 
@@ -13,6 +14,7 @@ const NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", visible: () => true },
   { href: "/trucks", label: "Trucks", visible: () => true },
   { href: "/trailers", label: "Trailers", visible: () => true },
+  { href: "/drivers", label: "Drivers", visible: canViewDrivers },
   { href: "/settings/members", label: "Members", visible: canManageMembers },
 ];
 

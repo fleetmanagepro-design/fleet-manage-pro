@@ -112,7 +112,7 @@ Role matrix per table is defined in §5. Financial visibility for dispatchers (c
 **customer_contacts**: id, organization_id, customer_id, name, email, phone, role
 
 ### Fleet
-**trucks**: id, organization_id, unit_number (unique per org), vin, year, make, model, plate, plate_state, ownership (`owned`/`financed`/`leased`), purchase_date, purchase_price_cents, current_odometer numeric(10,1), status (`active`/`in_shop`/`out_of_service`/`sold`), default_driver_id, registration_expires_on, annual_inspection_on, annual_inspection_valid_months (3/6/9/12, default 12), insurance_expires_on, notes, archived_at
+**trucks**: id, organization_id, unit_number (unique per org), vin, year, make, model, plate, plate_state, ownership (`owned`/`financed`/`leased`), purchase_date, purchase_price_cents, current_odometer numeric(10,1), status (`active`/`in_shop`/`out_of_service`/`sold`), registration_expires_on, annual_inspection_on, annual_inspection_valid_months (3/6/9/12, default 12), insurance_expires_on, notes, archived_at
 
 **trailers**: id, organization_id, unit_number (unique per org), vin, year, make, trailer_type (`dry_van`/`reefer`/`flatbed`/`step_deck`/`other`), length_ft, plate, plate_state, ownership, purchase_date, purchase_price_cents, hubodometer numeric(10,1), reefer_hours numeric(10,1), status, registration_expires_on, annual_inspection_on, annual_inspection_valid_months, notes, archived_at
 
@@ -121,13 +121,13 @@ Role matrix per table is defined in §5. Financial visibility for dispatchers (c
 — the asset's current meter values are maintained from these readings by triggers; users can't write them directly
 
 **Cross-tenant references**: every table that references another tenant-owned row uses a composite foreign key `(organization_id, x_id) → x(organization_id, id)` so a row can never point at another organization's record (implemented from `0003_fleet` on; `trucks`/`trailers` carry `unique (organization_id, id)` for this).
-`trucks.default_driver_id` is added with the drivers migration.
+A truck's drivers are `drivers.default_truck_id = trucks.id` (no `trucks.default_driver_id`, so there is one source of truth and teams work).
 
 ### Drivers
-**drivers**: id, organization_id, first_name, last_name, phone, email, driver_type (`company`/`owner_operator`/`team`), hire_date, status (`active`/`inactive`/`terminated`), cdl_number, cdl_state, cdl_class, cdl_expires_on, medical_card_expires_on, default_truck_id, emergency_contact, archived_at
+**drivers**: id, organization_id, first_name, last_name, phone, email, driver_type (`company`/`owner_operator`/`team`), hire_date, status (`active`/`inactive`/`terminated`), cdl_number, cdl_state, cdl_class (`A`/`B`/`C`), cdl_expires_on, medical_card_expires_on, default_truck_id, emergency_contact_name, emergency_contact_phone, notes, archived_at — CDL unique per (org, state, number) among non-archived
 
 **driver_pay_rules**: id, organization_id, driver_id, effective_from date, pay_type (`per_mile`/`percent`/`flat`), rate_cents_per_mile int, miles_basis (`loaded`/`all`), percent numeric(5,2), percent_basis (`linehaul`/`linehaul_fsc`/`total`), flat_cents bigint, stop_pay_cents bigint, detention_pay_cents_per_hour bigint
-— latest rule with `effective_from <= delivery date` applies
+— latest rule with `effective_from <= delivery date` applies; unique (driver_id, effective_from); a check constraint allows exactly the fields of the pay type; rules with `effective_from <= org_today(org)` can't be updated or deleted (trigger)
 
 ### Loads & dispatch
 ```
@@ -206,7 +206,7 @@ One user per role in Lakeside; one owner in Prairie Haul.
 1. `0001_tenancy` — organizations, members, invitations, helper functions, audit trigger function ✅
 2. `0002_member_directory` — `list_organization_members(org)`, `get_invitation_preview(token)` ✅
 3. `0003_fleet` — trucks, trailers, odometer readings ✅
-3b. `0003b_drivers` — drivers, pay rules, `trucks.default_driver_id`
+3b. `0003b_drivers` — drivers, pay rules, `org_today()` ✅
 3c. `0003c_customers` — customers, contacts
 4. `0004_loads` — loads, stops, drivers, accessorials, events
 5. `0005_expenses` — categories, expenses, fuel details, recurring costs
