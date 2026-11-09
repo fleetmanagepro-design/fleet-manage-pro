@@ -42,6 +42,15 @@ Status of the MVP build. Updated at the end of every task.
 - Tests: 53 new pgTAP tests (116 total), 42 new unit tests (120 total), 5 new e2e tests (10 total).
 - Spec: fleet business rules added to PRODUCT_SPEC.md §4.5.
 
+### Task 3b — Drivers & pay rules (11/09/2026)
+- Migration `0003b_drivers`: `drivers`, `driver_pay_rules`, `org_today()`. RLS: owner/admin/accounting edit;
+  dispatcher/maintenance read drivers but not pay; viewers see no drivers. Pay rules in effect are immutable.
+- Screens: drivers list (status filter, CDL/medical expiry, compliance), add/edit, detail with compliance
+  (60/30-day warnings, "can't be dispatched" when expired) and pay history with current/upcoming rules.
+  Truck page lists its drivers.
+- Shared `src/lib/expiry.ts` for expiry warnings (fleet now uses it too).
+- Tests: 37 new pgTAP (155 total), 22 new unit (146 total), 4 new e2e (14 total).
+
 ## Known gaps / follow-ups
 - No CI pipeline yet (lint, typecheck, unit, db and e2e tests should run on every PR).
 - Production email: verify `fleetmanagepro.com` in Resend (DNS records) and set `RESEND_API_KEY`
@@ -55,10 +64,6 @@ Status of the MVP build. Updated at the end of every task.
 - Compliance expirations are shown on assets; the alert center and daily email digest come with Task 8.
 
 ## Next
-
-### Task 3b — Drivers & pay rules (`0003b_drivers`)
-Drivers (CDL, medical card, status), pay rules (per mile / percent / flat + extras) with effective dates,
-`trucks.default_driver_id`, CDL/medical expiry warnings at 60/30 days, driver detail and forms.
 
 ### Task 3c — Customers (`0003c_customers`)
 Brokers/shippers, contacts, payment terms, do-not-use status.

@@ -25,6 +25,58 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"driver_pay_rules": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"detention_pay_cents_per_hour": number,"driver_id": string,"effective_from": string,"flat_cents": number | null,"id": string,"miles_basis": Database["public"]['Enums']["miles_basis"] | null,"notes": string | null,"organization_id": string,"pay_type": Database["public"]['Enums']["pay_type"],"percent": number | null,"percent_basis": Database["public"]['Enums']["percent_basis"] | null,"rate_cents_per_mile": number | null,"stop_pay_cents": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"detention_pay_cents_per_hour"?: number,"driver_id": string,"effective_from": string,"flat_cents"?: number | null,"id"?: string,"miles_basis"?: Database["public"]['Enums']["miles_basis"] | null,"notes"?: string | null,"organization_id": string,"pay_type": Database["public"]['Enums']["pay_type"],"percent"?: number | null,"percent_basis"?: Database["public"]['Enums']["percent_basis"] | null,"rate_cents_per_mile"?: number | null,"stop_pay_cents"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"detention_pay_cents_per_hour"?: number,"driver_id"?: string,"effective_from"?: string,"flat_cents"?: number | null,"id"?: string,"miles_basis"?: Database["public"]['Enums']["miles_basis"] | null,"notes"?: string | null,"organization_id"?: string,"pay_type"?: Database["public"]['Enums']["pay_type"],"percent"?: number | null,"percent_basis"?: Database["public"]['Enums']["percent_basis"] | null,"rate_cents_per_mile"?: number | null,"stop_pay_cents"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "driver_pay_rules_organization_id_driver_id_fkey"
+      columns: ["organization_id","driver_id"]
+isOneToOne: false
+      referencedRelation: "drivers"
+      referencedColumns: ["organization_id","id"]
+    },{
+      foreignKeyName: "driver_pay_rules_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"drivers": {
+                  Row: {
+                    "archived_at": string | null,"archived_by": string | null,"cdl_class": Database["public"]['Enums']["cdl_class"] | null,"cdl_expires_on": string | null,"cdl_number": string | null,"cdl_state": string | null,"created_at": string,"created_by": string | null,"default_truck_id": string | null,"driver_type": Database["public"]['Enums']["driver_type"],"email": string | null,"emergency_contact_name": string | null,"emergency_contact_phone": string | null,"first_name": string,"hire_date": string | null,"id": string,"last_name": string,"medical_card_expires_on": string | null,"notes": string | null,"organization_id": string,"phone": string | null,"status": Database["public"]['Enums']["driver_status"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"archived_by"?: string | null,"cdl_class"?: Database["public"]['Enums']["cdl_class"] | null,"cdl_expires_on"?: string | null,"cdl_number"?: string | null,"cdl_state"?: string | null,"created_at"?: string,"created_by"?: string | null,"default_truck_id"?: string | null,"driver_type"?: Database["public"]['Enums']["driver_type"],"email"?: string | null,"emergency_contact_name"?: string | null,"emergency_contact_phone"?: string | null,"first_name": string,"hire_date"?: string | null,"id"?: string,"last_name": string,"medical_card_expires_on"?: string | null,"notes"?: string | null,"organization_id": string,"phone"?: string | null,"status"?: Database["public"]['Enums']["driver_status"],"updated_at"?: string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"archived_by"?: string | null,"cdl_class"?: Database["public"]['Enums']["cdl_class"] | null,"cdl_expires_on"?: string | null,"cdl_number"?: string | null,"cdl_state"?: string | null,"created_at"?: string,"created_by"?: string | null,"default_truck_id"?: string | null,"driver_type"?: Database["public"]['Enums']["driver_type"],"email"?: string | null,"emergency_contact_name"?: string | null,"emergency_contact_phone"?: string | null,"first_name"?: string,"hire_date"?: string | null,"id"?: string,"last_name"?: string,"medical_card_expires_on"?: string | null,"notes"?: string | null,"organization_id"?: string,"phone"?: string | null,"status"?: Database["public"]['Enums']["driver_status"],"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "drivers_organization_id_default_truck_id_fkey"
+      columns: ["organization_id","default_truck_id"]
+isOneToOne: false
+      referencedRelation: "trucks"
+      referencedColumns: ["organization_id","id"]
+    },{
+      foreignKeyName: "drivers_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"invitations": {
                   Row: {
                     "accepted_at": string | null,"accepted_by": string | null,"created_at": string,"email": string,"expires_at": string,"id": string,"invited_by": string | null,"organization_id": string,"role": Database["public"]['Enums']["org_role"],"token_hash": string
@@ -178,10 +230,13 @@ isOneToOne: false
 { Args: { "p_org": string }; Returns: {
               "email": string,"first_name": string,"joined_at": string,"last_name": string,"role": Database["public"]['Enums']["org_role"],"user_id": string
             }[]
+                           },
+"org_today":
+{ Args: { "org": string }; Returns: string
                            }
           }
           Enums: {
-            "asset_status": "active"|"in_shop"|"out_of_service"|"sold","asset_type": "truck"|"trailer","audit_action": "insert"|"update"|"void"|"delete","meter_source": "manual"|"fuel"|"work_order"|"load","meter_type": "odometer"|"hubodometer"|"reefer_hours","org_role": "owner"|"admin"|"dispatcher"|"maintenance"|"accounting"|"viewer","ownership_type": "owned"|"financed"|"leased","trailer_type": "dry_van"|"reefer"|"flatbed"|"step_deck"|"other"
+            "asset_status": "active"|"in_shop"|"out_of_service"|"sold","asset_type": "truck"|"trailer","audit_action": "insert"|"update"|"void"|"delete","cdl_class": "A"|"B"|"C","driver_status": "active"|"inactive"|"terminated","driver_type": "company"|"owner_operator"|"team","meter_source": "manual"|"fuel"|"work_order"|"load","meter_type": "odometer"|"hubodometer"|"reefer_hours","miles_basis": "loaded"|"all","org_role": "owner"|"admin"|"dispatcher"|"maintenance"|"accounting"|"viewer","ownership_type": "owned"|"financed"|"leased","pay_type": "per_mile"|"percent"|"flat","percent_basis": "linehaul"|"linehaul_fsc"|"total","trailer_type": "dry_van"|"reefer"|"flatbed"|"step_deck"|"other"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -297,7 +352,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "asset_status": ["active", "in_shop", "out_of_service", "sold"],"asset_type": ["truck", "trailer"],"audit_action": ["insert", "update", "void", "delete"],"meter_source": ["manual", "fuel", "work_order", "load"],"meter_type": ["odometer", "hubodometer", "reefer_hours"],"org_role": ["owner", "admin", "dispatcher", "maintenance", "accounting", "viewer"],"ownership_type": ["owned", "financed", "leased"],"trailer_type": ["dry_van", "reefer", "flatbed", "step_deck", "other"]
+            "asset_status": ["active", "in_shop", "out_of_service", "sold"],"asset_type": ["truck", "trailer"],"audit_action": ["insert", "update", "void", "delete"],"cdl_class": ["A", "B", "C"],"driver_status": ["active", "inactive", "terminated"],"driver_type": ["company", "owner_operator", "team"],"meter_source": ["manual", "fuel", "work_order", "load"],"meter_type": ["odometer", "hubodometer", "reefer_hours"],"miles_basis": ["loaded", "all"],"org_role": ["owner", "admin", "dispatcher", "maintenance", "accounting", "viewer"],"ownership_type": ["owned", "financed", "leased"],"pay_type": ["per_mile", "percent", "flat"],"percent_basis": ["linehaul", "linehaul_fsc", "total"],"trailer_type": ["dry_van", "reefer", "flatbed", "step_deck", "other"]
           }
         }
 } as const

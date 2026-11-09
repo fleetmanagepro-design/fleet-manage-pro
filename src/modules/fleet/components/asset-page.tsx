@@ -57,13 +57,24 @@ export function NotBuiltYet({ title, children }: { title: string; children: Reac
   );
 }
 
-export function ListFilters({ status, includeArchived }: { status?: AssetStatus; includeArchived: boolean }) {
+const ASSET_STATUS_OPTIONS = ASSET_STATUSES.map((s) => [s, STATUS_LABELS[s]] as const);
+
+/** Status + "show archived" filter for list pages (GET form, so the URL is shareable). */
+export function ListFilters({
+  status,
+  includeArchived,
+  statusOptions = ASSET_STATUS_OPTIONS,
+}: {
+  status?: string;
+  includeArchived: boolean;
+  statusOptions?: readonly (readonly [string, string])[];
+}) {
   return (
     <form method="get" className="flex flex-wrap items-center gap-3 text-sm" role="search">
       <NativeSelect name="status" defaultValue={status ?? ""} aria-label="Filter by status" size="sm" className="min-w-40">
         <NativeSelectOption value="">All statuses</NativeSelectOption>
-        {ASSET_STATUSES.map((s) => (
-          <NativeSelectOption key={s} value={s}>{STATUS_LABELS[s]}</NativeSelectOption>
+        {statusOptions.map(([value, label]) => (
+          <NativeSelectOption key={value} value={value}>{label}</NativeSelectOption>
         ))}
       </NativeSelect>
       <label className="flex items-center gap-2">

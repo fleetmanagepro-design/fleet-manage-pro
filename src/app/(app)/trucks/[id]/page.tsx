@@ -29,6 +29,8 @@ import {
   canSetSold,
 } from "@/modules/fleet/permissions";
 import { getTruck, listReadings } from "@/modules/fleet/queries";
+import { canViewDrivers } from "@/modules/drivers/permissions";
+import { listDriversForTruck } from "@/modules/drivers/queries";
 
 export const metadata = { title: "Truck · Fleet Manage Pro" };
 
@@ -111,6 +113,13 @@ async function TruckDetail({ params, searchParams }: Pick<PageProps<"/trucks/[id
             <SectionCard title="Compliance" description="Flagged 30 days before expiry.">
               <ComplianceList items={complianceItems(truck, today)} />
             </SectionCard>
+            {canViewDrivers(role) && (
+              <SectionCard title="Drivers" description="Drivers who have this as their default truck.">
+                <Suspense fallback={<PageLoading />}>
+                  <TruckDrivers organizationId={active.organizationId} truckId={truck.id} />
+                </Suspense>
+              </SectionCard>
+            )}
             {canChangeAssetStatus(role) && !archived && (!sold || canSetSold(role)) && (
               <SectionCard title="Status">
                 <StatusForm kind="truck" id={truck.id} status={truck.status} allowSold={canSetSold(role)} />
@@ -141,4 +150,18 @@ async function TruckDetail({ params, searchParams }: Pick<PageProps<"/trucks/[id
 async function Readings({ organizationId, truckId, timeZone }: { organizationId: string; truckId: string; timeZone: string }) {
   const readings = await listReadings(organizationId, { truckId });
   return <ReadingHistory readings={readings} timeZone={timeZone} />;
+}
+
+async function TruckDrivers({ organizationId, truckId }: { organizationId: string; truckId: string }) {
+  const drivers = await listDriversForTruck(organizationId, truckId);
+  if (drivers.length === 0) return <p className="text-sm text-muted-foreground">No driver assigned.</p>;
+  return (
+    <ul className="grid gap-1 text-sm">
+      {drivers.map((d) => (
+        <li key={d.id}>
+          <Link href={`/drivers/${d.id}`} className="hover:underline">{d.first_name} {d.last_name}</Link>
+        </li>
+      ))}
+    </ul>
+  );
 }
