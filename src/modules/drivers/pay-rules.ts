@@ -31,13 +31,19 @@ export function isRuleLocked(rule: Pick<PayRule, "effective_from">, today: strin
   return rule.effective_from <= today;
 }
 
-/** "$0.58/mi on loaded miles", "72% of linehaul + fuel surcharge", "$450.00 per load". */
+/** "Company driver · $0.58/mi on loaded miles", "Owner-operator · 12% company fee (keeps 88%)". */
 export function describePayRule(rule: PayRule): string {
   switch (rule.pay_type) {
     case "per_mile":
-      return `${formatCents(rule.rate_cents_per_mile ?? 0)}/mi on ${MILES_BASIS_LABELS[rule.miles_basis ?? "loaded"]}`;
-    case "percent":
-      return `${Number(rule.percent ?? 0).toLocaleString("en-US", { maximumFractionDigits: 2 })}% of ${PERCENT_BASIS_LABELS[rule.percent_basis ?? "linehaul"]}`;
+      return `Company driver · ${formatCents(rule.rate_cents_per_mile ?? 0)}/mi on ${MILES_BASIS_LABELS[rule.miles_basis ?? "loaded"]}`;
+    case "percent": {
+      const share = Number(rule.percent ?? 0);
+      const fee = Math.round((100 - share) * 100) / 100;
+      const fmt = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+      return rule.percent_basis === "total"
+        ? `Owner-operator · ${fmt(fee)}% company fee (keeps ${fmt(share)}% of load value)`
+        : `${fmt(share)}% of ${PERCENT_BASIS_LABELS[rule.percent_basis ?? "linehaul"]}`;
+    }
     case "flat":
       return `${formatCents(rule.flat_cents ?? 0)} per load`;
   }

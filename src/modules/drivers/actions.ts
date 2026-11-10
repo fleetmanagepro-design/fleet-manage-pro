@@ -6,10 +6,11 @@ import type { PostgrestError } from "@supabase/supabase-js";
 import { z } from "zod";
 import { type ActionState, errorState, formValues, validationError } from "@/lib/action-state";
 import { authorizeAction } from "@/lib/auth";
+import { todayIn } from "@/lib/dates";
 import { checkbox } from "@/lib/form-fields";
 import { createClient } from "@/lib/supabase/server";
 import { DRIVER_EDITORS } from "./permissions";
-import { deletePayRuleSchema, driverSchema, payRuleSchema } from "./schemas";
+import { deductionSchema, deletePayRuleSchema, driverSchema, endDeductionSchema, payRuleSchema } from "./schemas";
 
 const NO_PERMISSION = "You don't have permission to do that.";
 const UNEXPECTED = "Something went wrong. Please try again.";
@@ -132,11 +133,10 @@ export async function addPayRule(_prev: ActionState, formData: FormData): Promis
     pay_type: r.payType,
     rate_cents_per_mile: r.payType === "per_mile" ? r.ratePerMile : null,
     miles_basis: r.payType === "per_mile" ? r.milesBasis : null,
-    percent: r.payType === "percent" ? r.percent : null,
-    percent_basis: r.payType === "percent" ? r.percentBasis : null,
-    flat_cents: r.payType === "flat" ? r.flatAmount : null,
-    stop_pay_cents: r.stopPayCents,
-    detention_pay_cents_per_hour: r.detentionPayCentsPerHour,
+    // Owner-operators: stored as the share they keep, of the whole load value.
+    percent: r.payType === "percent" ? Math.round((100 - r.companyFeePercent) * 100) / 100 : null,
+    percent_basis: r.payType === "percent" ? "total" : null,
+    flat_cents: null,
     notes: nullable(r.notes),
   });
   if (error) {
@@ -169,4 +169,46 @@ export async function deletePayRule(_prev: ActionState, formData: FormData): Pro
   revalidatePath(`/drivers/${parsed.data.driverId}`);
   refresh();
   return { status: "success", message: "Pay rule removed." };
+}
+
+export async function addDeduction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const ctx = await authorizeAction(DRIVER_EDITORS);
+  if (!ctx) return errorState(NO_PERMISSION);
+  const parsed = deductionSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return validationError(parsed.error, formData);
+  const d = parsed.data;
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("driver_deductions").insert({
+    organization_id: ctx.active.organizationId,
+    driver_id: d.driverId,
+    name: d.name,
+    kind: d.kind,
+    percent: d.kind === "percent_of_gross" ? d.percent : null,
+    amount_cents: d.kind === "fixed_weekly" ? d.amount : null,
+    starts_on: d.startsOn,
+    notes: nullable(d.notes),
+  });
+  if (error) return dbError("addDeduction", error, formData);
+  refresh();
+  return { status: "success", message: "Deduction added." };
+}
+
+export async function endDeduction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const ctx = await authorizeAction(DRIVER_EDITORS);
+  if (!ctx) return errorState(NO_PERMISSION);
+  const parsed = endDeductionSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return errorState(UNEXPECTED);
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("driver_deductions")
+    .update({ ends_on: todayIn(ctx.active.timezone) })
+    .eq("organization_id", ctx.active.organizationId)
+    .eq("id", parsed.data.id)
+    .select("id");
+  if (error) return dbError("endDeduction", error);
+  if (!data?.length) return errorState(NO_PERMISSION);
+  refresh();
+  return { status: "success", message: "Deduction ended." };
 }

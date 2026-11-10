@@ -9,12 +9,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { requireOrgRole } from "@/lib/auth";
 import { formatCalendarDate, todayIn } from "@/lib/dates";
 import { driverCompliance, isBlockedFromDriving } from "@/modules/drivers/compliance";
-import { DeletePayRuleButton, DriverArchiveForm, PayRuleForm } from "@/modules/drivers/components/pay-rule-controls";
+import {
+  DeductionForm,
+  DeletePayRuleButton,
+  DriverArchiveForm,
+  EndDeductionButton,
+  PayRuleForm,
+} from "@/modules/drivers/components/pay-rule-controls";
 import { DriverStatusBadge } from "@/modules/drivers/components/status-badge";
 import { DRIVER_TYPE_LABELS } from "@/modules/drivers/labels";
 import { describeExtras, describePayRule, isRuleLocked, ruleInEffect } from "@/modules/drivers/pay-rules";
 import { DRIVER_READERS, canEditDrivers, canViewPay } from "@/modules/drivers/permissions";
-import { getDriver, listPayRules } from "@/modules/drivers/queries";
+import { getDriver, listDeductions, listPayRules } from "@/modules/drivers/queries";
+import { formatCents } from "@/lib/money";
 import { DetailList, NotBuiltYet, PageLoading, SectionCard } from "@/modules/fleet/components/asset-page";
 
 export const metadata = { title: "Driver · Fleet Manage Pro" };
@@ -88,7 +95,16 @@ async function DriverDetail({ params }: Pick<PageProps<"/drivers/[id]">, "params
         {canViewPay(active.role) && (
           <SectionCard title="Pay" description="A raise is a new rule with a start date. Rules already in effect are kept as history.">
             <Suspense fallback={<PageLoading />}>
-              <PayRules organizationId={active.organizationId} driverId={driver.id} today={today} editable={editable && !archived} />
+              <PayRules organizationId={active.organizationId} driverId={driver.id} today={today} editable={editable && !archived}
+                defaultType={driver.driver_type === "owner_operator" ? "percent" : "per_mile"} />
+            </Suspense>
+          </SectionCard>
+        )}
+
+        {canViewPay(active.role) && (
+          <SectionCard title="Deductions" description="Taken off every weekly statement while active: % of the week's gross or a fixed amount per week.">
+            <Suspense fallback={<PageLoading />}>
+              <Deductions organizationId={active.organizationId} driverId={driver.id} today={today} editable={editable && !archived} />
             </Suspense>
           </SectionCard>
         )}
@@ -101,8 +117,8 @@ async function DriverDetail({ params }: Pick<PageProps<"/drivers/[id]">, "params
   );
 }
 
-async function PayRules({ organizationId, driverId, today, editable }: {
-  organizationId: string; driverId: string; today: string; editable: boolean;
+async function PayRules({ organizationId, driverId, today, editable, defaultType }: {
+  organizationId: string; driverId: string; today: string; editable: boolean; defaultType: "percent" | "per_mile";
 }) {
   const rules = await listPayRules(organizationId, driverId);
   const current = ruleInEffect(rules, today);
@@ -145,7 +161,49 @@ async function PayRules({ organizationId, driverId, today, editable }: {
           </TableBody>
         </Table>
       )}
-      {editable && <PayRuleForm driverId={driverId} today={today} />}
+      {editable && <PayRuleForm driverId={driverId} today={today} defaultType={defaultType} />}
+    </div>
+  );
+}
+
+async function Deductions({ organizationId, driverId, today, editable }: {
+  organizationId: string; driverId: string; today: string; editable: boolean;
+}) {
+  const deductions = await listDeductions(organizationId, driverId);
+  return (
+    <div className="grid gap-5">
+      {deductions.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No deductions.</p>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Deduction</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Active</TableHead>
+              <TableHead className="text-right"><span className="sr-only">Actions</span></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {deductions.map((d) => {
+              const ended = d.ends_on !== null && d.ends_on < today;
+              return (
+                <TableRow key={d.id} data-testid={`deduction-${d.name}`}>
+                  <TableCell className="font-medium">{d.name}</TableCell>
+                  <TableCell>{d.kind === "percent_of_gross" ? `${Number(d.percent)}% of gross` : `${formatCents(d.amount_cents ?? 0)} / week`}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {formatCalendarDate(d.starts_on)} – {d.ends_on ? formatCalendarDate(d.ends_on) : "ongoing"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {editable && !ended && d.ends_on === null && <EndDeductionButton id={d.id} driverId={driverId} name={d.name} />}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      )}
+      {editable && <DeductionForm driverId={driverId} today={today} />}
     </div>
   );
 }

@@ -211,8 +211,9 @@ insert into public.driver_pay_rules (organization_id, driver_id, effective_from,
 select d.organization_id, d.id, current_date - 60, 'per_mile', 58, 'loaded', 5000, 2500
 from public.drivers d where d.driver_type = 'company' and d.status = 'active' and d.hire_date < current_date - 60;
 
+-- Owner-operators keep 88% of the load value (12% company fee).
 insert into public.driver_pay_rules (organization_id, driver_id, effective_from, pay_type, percent, percent_basis)
-select d.organization_id, d.id, d.hire_date, 'percent', 72.00, 'linehaul_fsc'
+select d.organization_id, d.id, d.hire_date, 'percent', 88.00, 'total'
 from public.drivers d where d.driver_type = 'owner_operator';
 
 insert into public.driver_pay_rules (organization_id, driver_id, effective_from, pay_type, rate_cents_per_mile, miles_basis,
@@ -365,3 +366,34 @@ begin
     ('a0000000-0000-4000-8000-000000000001', v_load, 2, 'delivery', 'Metro Print Center', 'Detroit', 'MI', 'America/Detroit',
      p + interval '11 hours', p + interval '13 hours');
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- Driver pay (0004c): deductions, driver extras, broker bonus/penalty on loads
+-- ---------------------------------------------------------------------------
+
+-- Richard Long runs a company truck (rent 10% of gross) and trailer ($250/week);
+-- Susan Coleman owns her truck and pays an ELD/insurance fee.
+insert into public.driver_deductions (organization_id, driver_id, name, kind, percent, amount_cents, starts_on)
+select d.organization_id, d.id, v.name, v.kind::public.deduction_kind, v.pct, v.amt, d.hire_date
+from public.drivers d
+join (values
+  ('Long', 'Truck rent', 'percent_of_gross', 10.00, null::bigint),
+  ('Long', 'Trailer rent', 'fixed_weekly', null, 25000),
+  ('Coleman', 'Insurance & ELD', 'fixed_weekly', null, 17500)
+) v(last_name, name, kind, pct, amt) on v.last_name = d.last_name
+where d.organization_id = 'a0000000-0000-4000-8000-000000000001';
+
+-- On-time bonus and late penalty from brokers on some delivered loads.
+insert into public.load_accessorials (organization_id, load_id, type, amount_cents, billable_to_customer, notes)
+select organization_id, id, case when load_number::int % 7 = 0 then 'late_penalty' else 'on_time_bonus' end::public.accessorial_type,
+  20000, true, case when load_number::int % 7 = 0 then 'Delivered 3h late' else 'Delivered on time' end
+from public.loads
+where organization_id = 'a0000000-0000-4000-8000-000000000001' and status = 'delivered'
+  and (load_number::int % 5 = 0 or load_number::int % 7 = 0);
+
+-- Drivers who unloaded themselves get $100.
+insert into public.load_driver_items (organization_id, load_id, driver_id, description, amount_cents)
+select ld.organization_id, ld.load_id, ld.driver_id, 'Unloaded the trailer', 10000
+from public.load_drivers ld join public.loads l on l.id = ld.load_id
+where l.organization_id = 'a0000000-0000-4000-8000-000000000001' and l.status = 'delivered'
+  and ld.is_primary and l.load_number::int % 6 = 0;

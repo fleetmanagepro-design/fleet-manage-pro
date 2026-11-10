@@ -82,9 +82,18 @@ Status of the MVP build. Updated at the end of every task.
 - Migration `0004b_assign_load`: `assign_load()` (runs as the caller; assignment rules apply).
 - Tests: 9 new pgTAP (239 total), 7 new unit (191 total), 3 new e2e (23 total).
 
+### Task 4c-1 — Driver pay per load (11/10/2026)
+- Pay rules match how carriers pay: owner-operators keep a % of the load value (company fee per driver, default 12%),
+  company drivers get a rate per mile. Rule in effect on the first pickup day applies.
+- Migration `0004c_driver_pay`: on-time bonus / late penalty accessorials (penalties reduce load value),
+  `load_driver_items` (extras paid in full), `driver_deductions` (free-form % of gross or $/week, ended not deleted).
+- Load page: load value, driver pay per driver (value − company fee + extras, or miles × rate) and contribution
+  (owner/admin/accounting only); driver extras section. Driver page: deductions section.
+- Tests: 14 new pgTAP (253 total), 8 new unit (199 total), 4 new e2e (27 total).
+
 ## Known gaps / follow-ups
 - Dispatch board: no drag-and-drop; loads without appointment times don't appear on it (they're in the list).
-- Loads: Invoiced/Paid can't be set until invoicing exists; no direct costs/contribution yet (4c and expenses);
+- Loads: Invoiced/Paid can't be set until invoicing exists; contribution counts driver pay only until expenses exist (Task 5);
   no document upload; actual arrival/departure times are stored but not editable in the UI yet.
 - Customer contacts can be added and removed but not edited in place.
 - No in-app "Delete organization" (owner only, with confirmation and data export) — needed once; done by SQL.
@@ -98,9 +107,9 @@ Status of the MVP build. Updated at the end of every task.
 
 ## Next
 
-### Task 4c — Delivery pay & load profitability
-Driver pay calculated on delivery from the rule in effect (team drivers each on their own rule), stored as a
-load-direct cost; contribution on the load page.
+### Task 4c-2 — Weekly driver statements
+Per driver per week (Mon–Sun, loads by pickup date in company time zone): loads with value → gross → −company fee
+→ +extras → −deductions → net pay; company drivers miles × rate. Finalize (immutable snapshot, void with reason), print/PDF.
 
 ### After that (in order)
 5. `0005_expenses` — categories, expenses, fuel, recurring costs

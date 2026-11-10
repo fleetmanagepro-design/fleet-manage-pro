@@ -2,7 +2,6 @@ import { z } from "zod";
 import { isCalendarDate } from "@/lib/dates";
 import {
   optionalCalendarDate,
-  optionalDollarsAsCents,
   optionalText,
   optionalUpperText,
   optionalUsState,
@@ -14,7 +13,6 @@ import {
   DRIVER_TYPES,
   MILES_BASES,
   PAY_TYPES,
-  PERCENT_BASES,
 } from "./labels";
 
 const blank = (v: unknown) => (typeof v === "string" && v.trim() === "" ? undefined : v);
@@ -69,12 +67,10 @@ const percentValue = z
 const payRuleBase = z.object({
   driverId: z.uuid(),
   effectiveFrom: z.string().refine(isCalendarDate, { error: "Enter a valid date" }),
-  stopPayCents: optionalDollarsAsCents.transform((v) => v ?? 0),
-  detentionPayCentsPerHour: optionalDollarsAsCents.transform((v) => v ?? 0),
   notes: optionalText(1000),
 });
 
-/** One shape per pay type, mirroring the database check constraint. */
+/** Two ways drivers are paid (decision of 11/10/2026). Mirrors the database check constraint. */
 export const payRuleSchema = z.discriminatedUnion("payType", [
   payRuleBase.extend({
     payType: z.literal("per_mile"),
@@ -83,14 +79,29 @@ export const payRuleSchema = z.discriminatedUnion("payType", [
   }),
   payRuleBase.extend({
     payType: z.literal("percent"),
-    percent: percentValue,
-    percentBasis: z.enum(PERCENT_BASES, { error: "Choose what the percentage is of" }),
-  }),
-  payRuleBase.extend({
-    payType: z.literal("flat"),
-    flatAmount: requiredCents("the amount per load"),
+    companyFeePercent: z
+      .string()
+      .trim()
+      .refine((v) => /^\d{1,2}(\.\d{1,2})?$/.test(v) && Number(v) >= 0 && Number(v) < 100, {
+        error: "Enter the company fee as a percentage from 0 to 99.99",
+      })
+      .transform(Number),
   }),
 ], { error: "Choose how the driver is paid" });
+
+const deductionBase = z.object({
+  driverId: z.uuid(),
+  name: z.string().trim().min(1, { error: "Name the deduction" }).max(100),
+  startsOn: z.string().refine(isCalendarDate, { error: "Enter a valid date" }),
+  notes: optionalText(500),
+});
+
+export const deductionSchema = z.discriminatedUnion("kind", [
+  deductionBase.extend({ kind: z.literal("percent_of_gross"), percent: percentValue }),
+  deductionBase.extend({ kind: z.literal("fixed_weekly"), amount: requiredCents("the weekly amount") }),
+], { error: "Choose how the deduction is calculated" });
+
+export const endDeductionSchema = z.object({ id: z.uuid(), driverId: z.uuid() });
 
 export const PAY_TYPE_VALUES = PAY_TYPES;
 

@@ -10,7 +10,15 @@ import { createClient } from "@/lib/supabase/server";
 import { zonedLocalToUtc } from "@/lib/zoned-time";
 import { findConflicts } from "./overlap";
 import { getLoad, listAssignmentCandidates } from "./queries";
-import { accessorialSchema, assignLoadSchema, changeStatusSchema, loadFormSchema, removeAccessorialSchema } from "./schemas";
+import {
+  accessorialSchema,
+  assignLoadSchema,
+  changeStatusSchema,
+  driverItemSchema,
+  loadFormSchema,
+  removeAccessorialSchema,
+  removeDriverItemSchema,
+} from "./schemas";
 import { DISPATCH_EDITORS, canOverrideOverlap } from "./status";
 
 const NO_PERMISSION = "You don't have permission to do that.";
@@ -30,6 +38,7 @@ const HINTS: Record<string, { field?: string; message: string }> = {
   delivery_details_required: { field: "loadedMiles", message: "Delivered needs the delivery time and loaded miles." },
   invoicing_not_built: { message: "Invoicing isn't built yet, so loads can't be marked invoiced or paid." },
   cancel_delivered: { message: "A delivered load can't be cancelled. Move it back first (with a reason)." },
+  driver_not_on_load: { field: "driverId", message: "This driver isn't on the load." },
 };
 
 function dbError(action: string, error: PostgrestError): ActionState {
@@ -236,4 +245,41 @@ export async function assignLoad(_prev: ActionState, formData: FormData): Promis
   revalidatePath("/loads");
   refresh();
   return { status: "success", message: `Load ${load.load_number} assigned.` };
+}
+
+/** Who records driver extras on a load (e.g. "unloaded the trailer"): dispatch and pay people. */
+const DRIVER_ITEM_EDITORS = ["owner", "admin", "dispatcher", "accounting"] as const;
+
+export async function addDriverItem(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const ctx = await authorizeAction(DRIVER_ITEM_EDITORS);
+  if (!ctx) return errorState(NO_PERMISSION);
+  const parsed = driverItemSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return validationError(parsed.error, formData);
+  const d = parsed.data;
+  const supabase = await createClient();
+  const { error } = await supabase.from("load_driver_items").insert({
+    organization_id: ctx.active.organizationId,
+    load_id: d.loadId,
+    driver_id: d.driverId,
+    description: d.description,
+    amount_cents: d.amount,
+  });
+  if (error) return dbError("addDriverItem", error);
+  refresh();
+  return { status: "success", message: "Driver extra added." };
+}
+
+export async function removeDriverItem(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const ctx = await authorizeAction(DRIVER_ITEM_EDITORS);
+  if (!ctx) return errorState(NO_PERMISSION);
+  const parsed = removeDriverItemSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return errorState(UNEXPECTED);
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("load_driver_items").delete()
+    .eq("organization_id", ctx.active.organizationId).eq("id", parsed.data.id).select("id");
+  if (error) return dbError("removeDriverItem", error);
+  if (!data?.length) return errorState(NO_PERMISSION);
+  refresh();
+  return { status: "success", message: "Driver extra removed." };
 }

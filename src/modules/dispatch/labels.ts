@@ -20,8 +20,12 @@ export const LOAD_STATUS_LABELS: Record<LoadStatus, string> = {
   cancelled: "Cancelled",
 };
 
-export const ACCESSORIAL_TYPES = ["detention", "layover", "lumper", "tonu", "stop_off", "other"] as const satisfies readonly AccessorialType[];
+export const ACCESSORIAL_TYPES = [
+  "on_time_bonus", "late_penalty", "detention", "layover", "lumper", "tonu", "stop_off", "other",
+] as const satisfies readonly AccessorialType[];
 export const ACCESSORIAL_LABELS: Record<AccessorialType, string> = {
+  on_time_bonus: "On-time bonus",
+  late_penalty: "Late penalty (deducted)",
   detention: "Detention",
   layover: "Layover",
   lumper: "Lumper",

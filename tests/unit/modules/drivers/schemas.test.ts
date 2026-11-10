@@ -1,34 +1,45 @@
 import { describe, expect, it } from "vitest";
-import { driverSchema, payRuleSchema } from "@/modules/drivers/schemas";
+import { deductionSchema, driverSchema, payRuleSchema } from "@/modules/drivers/schemas";
 
 const DRIVER = "a0000000-0000-4000-8000-000000000001";
 
 describe("payRuleSchema", () => {
-  const base = { driverId: DRIVER, effectiveFrom: "2026-12-01", stopPayCents: "", detentionPayCentsPerHour: "", notes: "" };
+  const base = { driverId: DRIVER, effectiveFrom: "2026-12-01", notes: "" };
 
-  it("parses per-mile pay into cents", () => {
-    const r = payRuleSchema.parse({ ...base, payType: "per_mile", ratePerMile: "0.58", milesBasis: "loaded", stopPayCents: "50" });
-    expect(r).toMatchObject({ payType: "per_mile", ratePerMile: 58, milesBasis: "loaded", stopPayCents: 5000, detentionPayCentsPerHour: 0 });
+  it("parses company-driver pay per mile into cents", () => {
+    const r = payRuleSchema.parse({ ...base, payType: "per_mile", ratePerMile: "0.58", milesBasis: "loaded" });
+    expect(r).toMatchObject({ payType: "per_mile", ratePerMile: 58, milesBasis: "loaded" });
   });
 
-  it("parses percent and flat pay", () => {
-    expect(payRuleSchema.parse({ ...base, payType: "percent", percent: "72.5", percentBasis: "linehaul_fsc" })).toMatchObject({ percent: 72.5 });
-    expect(payRuleSchema.parse({ ...base, payType: "flat", flatAmount: "$450" })).toMatchObject({ flatAmount: 45000 });
+  it("parses the owner-operator company fee", () => {
+    expect(payRuleSchema.parse({ ...base, payType: "percent", companyFeePercent: "12" })).toMatchObject({ companyFeePercent: 12 });
+    expect(payRuleSchema.parse({ ...base, payType: "percent", companyFeePercent: "12.5" })).toMatchObject({ companyFeePercent: 12.5 });
   });
 
   it.each([
     [{ payType: "per_mile", ratePerMile: "0", milesBasis: "loaded" }, "ratePerMile"],
     [{ payType: "per_mile", ratePerMile: "0.585", milesBasis: "loaded" }, "ratePerMile"],
     [{ payType: "per_mile", ratePerMile: "0.58" }, "milesBasis"],
-    [{ payType: "percent", percent: "0", percentBasis: "linehaul" }, "percent"],
-    [{ payType: "percent", percent: "100.5", percentBasis: "linehaul" }, "percent"],
-    [{ payType: "flat", flatAmount: "-10" }, "flatAmount"],
-    [{ payType: "flat", flatAmount: "450", effectiveFrom: "12/01/2026" }, "effectiveFrom"],
-    [{ payType: "hourly" }, "payType"],
+    [{ payType: "percent", companyFeePercent: "100" }, "companyFeePercent"],
+    [{ payType: "percent", companyFeePercent: "-1" }, "companyFeePercent"],
+    [{ payType: "percent", companyFeePercent: "12", effectiveFrom: "12/01/2026" }, "effectiveFrom"],
+    [{ payType: "flat" }, "payType"],
   ])("rejects %j", (o, field) => {
     const r = payRuleSchema.safeParse({ ...base, ...o });
     expect(r.success).toBe(false);
     expect(r.error?.issues.map((i) => i.path[0])).toContain(field);
+  });
+});
+
+describe("deductionSchema", () => {
+  const base = { driverId: DRIVER, name: "Truck rent", startsOn: "2026-11-09" };
+  it("accepts % of gross or a fixed weekly amount", () => {
+    expect(deductionSchema.parse({ ...base, kind: "percent_of_gross", percent: "10" })).toMatchObject({ percent: 10 });
+    expect(deductionSchema.parse({ ...base, kind: "fixed_weekly", amount: "250" })).toMatchObject({ amount: 25000 });
+  });
+  it("rejects missing amounts and names", () => {
+    expect(deductionSchema.safeParse({ ...base, kind: "fixed_weekly", amount: "" }).success).toBe(false);
+    expect(deductionSchema.safeParse({ ...base, name: "", kind: "percent_of_gross", percent: "10" }).success).toBe(false);
   });
 });
 

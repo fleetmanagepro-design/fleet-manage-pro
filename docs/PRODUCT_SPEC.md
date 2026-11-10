@@ -60,7 +60,7 @@ These definitions are used everywhere. Implement once in `calculations.ts`.
 - MVP: miles are entered manually per load (Mapbox auto-calculation is Phase 2).
 
 ### Revenue
-- **Load revenue** = linehaul + fuel surcharge + accessorials (detention, layover, lumper reimbursement, TONU, etc.).
+- **Load revenue** ("load value") = linehaul + fuel surcharge + accessorials billed to the customer (detention, layover, lumper reimbursement, TONU, on-time bonus, etc.) − late penalties the broker deducts.
 - Revenue is recognized on the load's **delivery date** for reporting periods.
 
 ### Costs — three levels
@@ -82,13 +82,32 @@ Fixed recurring costs (truck payment, insurance, trailer lease) are entered once
 - **Load estimated profit** = load contribution − (truck's trailing 90-day CPM excluding driver pay × load total miles). Shown as an estimate and labeled as such.
 - **Maintenance CPM** = repair + PM + tire costs ÷ miles (per truck and per trailer).
 
-### Driver pay (MVP)
-Each driver has one pay rule:
-- per mile (loaded only, or all miles), or
-- % of load revenue (linehaul only, or linehaul + FSC), or
-- flat per load.
-Plus optional per-load extras (stop pay, detention pay) and deductions.
-Driver pay is calculated automatically when a load is marked Delivered and stored as a load-direct expense (editable, with audit trail).
+### Driver pay (MVP) — decided 11/10/2026 with the project owner
+There are two kinds of drivers, each set up with their own rule when the driver is created (rules are dated; a new rule starts on a date, old ones stay for history):
+- **Owner-operators** keep a percentage of the load value; the rest is the **company fee** (default 12%, set per driver).
+  Example statement line: *Load 1042 · value $3,800.00 · −12% company fee −$456.00 · driver $3,344.00*.
+  Owner-operators may drive their own truck or rent one from the company (see deductions).
+- **Company drivers** are paid a rate per mile (loaded miles, or all miles incl. deadhead), set per driver.
+
+Load value includes broker bonuses and penalties: e.g. broker pays $3,600 for 1,000 miles, +$200 if on time, −$200 if late.
+The owner-operator's percentage applies to that final value.
+
+**Driver extras** on a load (e.g. "unloaded the trailer himself" $100) are paid to the driver in full, no company fee.
+They are entered on the load by dispatch or accounting.
+
+**Deductions** are free-form per driver: name + either % of the week's gross (e.g. truck rent 10%) or a fixed amount per week (e.g. trailer rent $250).
+They start on a date and are ended (never deleted), so old statements stay explainable.
+
+**Which rule applies:** the rule in effect on the load's first pickup day (company time zone).
+
+**Pay period (statements, Task 4c-2):** Monday–Sunday. A load belongs to the week it was **picked up**, not delivered
+(a load picked up Sunday and delivered Tuesday is in the earlier week). Statement: loads with value → gross → −company fee
+→ +extras → −deductions → net pay. Finalized statements are an immutable snapshot (void with a reason).
+
+Until statements exist, driver pay is computed live on the load page from the rule in effect (owners, admins and accounting see it;
+dispatchers don't). It is stored when a statement is finalized, not on delivery.
+
+Legacy rule shapes (flat per load, % of linehaul only, stop/detention pay) remain readable in the database but are no longer offered in the UI.
 
 ## 4. Modules and screens
 
