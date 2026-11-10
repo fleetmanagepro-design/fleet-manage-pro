@@ -4,9 +4,12 @@ Production runs on **Vercel** (app) and **Supabase** (database, auth). Set up 11
 
 | What | Where |
 |---|---|
-| App | https://fleet-manage-pro-fj28.vercel.app (later `app.fleetmanagepro.com`) |
+| App | https://app.fleetmanagepro.com (also https://fleet-manage-pro-fj28.vercel.app) |
+| Marketing site | `fleetmanagepro.com` — not built yet; the root domain is still parked at GoDaddy |
 | Supabase project | `shrynboejmrxomoxwxqh` (East US) |
 | GitHub | `fleetmanagepro-design/fleet-manage-pro` |
+| Vercel project | `fleet-manage-pro-fj28` |
+| DNS | GoDaddy (`app` CNAME → Vercel; `send`, `rsend`, `resend._domainkey` → Resend) |
 
 ## How changes reach production
 - **App:** every push to `main` is deployed by Vercel automatically. Pull requests get preview deployments.
@@ -49,7 +52,13 @@ Vercel won't turn a Sensitive variable back into a plain one; delete and re-add 
   password = Resend API key, sender `notifications@fleetmanagepro.com`, name `Fleet Manage Pro`.
   Without custom SMTP, Supabase only emails members of the Supabase project team.
 
-## When the domain moves to app.fleetmanagepro.com
-1. Vercel → Settings → Domains → add `app.fleetmanagepro.com`; add the DNS record Vercel shows at the registrar.
+## Changing the app's domain
+1. Vercel → Settings → Domains → add the domain; add the DNS record Vercel shows at GoDaddy (Name = only the subdomain, e.g. `app`).
 2. Change `NEXT_PUBLIC_SITE_URL` and Redeploy.
-3. Supabase → URL Configuration: update Site URL and add the new Redirect URL.
+3. Supabase → URL Configuration: update Site URL and add `<new URL>/**` to Redirect URLs.
+
+## Removing a whole organization
+There is no in-app way yet (planned). Until then it's a one-off SQL in Supabase → SQL Editor: look the organization
+up by name **and** owner email, then delete its rows from every `public` table with an `organization_id`
+column and the organization itself, in one transaction with `session_replication_role = replica`
+(the audit log is otherwise insert-only). Done once on 11/10/2026 for a test organization.
