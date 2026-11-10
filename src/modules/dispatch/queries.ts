@@ -184,3 +184,57 @@ export async function loadFormOptions(organizationId: string, current?: LoadDeta
   };
 }
 export type LoadFormOptions = Awaited<ReturnType<typeof loadFormOptions>>;
+
+export type BoardTruck = { id: string; unit_number: string; status: string; drivers: string[] };
+
+/** Everything the dispatch board needs for the days [from, to) (UTC instants). */
+export async function boardData(organizationId: string, fromIso: string, toIso: string) {
+  const supabase = await createClient();
+  // Loads with a stop in range (±7 days, so loads crossing the board's edges still show).
+  const stopsInRange = await supabase
+    .from("load_stops")
+    .select("load_id")
+    .eq("organization_id", organizationId)
+    .gte("appointment_start", new Date(Date.parse(fromIso) - 7 * 86_400_000).toISOString())
+    .lt("appointment_start", new Date(Date.parse(toIso) + 7 * 86_400_000).toISOString())
+    .limit(5000);
+  if (stopsInRange.error) {
+    console.error("boardData stops failed", { error: stopsInRange.error });
+    throw new Error("Could not load the dispatch board.");
+  }
+  const loadIds = [...new Set((stopsInRange.data ?? []).map((s) => s.load_id))];
+
+  const [trucks, drivers, loads, unassigned] = await Promise.all([
+    supabase.from("trucks").select("id, unit_number, status").eq("organization_id", organizationId)
+      .is("archived_at", null).neq("status", "sold"),
+    supabase.from("drivers").select("first_name, last_name, default_truck_id").eq("organization_id", organizationId)
+      .is("archived_at", null).eq("status", "active").not("default_truck_id", "is", null),
+    loadIds.length
+      ? supabase.from("loads").select(LIST_SELECT).eq("organization_id", organizationId).neq("status", "cancelled")
+          .not("truck_id", "is", null).in("id", loadIds)
+      : Promise.resolve({ data: [], error: null }),
+    supabase.from("loads").select(LIST_SELECT).eq("organization_id", organizationId)
+      .in("status", ["planned", "dispatched", "at_pickup", "in_transit"]).is("truck_id", null)
+      .order("created_at", { ascending: false }).limit(100),
+  ]);
+  for (const r of [trucks, drivers, loads, unassigned]) {
+    if (r.error) {
+      console.error("boardData failed", { error: r.error });
+      throw new Error("Could not load the dispatch board.");
+    }
+  }
+  const byUnit = new Intl.Collator("en-US", { numeric: true });
+  const driversByTruck = new Map<string, string[]>();
+  for (const d of drivers.data ?? []) {
+    const list = driversByTruck.get(d.default_truck_id!) ?? [];
+    list.push(`${d.first_name} ${d.last_name}`);
+    driversByTruck.set(d.default_truck_id!, list);
+  }
+  return {
+    trucks: (trucks.data ?? [])
+      .sort((a, b) => byUnit.compare(a.unit_number, b.unit_number))
+      .map((t): BoardTruck => ({ ...t, drivers: driversByTruck.get(t.id) ?? [] })),
+    loads: ((loads.data ?? []) as unknown as LoadListItem[]).map(sortChildren),
+    unassigned: ((unassigned.data ?? []) as unknown as LoadListItem[]).map(sortChildren),
+  };
+}

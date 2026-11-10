@@ -159,3 +159,14 @@ export const accessorialSchema = z.object({
 });
 
 export const removeAccessorialSchema = z.object({ id: z.uuid(), loadId: z.uuid() });
+
+export const assignLoadSchema = z
+  .object({
+    loadId: z.uuid(),
+    truckId: z.uuid({ error: "Choose a truck" }),
+    trailerId: optUuid,
+    driver1Id: z.uuid({ error: "Choose a driver" }),
+    driver2Id: optUuid,
+    overrideReason: optText(1000),
+  })
+  .refine((a) => a.driver1Id !== a.driver2Id, { error: "Choose two different drivers", path: ["driver2Id"] });

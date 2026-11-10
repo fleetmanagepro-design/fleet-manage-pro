@@ -75,7 +75,15 @@ Status of the MVP build. Updated at the end of every task.
 - Tests: 44 new pgTAP (230 total), 26 new unit (184 total), 4 new e2e (20 total), including the spec's
   "2-stop load in under a minute".
 
+### Task 4b — Dispatch board (11/10/2026)
+- `/dispatch`: trucks × 7 days (company time zone), loads as blocks spanning their days, overlapping loads stacked,
+  in-shop / out-of-service trucks marked, previous/next week; unassigned open loads with an assign form
+  (truck suggests its driver, expired drivers disabled, same overlap rule and override).
+- Migration `0004b_assign_load`: `assign_load()` (runs as the caller; assignment rules apply).
+- Tests: 9 new pgTAP (239 total), 7 new unit (191 total), 3 new e2e (23 total).
+
 ## Known gaps / follow-ups
+- Dispatch board: no drag-and-drop; loads without appointment times don't appear on it (they're in the list).
 - Loads: Invoiced/Paid can't be set until invoicing exists; no direct costs/contribution yet (4c and expenses);
   no document upload; actual arrival/departure times are stored but not editable in the UI yet.
 - Customer contacts can be added and removed but not edited in place.
@@ -89,9 +97,6 @@ Status of the MVP build. Updated at the end of every task.
 - Compliance expirations are shown on assets; the alert center and daily email digest come with Task 8.
 
 ## Next
-
-### Task 4b — Dispatch board
-Trucks as rows, days as columns, loads as blocks; unassigned loads; assign from the board.
 
 ### Task 4c — Delivery pay & load profitability
 Driver pay calculated on delivery from the rule in effect (team drivers each on their own rule), stored as a

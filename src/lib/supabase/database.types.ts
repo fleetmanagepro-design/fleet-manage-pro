@@ -426,6 +426,9 @@ isOneToOne: false
             "accept_invitation":
 { Args: { "p_token": string }; Returns: string
                            },
+"assign_load":
+{ Args: { "p_driver_ids": (string)[],"p_load": string,"p_trailer": string,"p_truck": string }; Returns: undefined
+                           },
 "can_edit_load":
 { Args: { "p_load": string }; Returns: boolean
                            },

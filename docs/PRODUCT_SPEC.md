@@ -158,6 +158,9 @@ Fields: name, type (broker / shipper / both), MC number, contact(s), billing ema
 - Dispatching needs a truck, a driver, a pickup and a delivery. A do-not-use or archived customer, a sold/archived truck or trailer, and an inactive driver or one with an expired CDL/medical card can't be put on an open load.
 - Overlap check uses each load's window (earliest appointment → latest appointment). Dispatchers are blocked; Owner/Admin can save with a reason, recorded in the history.
 - Revenue counts accessorials only when they are billed to the customer.
+- Dispatch board (decided 11/10/2026): 7 days from today with previous/next week; days are in the company's time zone.
+  Assignment from the board is by choosing truck and driver for each unassigned load (no drag-and-drop yet);
+  the same overlap rule applies.
 
 **AC**
 - Dispatcher can create a 2-stop load and assign it in under 1 minute.

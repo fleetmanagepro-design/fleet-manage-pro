@@ -210,6 +210,7 @@ One user per role in Lakeside; one owner in Prairie Haul.
 3c. `0003c_customers` — customers, contacts ✅
 3d. `0003d_user_deletion` — users who have acted can be deleted (audit keeps their id) ✅
 4. `0004_loads` — loads, stops, drivers, accessorials, events, `organization_counters` ✅
+4b. `0004b_assign_load` — `assign_load()` for the dispatch board ✅
 5. `0005_expenses` — categories, expenses, fuel details, recurring costs
 6. `0006_maintenance` — work orders, lines, PM, tires
 7. `0007_invoicing` — invoices, lines, payments

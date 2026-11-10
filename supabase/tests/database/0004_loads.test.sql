@@ -23,7 +23,7 @@ select
   (select id from public.drivers where last_name = 'Hayes') as a_expired_driver,
   (select id from public.drivers where last_name = 'Bishop') as a_inactive_driver,
   (select id from public.loads where organization_id = 'b0000000-0000-4000-8000-000000000001' limit 1) as b_load,
-  (select id from public.loads where organization_id = 'a0000000-0000-4000-8000-000000000001' and status = 'planned') as a_planned;
+  (select id from public.loads where organization_id = 'a0000000-0000-4000-8000-000000000001' and load_number = '1064') as a_planned;
 grant select on ids to authenticated;
 
 create function pg_temp.stops() returns jsonb language sql as $$
@@ -41,7 +41,7 @@ select throws_ok($$ select * from public.loads $$, '42501', null, 'anon cannot r
 select pg_temp.logout();
 
 select pg_temp.login('10000000-0000-4000-8000-000000000006'); -- A viewer
-select is((select count(*)::int from public.loads), 64, 'Org A member sees only Org A loads');
+select is((select count(*)::int from public.loads), 65, 'Org A member sees only Org A loads');
 select is((select count(*)::int from public.load_stops where organization_id = 'b0000000-0000-4000-8000-000000000001'), 0,
   'Org A cannot read Org B stops');
 select is((select count(*)::int from public.load_events where organization_id = 'b0000000-0000-4000-8000-000000000001'), 0,
@@ -86,7 +86,7 @@ insert into new_load select public.save_load(
   jsonb_build_object('organization_id', 'a0000000-0000-4000-8000-000000000001', 'customer_id', (select a_customer from ids),
     'truck_id', (select a_truck from ids), 'linehaul_cents', 120000, 'fuel_surcharge_cents', 18000, 'loaded_miles', 355),
   pg_temp.stops(), array[(select a_driver from ids)]);
-select is((select load_number from public.loads where id = (select id from new_load)), '1065', 'load number assigned automatically');
+select is((select load_number from public.loads where id = (select id from new_load)), '1066', 'load number assigned automatically');
 select is((select count(*)::int from public.load_stops where load_id = (select id from new_load)), 2, 'stops saved');
 select is((select count(*)::int from public.load_drivers where load_id = (select id from new_load) and is_primary), 1, 'primary driver saved');
 select is((select to_status::text from public.load_events where load_id = (select id from new_load)), 'planned', 'creation is in the history');
@@ -98,7 +98,7 @@ select throws_ok($$ update public.loads set status = 'delivered' where id = (sel
   '42501', null, 'status cannot be updated directly');
 select throws_ok($$ select public.save_load(
                     jsonb_build_object('organization_id', 'a0000000-0000-4000-8000-000000000001',
-                                       'customer_id', (select a_customer from ids), 'load_number', '1065'),
+                                       'customer_id', (select a_customer from ids), 'load_number', '1066'),
                     pg_temp.stops(), '{}') $$,
   '23505', null, 'load numbers are unique per organization');
 select lives_ok($$ select public.save_load(
