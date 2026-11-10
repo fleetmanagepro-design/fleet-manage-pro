@@ -133,11 +133,11 @@ A truck's drivers are `drivers.default_truck_id = trucks.id` (no `trucks.default
 ```
 load_status: planned, dispatched, at_pickup, in_transit, delivered, invoiced, paid, cancelled
 ```
-**loads**: id, organization_id, load_number (unique per org), customer_id, customer_reference, status load_status, truck_id, trailer_id, linehaul_cents, fuel_surcharge_cents, loaded_miles, deadhead_miles, commodity, weight_lbs, equipment_type, delivered_at timestamptz, cancelled_reason, is_tonu bool, notes
+**loads**: id, organization_id, load_number (auto per org via `organization_counters`, editable, unique case-insensitive), customer_id, customer_reference, status load_status, truck_id, trailer_id, linehaul_cents, fuel_surcharge_cents, loaded_miles, deadhead_miles, commodity, weight_lbs, equipment_type, delivered_at timestamptz, cancelled_reason, is_tonu bool, notes — status, delivered_at and cancelled_reason change only through `change_load_status()`; loads are saved with stops and drivers in one transaction by `save_load()`
 **load_drivers**: load_id, driver_id, organization_id, is_primary — supports team loads
-**load_stops**: id, organization_id, load_id, sequence int, stop_type (`pickup`/`delivery`), facility_name, address_line1, city, state, zip, appointment_start, appointment_end, arrived_at, departed_at, notes
+**load_stops**: id, organization_id, load_id, sequence int, stop_type (`pickup`/`delivery`), facility_name, address_line1, city, state, zip, timezone (IANA, facility local time), appointment_start, appointment_end, arrived_at, departed_at, notes
 **load_accessorials**: id, organization_id, load_id, type (`detention`/`layover`/`lumper`/`tonu`/`stop_off`/`other`), amount_cents, billable_to_customer bool, notes
-**load_events**: id, organization_id, load_id, from_status, to_status, note, created_by, created_at — insert-only
+**load_events**: id, organization_id, load_id, kind (`status_change`/`assignment_override`), from_status, to_status, reason, created_by (no FK), created_at — insert-only
 
 Computed (view `load_financials`): total_revenue_cents, total_miles, rpm, direct_costs_cents, contribution_cents.
 
@@ -209,7 +209,7 @@ One user per role in Lakeside; one owner in Prairie Haul.
 3b. `0003b_drivers` — drivers, pay rules, `org_today()` ✅
 3c. `0003c_customers` — customers, contacts ✅
 3d. `0003d_user_deletion` — users who have acted can be deleted (audit keeps their id) ✅
-4. `0004_loads` — loads, stops, drivers, accessorials, events
+4. `0004_loads` — loads, stops, drivers, accessorials, events, `organization_counters` ✅
 5. `0005_expenses` — categories, expenses, fuel details, recurring costs
 6. `0006_maintenance` — work orders, lines, PM, tires
 7. `0007_invoicing` — invoices, lines, payments
