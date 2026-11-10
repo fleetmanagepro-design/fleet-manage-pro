@@ -39,8 +39,11 @@ describe("isRuleLocked", () => {
 
 describe("describePayRule", () => {
   it("describes each pay type", () => {
-    expect(describePayRule(rule({ rate_cents_per_mile: 58 }))).toBe("$0.58/mi on loaded miles");
-    expect(describePayRule(rule({ rate_cents_per_mile: 32, miles_basis: "all" }))).toBe("$0.32/mi on all miles");
+    expect(describePayRule(rule({ rate_cents_per_mile: 58 }))).toBe("Company driver · $0.58/mi on loaded miles");
+    expect(describePayRule(rule({ rate_cents_per_mile: 32, miles_basis: "all" }))).toBe("Company driver · $0.32/mi on all miles");
+    expect(
+      describePayRule(rule({ pay_type: "percent", rate_cents_per_mile: null, miles_basis: null, percent: 88, percent_basis: "total" })),
+    ).toBe("Owner-operator · 12% company fee (keeps 88% of load value)");
     expect(
       describePayRule(rule({ pay_type: "percent", rate_cents_per_mile: null, miles_basis: null, percent: 72.5, percent_basis: "linehaul_fsc" })),
     ).toBe("72.5% of linehaul + fuel surcharge");

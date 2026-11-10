@@ -6,6 +6,7 @@ import type { DriverStatus } from "./labels";
 export type Driver = Tables<"drivers">;
 export type DriverWithTruck = Driver & { default_truck: { id: string; unit_number: string } | null };
 export type DriverPayRule = Tables<"driver_pay_rules">;
+export type DriverDeduction = Tables<"driver_deductions">;
 
 const WITH_TRUCK = "*, default_truck:trucks!drivers_organization_id_default_truck_id_fkey ( id, unit_number )";
 
@@ -85,4 +86,17 @@ export async function listAssignableTrucks(organizationId: string, includeId?: s
     .filter((t) => t.id === includeId || (!t.archived_at && t.status !== "sold"))
     .sort((a, b) => collator.compare(a.unit_number, b.unit_number))
     .map((t) => ({ id: t.id, unitNumber: t.unit_number }));
+}
+
+/** Recurring deductions, newest first. [] for roles that may not see pay (RLS). */
+export async function listDeductions(organizationId: string, driverId: string): Promise<DriverDeduction[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("driver_deductions").select("*").eq("organization_id", organizationId).eq("driver_id", driverId)
+    .order("starts_on", { ascending: false });
+  if (error) {
+    console.error("listDeductions failed", { driverId, error });
+    throw new Error("Could not load deductions.");
+  }
+  return data ?? [];
 }

@@ -29,18 +29,18 @@ test("accounting adds a driver with a default truck and pay rules", async ({ pag
   // Pay rule in effect from today (the form defaults to today in the company's time zone)
   const today = await page.getByLabel("Effective from").inputValue();
   const later = new Date(Date.parse(`${today}T12:00:00Z`) + 30 * 86_400_000).toISOString().slice(0, 10);
+  await expect(page.getByLabel("How this driver is paid")).toHaveValue("per_mile"); // company driver by default
   await page.getByLabel("Rate per mile (USD)").fill("0.60");
-  await page.getByLabel("Stop pay per extra stop (USD, optional)").fill("50");
   await page.getByRole("button", { name: "Add pay rule" }).click();
   await expect(page.getByText("Pay rule added.")).toBeVisible();
   await expect(page.getByText("$0.60/mi on loaded miles")).toBeVisible();
 
   // An upcoming percent rule can be removed; the current one can't
-  await page.getByLabel("Pay type").selectOption("percent");
+  await page.getByLabel("How this driver is paid").selectOption("percent");
   await page.getByLabel("Effective from").fill(later);
-  await page.getByLabel("Percent").fill("70");
+  await page.getByLabel("Company fee (%)").fill("15");
   await page.getByRole("button", { name: "Add pay rule" }).click();
-  await expect(page.getByText("70% of linehaul + fuel surcharge")).toBeVisible();
+  await expect(page.getByText("Owner-operator · 15% company fee (keeps 85% of load value)")).toBeVisible();
   await expect(page.getByTestId(`pay-rule-${later}`)).toContainText("Upcoming");
   await expect(page.getByTestId(`pay-rule-${today}`).getByRole("button", { name: "Remove" })).toHaveCount(0);
 

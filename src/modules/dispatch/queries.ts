@@ -15,7 +15,7 @@ export type LoadListItem = Tables<"loads"> & {
   truck: { id: string; unit_number: string } | null;
   stops: LoadStop[];
   drivers: { is_primary: boolean; driver: Person | null }[];
-  accessorials: Pick<LoadAccessorial, "amount_cents" | "billable_to_customer">[];
+  accessorials: Pick<LoadAccessorial, "type" | "amount_cents" | "billable_to_customer">[];
 };
 
 export type LoadDetail = Omit<LoadListItem, "accessorials"> & {
@@ -28,7 +28,7 @@ const LIST_SELECT = `*,
   truck:trucks!loads_organization_id_truck_id_fkey ( id, unit_number ),
   stops:load_stops ( * ),
   drivers:load_drivers ( is_primary, driver:drivers!load_drivers_organization_id_driver_id_fkey ( id, first_name, last_name ) ),
-  accessorials:load_accessorials ( amount_cents, billable_to_customer )`;
+  accessorials:load_accessorials ( type, amount_cents, billable_to_customer )`;
 
 export type LoadFilter = {
   status?: LoadStatus;
@@ -76,7 +76,7 @@ export async function getLoad(organizationId: string, id: string): Promise<LoadD
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("loads")
-    .select(`${LIST_SELECT.replace("accessorials:load_accessorials ( amount_cents, billable_to_customer )", "accessorials:load_accessorials ( * )")},
+    .select(`${LIST_SELECT.replace("accessorials:load_accessorials ( type, amount_cents, billable_to_customer )", "accessorials:load_accessorials ( * )")},
       trailer:trailers!loads_organization_id_trailer_id_fkey ( id, unit_number )`)
     .eq("organization_id", organizationId)
     .eq("id", id)
@@ -237,4 +237,32 @@ export async function boardData(organizationId: string, fromIso: string, toIso: 
     loads: ((loads.data ?? []) as unknown as LoadListItem[]).map(sortChildren),
     unassigned: ((unassigned.data ?? []) as unknown as LoadListItem[]).map(sortChildren),
   };
+}
+
+export type LoadDriverItem = Tables<"load_driver_items">;
+
+/** Driver extras on a load. [] for roles that may not see them (RLS). */
+export async function listLoadDriverItems(organizationId: string, loadId: string): Promise<LoadDriverItem[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("load_driver_items").select("*").eq("organization_id", organizationId).eq("load_id", loadId)
+    .order("created_at");
+  if (error) {
+    console.error("listLoadDriverItems failed", { loadId, error });
+    throw new Error("Could not load driver extras.");
+  }
+  return data ?? [];
+}
+
+/** Pay rules of the load's drivers. [] for roles that may not see pay (RLS). */
+export async function listPayRulesForDrivers(organizationId: string, driverIds: string[]) {
+  if (driverIds.length === 0) return [];
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("driver_pay_rules").select("*").eq("organization_id", organizationId).in("driver_id", driverIds);
+  if (error) {
+    console.error("listPayRulesForDrivers failed", { error });
+    throw new Error("Could not load pay rules.");
+  }
+  return data ?? [];
 }

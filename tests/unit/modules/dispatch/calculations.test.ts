@@ -14,6 +14,15 @@ describe("loadRevenueCents", () => {
     ).toBe(153000);
   });
 
+  it("adds an on-time bonus and subtracts a late penalty (the broker deducts it)", () => {
+    expect(loadRevenueCents({ ...load, linehaul_cents: 360000, fuel_surcharge_cents: 0 }, [
+      { type: "on_time_bonus", amount_cents: 20000, billable_to_customer: true },
+    ])).toBe(380000);
+    expect(loadRevenueCents({ ...load, linehaul_cents: 360000, fuel_surcharge_cents: 0 }, [
+      { type: "late_penalty", amount_cents: 20000, billable_to_customer: true },
+    ])).toBe(340000);
+  });
+
   it("is zero for a load with no revenue (e.g. TONU not billed yet)", () => {
     expect(loadRevenueCents({ ...load, linehaul_cents: 0, fuel_surcharge_cents: 0 })).toBe(0);
   });

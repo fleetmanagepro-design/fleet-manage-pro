@@ -170,3 +170,21 @@ export const assignLoadSchema = z
     overrideReason: optText(1000),
   })
   .refine((a) => a.driver1Id !== a.driver2Id, { error: "Choose two different drivers", path: ["driver2Id"] });
+
+export const driverItemSchema = z.object({
+  loadId: z.uuid(),
+  driverId: z.uuid({ error: "Choose the driver" }),
+  description: z.string().trim().min(1, { error: "Say what it's for" }).max(200),
+  amount: z.string().transform((v, ctx) => {
+    try {
+      const c = parseDollarsToCents(v);
+      if (c <= 0) throw new MoneyError("not positive");
+      return c;
+    } catch {
+      ctx.addIssue({ code: "custom", message: "Enter an amount greater than $0" });
+      return z.NEVER;
+    }
+  }),
+});
+
+export const removeDriverItemSchema = z.object({ id: z.uuid(), loadId: z.uuid() });

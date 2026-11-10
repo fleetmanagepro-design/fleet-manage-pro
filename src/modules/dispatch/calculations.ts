@@ -5,7 +5,10 @@ import { type Cents, sumCents } from "@/lib/money";
  * Miles are numeric(10,1); they're converted to tenths so division stays exact.
  */
 
-export type AccessorialLike = { amount_cents: Cents; billable_to_customer: boolean };
+export type AccessorialLike = { type?: string; amount_cents: Cents; billable_to_customer: boolean };
+
+/** Broker deductions (e.g. late delivery) reduce the load value instead of adding to it. */
+export const isDeduction = (a: Pick<AccessorialLike, "type">) => a.type === "late_penalty";
 
 export type LoadMoney = {
   linehaul_cents: Cents;
@@ -16,12 +19,16 @@ export type LoadMoney = {
 
 const toTenths = (miles: number | null | undefined) => Math.round((miles ?? 0) * 10);
 
-/** Revenue = linehaul + fuel surcharge + accessorials billed to the customer. */
+/**
+ * Load value (revenue) = linehaul + fuel surcharge + accessorials billed to the customer
+ * (e.g. on-time bonus) − late penalties the broker deducts. Can be negative only in theory.
+ */
 export function loadRevenueCents(load: LoadMoney, accessorials: readonly AccessorialLike[] = []): Cents {
   return sumCents([
     load.linehaul_cents,
     load.fuel_surcharge_cents,
-    ...accessorials.filter((a) => a.billable_to_customer).map((a) => a.amount_cents),
+    ...accessorials.filter((a) => isDeduction(a)).map((a) => -a.amount_cents),
+    ...accessorials.filter((a) => !isDeduction(a) && a.billable_to_customer).map((a) => a.amount_cents),
   ]);
 }
 

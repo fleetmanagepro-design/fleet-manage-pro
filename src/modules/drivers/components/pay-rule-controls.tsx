@@ -6,28 +6,20 @@ import { FormMessage } from "@/components/form-message";
 import { SubmitButton } from "@/components/submit-button";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { initialActionState } from "@/lib/action-state";
-import { addPayRule, deletePayRule, setDriverArchived } from "../actions";
-import {
-  MILES_BASES,
-  MILES_BASIS_LABELS,
-  PAY_TYPES,
-  PAY_TYPE_LABELS,
-  PERCENT_BASES,
-  PERCENT_BASIS_LABELS,
-  type PayType,
-} from "../labels";
+import { addDeduction, addPayRule, deletePayRule, endDeduction, setDriverArchived } from "../actions";
+import { MILES_BASES, MILES_BASIS_LABELS, type PayType } from "../labels";
 
-export function PayRuleForm({ driverId, today }: { driverId: string; today: string }) {
+export function PayRuleForm({ driverId, today, defaultType }: { driverId: string; today: string; defaultType: PayType }) {
   const [state, action] = useActionState(addPayRule, initialActionState);
   const formRef = useRef<HTMLFormElement>(null);
   const v = state.status === "error" ? (state.values ?? {}) : {};
-  const [payType, setPayType] = useState<PayType>((v.payType as PayType) || "per_mile");
-  // After a successful save the form is reset to defaults, so the visible pay-type fields must follow.
+  const [payType, setPayType] = useState<PayType>((v.payType as PayType) || defaultType);
+  // After a successful save the form resets to defaults, so the visible fields must follow.
   // (Adjusting state during render when the action result changes: react.dev/learn/you-might-not-need-an-effect)
   const [seenState, setSeenState] = useState(state);
   if (state !== seenState) {
     setSeenState(state);
-    if (state.status === "success") setPayType("per_mile");
+    if (state.status === "success") setPayType(defaultType);
   }
   useEffect(() => {
     if (state.status === "success") formRef.current?.reset();
@@ -39,19 +31,18 @@ export function PayRuleForm({ driverId, today }: { driverId: string; today: stri
       <FormMessage state={state} />
       <input type="hidden" name="driverId" value={driverId} />
       <div className="grid gap-3 sm:grid-cols-2">
-        <FormField id="payType" label="Pay type" errors={e.payType}>
-          <NativeSelect id="payType" name="payType" defaultValue={v.payType || "per_mile"} className="w-full"
+        <FormField id="payType" label="How this driver is paid" errors={e.payType}>
+          <NativeSelect id="payType" name="payType" defaultValue={v.payType || defaultType} className="w-full"
             onChange={(ev) => setPayType(ev.target.value as PayType)}>
-            {PAY_TYPES.map((t) => (
-              <NativeSelectOption key={t} value={t}>{PAY_TYPE_LABELS[t]}</NativeSelectOption>
-            ))}
+            <NativeSelectOption value="percent">Owner-operator — % of load value</NativeSelectOption>
+            <NativeSelectOption value="per_mile">Company driver — per mile</NativeSelectOption>
           </NativeSelect>
         </FormField>
         <FormField id="effectiveFrom" label="Effective from" type="date" required defaultValue={v.effectiveFrom ?? today}
           errors={e.effectiveFrom} hint="Rules already in effect can't be changed later." />
       </div>
 
-      {payType === "per_mile" && (
+      {payType === "per_mile" ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <FormField id="ratePerMile" label="Rate per mile (USD)" inputMode="decimal" placeholder="0.58"
             defaultValue={v.ratePerMile} errors={e.ratePerMile} />
@@ -63,34 +54,68 @@ export function PayRuleForm({ driverId, today }: { driverId: string; today: stri
             </NativeSelect>
           </FormField>
         </div>
+      ) : (
+        <FormField id="companyFeePercent" label="Company fee (%)" inputMode="decimal" defaultValue={v.companyFeePercent ?? "12"}
+          errors={e.companyFeePercent} hint="The driver keeps the rest of the load value." />
       )}
-      {payType === "percent" && (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <FormField id="percent" label="Percent" inputMode="decimal" placeholder="72" defaultValue={v.percent} errors={e.percent} />
-          <FormField id="percentBasis" label="Of" errors={e.percentBasis}>
-            <NativeSelect id="percentBasis" name="percentBasis" defaultValue={v.percentBasis ?? "linehaul_fsc"} className="w-full">
-              {PERCENT_BASES.map((b) => (
-                <NativeSelectOption key={b} value={b}>{PERCENT_BASIS_LABELS[b]}</NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </FormField>
-        </div>
-      )}
-      {payType === "flat" && (
-        <FormField id="flatAmount" label="Amount per load (USD)" inputMode="decimal" placeholder="450.00"
-          defaultValue={v.flatAmount} errors={e.flatAmount} />
-      )}
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <FormField id="stopPayCents" label="Stop pay per extra stop (USD, optional)" inputMode="decimal"
-          defaultValue={v.stopPayCents} errors={e.stopPayCents} />
-        <FormField id="detentionPayCentsPerHour" label="Detention pay per hour (USD, optional)" inputMode="decimal"
-          defaultValue={v.detentionPayCentsPerHour} errors={e.detentionPayCentsPerHour} />
-      </div>
       <FormField id="notes" label="Note (optional)" defaultValue={v.notes} errors={e.notes} />
       <div>
         <SubmitButton pendingLabel="Saving…">Add pay rule</SubmitButton>
       </div>
+    </form>
+  );
+}
+
+export function DeductionForm({ driverId, today }: { driverId: string; today: string }) {
+  const [state, action] = useActionState(addDeduction, initialActionState);
+  const formRef = useRef<HTMLFormElement>(null);
+  const v = state.status === "error" ? (state.values ?? {}) : {};
+  const [kind, setKind] = useState(v.kind || "percent_of_gross");
+  const [seenState, setSeenState] = useState(state);
+  if (state !== seenState) {
+    setSeenState(state);
+    if (state.status === "success") setKind("percent_of_gross");
+  }
+  useEffect(() => {
+    if (state.status === "success") formRef.current?.reset();
+  }, [state]);
+  const e = state.fieldErrors ?? {};
+  return (
+    <form ref={formRef} action={action} className="grid gap-3" noValidate>
+      <FormMessage state={state} />
+      <input type="hidden" name="driverId" value={driverId} />
+      <div className="grid gap-3 sm:grid-cols-[1fr_12rem_8rem]">
+        <FormField id="deductionName" name="name" label="Deduction" placeholder="Truck rent" defaultValue={v.name} errors={e.name} />
+        <FormField id="deductionKind" label="Calculated as" errors={e.kind}>
+          <NativeSelect id="deductionKind" name="kind" defaultValue={v.kind || "percent_of_gross"} className="w-full"
+            onChange={(ev) => setKind(ev.target.value)}>
+            <NativeSelectOption value="percent_of_gross">% of weekly gross</NativeSelectOption>
+            <NativeSelectOption value="fixed_weekly">Fixed per week</NativeSelectOption>
+          </NativeSelect>
+        </FormField>
+        {kind === "percent_of_gross" ? (
+          <FormField id="deductionPercent" name="percent" label="Percent" inputMode="decimal" defaultValue={v.percent} errors={e.percent} />
+        ) : (
+          <FormField id="deductionAmount" name="amount" label="USD / week" inputMode="decimal" defaultValue={v.amount} errors={e.amount} />
+        )}
+      </div>
+      <FormField id="deductionStartsOn" name="startsOn" label="Starts" type="date" defaultValue={v.startsOn ?? today} errors={e.startsOn} />
+      <div>
+        <SubmitButton variant="outline" pendingLabel="Adding…">Add deduction</SubmitButton>
+      </div>
+    </form>
+  );
+}
+
+export function EndDeductionButton({ id, driverId, name }: { id: string; driverId: string; name: string }) {
+  const [state, action] = useActionState(endDeduction, initialActionState);
+  return (
+    <form action={action} className="grid justify-items-end gap-1"
+      onSubmit={(ev) => { if (!window.confirm(`Stop deducting ${name} from today?`)) ev.preventDefault(); }}>
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="driverId" value={driverId} />
+      <SubmitButton size="sm" variant="outline" pendingLabel="…" aria-label={`End ${name}`}>End</SubmitButton>
+      {state.status === "error" && <p role="alert" className="text-xs text-destructive">{state.message}</p>}
     </form>
   );
 }

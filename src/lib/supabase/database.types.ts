@@ -71,6 +71,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"driver_deductions": {
+                  Row: {
+                    "amount_cents": number | null,"created_at": string,"created_by": string | null,"driver_id": string,"ends_on": string | null,"id": string,"kind": Database["public"]['Enums']["deduction_kind"],"name": string,"notes": string | null,"organization_id": string,"percent": number | null,"starts_on": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "amount_cents"?: number | null,"created_at"?: string,"created_by"?: string | null,"driver_id": string,"ends_on"?: string | null,"id"?: string,"kind": Database["public"]['Enums']["deduction_kind"],"name": string,"notes"?: string | null,"organization_id": string,"percent"?: number | null,"starts_on": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "amount_cents"?: number | null,"created_at"?: string,"created_by"?: string | null,"driver_id"?: string,"ends_on"?: string | null,"id"?: string,"kind"?: Database["public"]['Enums']["deduction_kind"],"name"?: string,"notes"?: string | null,"organization_id"?: string,"percent"?: number | null,"starts_on"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "driver_deductions_organization_id_driver_id_fkey"
+      columns: ["organization_id","driver_id"]
+isOneToOne: false
+      referencedRelation: "drivers"
+      referencedColumns: ["organization_id","id"]
+    },{
+      foreignKeyName: "driver_deductions_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"driver_pay_rules": {
                   Row: {
                     "created_at": string,"created_by": string | null,"detention_pay_cents_per_hour": number,"driver_id": string,"effective_from": string,"flat_cents": number | null,"id": string,"miles_basis": Database["public"]['Enums']["miles_basis"] | null,"notes": string | null,"organization_id": string,"pay_type": Database["public"]['Enums']["pay_type"],"percent": number | null,"percent_basis": Database["public"]['Enums']["percent_basis"] | null,"rate_cents_per_mile": number | null,"stop_pay_cents": number,"updated_at": string
@@ -163,6 +189,38 @@ isOneToOne: false
       referencedColumns: ["id"]
     },{
       foreignKeyName: "load_accessorials_organization_id_load_id_fkey"
+      columns: ["organization_id","load_id"]
+isOneToOne: false
+      referencedRelation: "loads"
+      referencedColumns: ["organization_id","id"]
+    }
+                  ]
+                },"load_driver_items": {
+                  Row: {
+                    "amount_cents": number,"created_at": string,"created_by": string | null,"description": string,"driver_id": string,"id": string,"load_id": string,"organization_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "amount_cents": number,"created_at"?: string,"created_by"?: string | null,"description": string,"driver_id": string,"id"?: string,"load_id": string,"organization_id": string
+                  }
+                  Update: {
+                    "amount_cents"?: number,"created_at"?: string,"created_by"?: string | null,"description"?: string,"driver_id"?: string,"id"?: string,"load_id"?: string,"organization_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "load_driver_items_organization_id_driver_id_fkey"
+      columns: ["organization_id","driver_id"]
+isOneToOne: false
+      referencedRelation: "drivers"
+      referencedColumns: ["organization_id","id"]
+    },{
+      foreignKeyName: "load_driver_items_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "load_driver_items_organization_id_load_id_fkey"
       columns: ["organization_id","load_id"]
 isOneToOne: false
       referencedRelation: "loads"
@@ -474,7 +532,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "accessorial_type": "detention"|"layover"|"lumper"|"tonu"|"stop_off"|"other","asset_status": "active"|"in_shop"|"out_of_service"|"sold","asset_type": "truck"|"trailer","audit_action": "insert"|"update"|"void"|"delete","cdl_class": "A"|"B"|"C","customer_status": "active"|"inactive"|"do_not_use","customer_type": "broker"|"shipper"|"both","driver_status": "active"|"inactive"|"terminated","driver_type": "company"|"owner_operator"|"team","load_event_kind": "status_change"|"assignment_override","load_status": "planned"|"dispatched"|"at_pickup"|"in_transit"|"delivered"|"invoiced"|"paid"|"cancelled","meter_source": "manual"|"fuel"|"work_order"|"load","meter_type": "odometer"|"hubodometer"|"reefer_hours","miles_basis": "loaded"|"all","org_role": "owner"|"admin"|"dispatcher"|"maintenance"|"accounting"|"viewer","ownership_type": "owned"|"financed"|"leased","pay_type": "per_mile"|"percent"|"flat","percent_basis": "linehaul"|"linehaul_fsc"|"total","stop_type": "pickup"|"delivery","trailer_type": "dry_van"|"reefer"|"flatbed"|"step_deck"|"other"
+            "accessorial_type": "detention"|"layover"|"lumper"|"tonu"|"stop_off"|"other"|"on_time_bonus"|"late_penalty","asset_status": "active"|"in_shop"|"out_of_service"|"sold","asset_type": "truck"|"trailer","audit_action": "insert"|"update"|"void"|"delete","cdl_class": "A"|"B"|"C","customer_status": "active"|"inactive"|"do_not_use","customer_type": "broker"|"shipper"|"both","deduction_kind": "percent_of_gross"|"fixed_weekly","driver_status": "active"|"inactive"|"terminated","driver_type": "company"|"owner_operator"|"team","load_event_kind": "status_change"|"assignment_override","load_status": "planned"|"dispatched"|"at_pickup"|"in_transit"|"delivered"|"invoiced"|"paid"|"cancelled","meter_source": "manual"|"fuel"|"work_order"|"load","meter_type": "odometer"|"hubodometer"|"reefer_hours","miles_basis": "loaded"|"all","org_role": "owner"|"admin"|"dispatcher"|"maintenance"|"accounting"|"viewer","ownership_type": "owned"|"financed"|"leased","pay_type": "per_mile"|"percent"|"flat","percent_basis": "linehaul"|"linehaul_fsc"|"total","stop_type": "pickup"|"delivery","trailer_type": "dry_van"|"reefer"|"flatbed"|"step_deck"|"other"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -590,7 +648,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "accessorial_type": ["detention", "layover", "lumper", "tonu", "stop_off", "other"],"asset_status": ["active", "in_shop", "out_of_service", "sold"],"asset_type": ["truck", "trailer"],"audit_action": ["insert", "update", "void", "delete"],"cdl_class": ["A", "B", "C"],"customer_status": ["active", "inactive", "do_not_use"],"customer_type": ["broker", "shipper", "both"],"driver_status": ["active", "inactive", "terminated"],"driver_type": ["company", "owner_operator", "team"],"load_event_kind": ["status_change", "assignment_override"],"load_status": ["planned", "dispatched", "at_pickup", "in_transit", "delivered", "invoiced", "paid", "cancelled"],"meter_source": ["manual", "fuel", "work_order", "load"],"meter_type": ["odometer", "hubodometer", "reefer_hours"],"miles_basis": ["loaded", "all"],"org_role": ["owner", "admin", "dispatcher", "maintenance", "accounting", "viewer"],"ownership_type": ["owned", "financed", "leased"],"pay_type": ["per_mile", "percent", "flat"],"percent_basis": ["linehaul", "linehaul_fsc", "total"],"stop_type": ["pickup", "delivery"],"trailer_type": ["dry_van", "reefer", "flatbed", "step_deck", "other"]
+            "accessorial_type": ["detention", "layover", "lumper", "tonu", "stop_off", "other", "on_time_bonus", "late_penalty"],"asset_status": ["active", "in_shop", "out_of_service", "sold"],"asset_type": ["truck", "trailer"],"audit_action": ["insert", "update", "void", "delete"],"cdl_class": ["A", "B", "C"],"customer_status": ["active", "inactive", "do_not_use"],"customer_type": ["broker", "shipper", "both"],"deduction_kind": ["percent_of_gross", "fixed_weekly"],"driver_status": ["active", "inactive", "terminated"],"driver_type": ["company", "owner_operator", "team"],"load_event_kind": ["status_change", "assignment_override"],"load_status": ["planned", "dispatched", "at_pickup", "in_transit", "delivered", "invoiced", "paid", "cancelled"],"meter_source": ["manual", "fuel", "work_order", "load"],"meter_type": ["odometer", "hubodometer", "reefer_hours"],"miles_basis": ["loaded", "all"],"org_role": ["owner", "admin", "dispatcher", "maintenance", "accounting", "viewer"],"ownership_type": ["owned", "financed", "leased"],"pay_type": ["per_mile", "percent", "flat"],"percent_basis": ["linehaul", "linehaul_fsc", "total"],"stop_type": ["pickup", "delivery"],"trailer_type": ["dry_van", "reefer", "flatbed", "step_deck", "other"]
           }
         }
 } as const

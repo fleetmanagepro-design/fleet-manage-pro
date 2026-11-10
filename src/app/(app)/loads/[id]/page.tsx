@@ -16,7 +16,12 @@ import { AddAccessorialForm, RemoveAccessorialButton } from "@/modules/dispatch/
 import { LoadStatusBadge } from "@/modules/dispatch/components/status-badge";
 import { StatusPanel } from "@/modules/dispatch/components/status-panel";
 import { ACCESSORIAL_LABELS, LOAD_STATUS_LABELS } from "@/modules/dispatch/labels";
-import { type LoadDetail, getLoad, listLoadEvents } from "@/modules/dispatch/queries";
+import { type LoadDetail, getLoad, listLoadDriverItems, listLoadEvents, listPayRulesForDrivers } from "@/modules/dispatch/queries";
+import { AddDriverItemForm, RemoveDriverItemButton } from "@/modules/dispatch/components/driver-items";
+import { driverLoadPay } from "@/modules/drivers/pay";
+import { describePayRule, ruleInEffect } from "@/modules/drivers/pay-rules";
+import { canViewPay } from "@/modules/drivers/permissions";
+import { todayIn } from "@/lib/dates";
 import { canEditLoads } from "@/modules/dispatch/status";
 import { DetailList, NotBuiltYet, PageLoading, SectionCard } from "@/modules/fleet/components/asset-page";
 import { TRAILER_TYPE_LABELS } from "@/modules/fleet/labels";
@@ -113,17 +118,17 @@ async function LoadDetailPage({ params }: Pick<PageProps<"/loads/[id]">, "params
                     <TableRow key={a.id} data-testid={`accessorial-${a.type}`}>
                       <TableCell>
                         {ACCESSORIAL_LABELS[a.type]}
-                        {!a.billable_to_customer && <span className="ml-2 text-xs text-muted-foreground">(not billed)</span>}
+                        {!a.billable_to_customer && a.type !== "late_penalty" && <span className="ml-2 text-xs text-muted-foreground">(not billed)</span>}
                         {a.notes && <div className="text-xs text-muted-foreground">{a.notes}</div>}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">{formatCents(a.amount_cents)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatCents(a.type === "late_penalty" ? -a.amount_cents : a.amount_cents)}</TableCell>
                       <TableCell className="w-20 text-right">
                         {editable && <RemoveAccessorialButton id={a.id} loadId={load.id} label={ACCESSORIAL_LABELS[a.type]} />}
                       </TableCell>
                     </TableRow>
                   ))}
                   <TableRow>
-                    <TableCell className="font-medium">Revenue</TableCell>
+                    <TableCell className="font-medium">Load value</TableCell>
                     <TableCell className="text-right font-medium tabular-nums" data-testid="load-revenue">{formatCents(revenue)}</TableCell>
                     <TableCell />
                   </TableRow>
@@ -149,18 +154,11 @@ async function LoadDetailPage({ params }: Pick<PageProps<"/loads/[id]">, "params
           )}
 
           <SectionCard title="Profitability">
-            <DetailList
-              rows={[
-                ["Revenue", formatCents(revenue)],
-                ["Total miles", miles ? `${formatMiles(miles)} (${formatMiles(load.loaded_miles)} loaded + ${formatMiles(load.deadhead_miles)} empty)` : "—"],
-                ["RPM", rpm === null ? "—" : `${formatCents(rpm)}/mi`],
-                ["Empty miles", emptyPct === null ? "—" : `${emptyPct}%`],
-                ["Direct costs", <span key="dc" className="text-muted-foreground">Not built yet</span>],
-              ]}
-            />
-            <p className="mt-3 text-xs text-muted-foreground">
-              Driver pay and load costs (and so contribution and estimated profit) come with delivery pay (Task 4c) and expenses.
-            </p>
+            <Suspense fallback={<PageLoading />}>
+              <Profitability load={load} organizationId={active.organizationId} timezone={active.timezone}
+                showPay={canViewPay(active.role)} canEditExtras={editable || active.role === "accounting"}
+                revenue={revenue} miles={miles} rpm={rpm} emptyPct={emptyPct} />
+            </Suspense>
           </SectionCard>
 
           <SectionCard title="Assignment">
@@ -211,5 +209,97 @@ async function History({ load, organizationId, timezone }: { load: LoadDetail; o
         </li>
       ))}
     </ol>
+  );
+}
+
+async function Profitability({ load, organizationId, timezone, showPay, canEditExtras, revenue, miles, rpm, emptyPct }: {
+  load: LoadDetail; organizationId: string; timezone: string; showPay: boolean; canEditExtras: boolean;
+  revenue: number; miles: number; rpm: number | null; emptyPct: number | null;
+}) {
+  const drivers = load.drivers.map((d) => d.driver).filter((d) => d !== null);
+  const [items, rules] = await Promise.all([
+    listLoadDriverItems(organizationId, load.id),
+    showPay ? listPayRulesForDrivers(organizationId, drivers.map((d) => d.id)) : Promise.resolve([]),
+  ]);
+  // The rule in effect on the pickup day pays the load (statements go by pickup week too).
+  const firstPickup = load.stops.find((s) => s.stop_type === "pickup")?.appointment_start;
+  const payDay = firstPickup ? todayIn(timezone, new Date(firstPickup)) : load.delivered_at ? todayIn(timezone, new Date(load.delivered_at)) : todayIn(timezone);
+  const pay = drivers.map((d) => {
+    const rule = ruleInEffect(rules.filter((r) => r.driver_id === d.id), payDay);
+    const extras = items.filter((i) => i.driver_id === d.id).map((i) => i.amount_cents);
+    return { driver: d, rule, result: rule ? driverLoadPay(rule, { valueCents: revenue, loaded_miles: load.loaded_miles, deadhead_miles: load.deadhead_miles }, extras) : null };
+  });
+  const driverPay = pay.reduce((sum, p) => sum + (p.result?.totalCents ?? 0), 0);
+  const missingRule = pay.some((p) => !p.rule);
+
+  return (
+    <div className="grid gap-4">
+      <DetailList
+        rows={[
+          ["Load value", formatCents(revenue)],
+          ["Total miles", miles ? `${formatMiles(miles)} (${formatMiles(load.loaded_miles)} loaded + ${formatMiles(load.deadhead_miles)} empty)` : "—"],
+          ["RPM", rpm === null ? "—" : `${formatCents(rpm)}/mi`],
+          ["Empty miles", emptyPct === null ? "—" : `${emptyPct}%`],
+          ...(showPay
+            ? ([
+                ["Driver pay", drivers.length ? <span key="dp" data-testid="load-driver-pay">{formatCents(driverPay)}</span> : "No driver"],
+                ["Contribution", <span key="c" className="font-medium" data-testid="load-contribution">{formatCents(revenue - driverPay)}</span>],
+              ] as [string, React.ReactNode][])
+            : []),
+        ]}
+      />
+      {showPay && pay.map((p) => (
+        <div key={p.driver.id} className="rounded-lg border p-3 text-sm" data-testid={`driver-pay-${p.driver.last_name}`}>
+          <div className="font-medium">{p.driver.first_name} {p.driver.last_name}</div>
+          {p.rule && p.result ? (
+            <>
+              <div className="text-xs text-muted-foreground">{describePayRule(p.rule)}</div>
+              <dl className="mt-2 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 tabular-nums">
+                {p.result.companyFeeCents !== null ? (
+                  <>
+                    <dt>Load value</dt><dd className="text-right">{formatCents(revenue)}</dd>
+                    <dt>Company fee</dt><dd className="text-right">{formatCents(-p.result.companyFeeCents)}</dd>
+                  </>
+                ) : (
+                  <>
+                    <dt>{formatMiles(p.result.paidMiles)} mi × {formatCents(p.rule.rate_cents_per_mile ?? 0)}</dt>
+                    <dd className="text-right">{formatCents(p.result.baseCents)}</dd>
+                  </>
+                )}
+                {p.result.extrasCents > 0 && (<><dt>Driver extras</dt><dd className="text-right">{formatCents(p.result.extrasCents)}</dd></>)}
+                <dt className="font-medium">Pay for this load</dt><dd className="text-right font-medium">{formatCents(p.result.totalCents)}</dd>
+              </dl>
+            </>
+          ) : (
+            <p className="text-xs text-destructive">No pay rule in effect on the pickup day — add one on the driver&apos;s page.</p>
+          )}
+        </div>
+      ))}
+      {showPay && missingRule && <p className="text-xs text-muted-foreground">Contribution leaves out drivers without a pay rule.</p>}
+      {!showPay && <p className="text-xs text-muted-foreground">Driver pay and contribution are visible to owners, admins and accounting.</p>}
+      <p className="text-xs text-muted-foreground">Other load costs (fuel, tolls, lumper paid) come with expenses.</p>
+
+      {canEditExtras || items.length ? (
+        <div className="grid gap-2 border-t pt-3">
+          <span className="text-sm font-medium">Driver extras</span>
+          <p className="text-xs text-muted-foreground">Paid to the driver in full (no company fee), e.g. unloading the trailer.</p>
+          {items.map((i) => {
+            const d = drivers.find((x) => x.id === i.driver_id);
+            return (
+              <div key={i.id} className="flex items-center justify-between gap-2 text-sm" data-testid="driver-item">
+                <span>{d ? `${d.first_name} ${d.last_name}` : "Driver"} · {i.description}</span>
+                <span className="flex items-center gap-1 tabular-nums">
+                  {formatCents(i.amount_cents)}
+                  {canEditExtras && <RemoveDriverItemButton id={i.id} loadId={load.id} label={i.description} />}
+                </span>
+              </div>
+            );
+          })}
+          {canEditExtras && (
+            <AddDriverItemForm loadId={load.id} drivers={drivers.map((d) => ({ id: d.id, label: `${d.first_name} ${d.last_name}` }))} />
+          )}
+        </div>
+      ) : null}
+    </div>
   );
 }

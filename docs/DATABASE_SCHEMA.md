@@ -127,7 +127,10 @@ A truck's drivers are `drivers.default_truck_id = trucks.id` (no `trucks.default
 **drivers**: id, organization_id, first_name, last_name, phone, email, driver_type (`company`/`owner_operator`/`team`), hire_date, status (`active`/`inactive`/`terminated`), cdl_number, cdl_state, cdl_class (`A`/`B`/`C`), cdl_expires_on, medical_card_expires_on, default_truck_id, emergency_contact_name, emergency_contact_phone, notes, archived_at — CDL unique per (org, state, number) among non-archived
 
 **driver_pay_rules**: id, organization_id, driver_id, effective_from date, pay_type (`per_mile`/`percent`/`flat`), rate_cents_per_mile int, miles_basis (`loaded`/`all`), percent numeric(5,2), percent_basis (`linehaul`/`linehaul_fsc`/`total`), flat_cents bigint, stop_pay_cents bigint, detention_pay_cents_per_hour bigint
-— latest rule with `effective_from <= delivery date` applies; unique (driver_id, effective_from); a check constraint allows exactly the fields of the pay type; rules with `effective_from <= org_today(org)` can't be updated or deleted (trigger)
+— owner-operators: `pay_type = 'percent'`, `percent` = driver share (100 − company fee), `percent_basis = 'total'`; company drivers: `per_mile`
+— latest rule with `effective_from <=` the load's first pickup day (org time zone) applies; unique (driver_id, effective_from); a check constraint allows exactly the fields of the pay type; rules with `effective_from <= org_today(org)` can't be updated or deleted (trigger)
+
+**driver_deductions** (`0004c`): id, organization_id, driver_id, name, kind (`percent_of_gross`/`fixed_weekly`), percent numeric(5,2), amount_cents bigint, starts_on, ends_on, notes, created_by — exactly one of percent / amount_cents per kind; never deleted (end with `ends_on`); only name, ends_on, notes updatable; owner/admin/accounting only
 
 ### Loads & dispatch
 ```
@@ -136,7 +139,8 @@ load_status: planned, dispatched, at_pickup, in_transit, delivered, invoiced, pa
 **loads**: id, organization_id, load_number (auto per org via `organization_counters`, editable, unique case-insensitive), customer_id, customer_reference, status load_status, truck_id, trailer_id, linehaul_cents, fuel_surcharge_cents, loaded_miles, deadhead_miles, commodity, weight_lbs, equipment_type, delivered_at timestamptz, cancelled_reason, is_tonu bool, notes — status, delivered_at and cancelled_reason change only through `change_load_status()`; loads are saved with stops and drivers in one transaction by `save_load()`
 **load_drivers**: load_id, driver_id, organization_id, is_primary — supports team loads
 **load_stops**: id, organization_id, load_id, sequence int, stop_type (`pickup`/`delivery`), facility_name, address_line1, city, state, zip, timezone (IANA, facility local time), appointment_start, appointment_end, arrived_at, departed_at, notes
-**load_accessorials**: id, organization_id, load_id, type (`detention`/`layover`/`lumper`/`tonu`/`stop_off`/`other`), amount_cents, billable_to_customer bool, notes
+**load_accessorials**: id, organization_id, load_id, type (`detention`/`layover`/`lumper`/`tonu`/`stop_off`/`on_time_bonus`/`late_penalty`/`other`), amount_cents, billable_to_customer bool, notes — `late_penalty` is subtracted from the load value
+**load_driver_items** (`0004c`): id, organization_id, load_id, driver_id, description, amount_cents > 0, created_by, created_at — extras paid to a driver on the load in full (no company fee); the driver must be on the load; insert/delete only; owner/admin/dispatcher/accounting
 **load_events**: id, organization_id, load_id, kind (`status_change`/`assignment_override`), from_status, to_status, reason, created_by (no FK), created_at — insert-only
 
 Computed (view `load_financials`): total_revenue_cents, total_miles, rpm, direct_costs_cents, contribution_cents.
@@ -209,7 +213,7 @@ One user per role in Lakeside; one owner in Prairie Haul.
 3b. `0003b_drivers` — drivers, pay rules, `org_today()` ✅
 3c. `0003c_customers` — customers, contacts ✅
 3d. `0003d_user_deletion` — users who have acted can be deleted (audit keeps their id) ✅
-4. `0004_loads` — loads, stops, drivers, accessorials, events, `organization_counters` ✅
+4. `0004_loads` — loads, stops, drivers, accessorials, events, `organization_counters` ✅ (+ `0004b_assign_load`, `0004c_driver_pay` ✅)
 4b. `0004b_assign_load` — `assign_load()` for the dispatch board ✅
 5. `0005_expenses` — categories, expenses, fuel details, recurring costs
 6. `0006_maintenance` — work orders, lines, PM, tires
