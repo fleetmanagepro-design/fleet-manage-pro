@@ -60,14 +60,16 @@ Status of the MVP build. Updated at the end of every task.
   value (React applies a select's defaultValue only on mount). `NativeSelect` now remounts when its default changes.
 - Tests: 22 new pgTAP (177 total), 12 new unit (158 total), 2 new e2e (16 total).
 
-### Online (11/09/2026)
-- Production on Vercel + Supabase (East US); see `docs/DEPLOYMENT.md`.
+### Online (11/09–11/10/2026)
+- Production at https://app.fleetmanagepro.com on Vercel + Supabase (East US); see `docs/DEPLOYMENT.md`.
 - CI on every PR; migrations deploy to production from `main` via GitHub Actions; seed never runs in production.
+- Email through Resend from `@fleetmanagepro.com`: invitations (app) and sign-up / password reset (Supabase SMTP).
+- `0003d_user_deletion`: users who have used the app can be deleted (found in production).
 
 ## Known gaps / follow-ups
 - Customer contacts can be added and removed but not edited in place.
-- Production email: Supabase only emails its own team members until custom SMTP (Resend) is set; invitation
-  emails fail over to the copyable link until `RESEND_API_KEY` is set.
+- No in-app "Delete organization" (owner only, with confirmation and data export) — needed once; done by SQL.
+- Marketing site at `fleetmanagepro.com` not built; the root domain is parked at GoDaddy.
 - Organization settings screen (edit name, USDOT, address, time zone, overhead allocation) — not built yet.
 - A page the user may not open shows "not found" but returns HTTP 200 (pages stream with Cache Components).
   Data is never sent; consider moving role gates into `proxy.ts` later if real status codes matter.
@@ -76,10 +78,6 @@ Status of the MVP build. Updated at the end of every task.
 - Compliance expirations are shown on assets; the alert center and daily email digest come with Task 8.
 
 ## Next
-
-### Next up — Email and domain
-Resend: verify `fleetmanagepro.com`, set `RESEND_API_KEY`/`EMAIL_FROM` in Vercel, and use Resend as Supabase Auth SMTP
-so sign-up emails reach everyone. Then move the app to `app.fleetmanagepro.com` (docs/DEPLOYMENT.md).
 
 ### Task 4 — Loads & dispatch (`0004_loads`)
 Loads, stops, load drivers, accessorials, status events; load list, load detail with profitability box,
