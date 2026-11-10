@@ -9,8 +9,8 @@ import { nestedFormValues } from "@/lib/nested-form";
 import { createClient } from "@/lib/supabase/server";
 import { zonedLocalToUtc } from "@/lib/zoned-time";
 import { findConflicts } from "./overlap";
-import { listAssignmentCandidates } from "./queries";
-import { accessorialSchema, changeStatusSchema, loadFormSchema, removeAccessorialSchema } from "./schemas";
+import { getLoad, listAssignmentCandidates } from "./queries";
+import { accessorialSchema, assignLoadSchema, changeStatusSchema, loadFormSchema, removeAccessorialSchema } from "./schemas";
 import { DISPATCH_EDITORS, canOverrideOverlap } from "./status";
 
 const NO_PERMISSION = "You don't have permission to do that.";
@@ -184,4 +184,56 @@ export async function removeAccessorial(_prev: ActionState, formData: FormData):
   if (!data?.length) return errorState(NO_PERMISSION);
   refresh();
   return { status: "success", message: "Accessorial removed." };
+}
+
+/** Assign truck/trailer/drivers from the dispatch board (same overlap rule as the load form). */
+export async function assignLoad(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const ctx = await authorizeAction(DISPATCH_EDITORS);
+  if (!ctx) return errorState(NO_PERMISSION);
+  const parsed = assignLoadSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return validationError(parsed.error, formData);
+  const a = parsed.data;
+  const orgId = ctx.active.organizationId;
+  const load = await getLoad(orgId, a.loadId);
+  if (!load) return errorState(NO_PERMISSION);
+  const driverIds = [a.driver1Id, a.driver2Id].filter((d): d is string => !!d);
+
+  const conflicts = findConflicts(
+    { id: load.id, truck_id: a.truckId, driver_ids: driverIds, stops: load.stops },
+    await listAssignmentCandidates(orgId, a.truckId, driverIds),
+  );
+  if (conflicts.length) {
+    const list = conflicts.map((c) => `load ${c.loadNumber} (same ${c.reason})`).join(", ");
+    if (!canOverrideOverlap(ctx.active.role)) {
+      return { status: "error", message: `Already on ${list} at that time. Ask an owner or admin to override.` };
+    }
+    if (!a.overrideReason) {
+      return {
+        status: "error",
+        message: `Already on ${list} at that time. Give a reason to override.`,
+        fieldErrors: { overrideReason: ["Required to override the overlap."] },
+        data: { needsOverride: "true" },
+      };
+    }
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("assign_load", {
+    p_load: a.loadId,
+    p_truck: a.truckId,
+    // null clears the trailer; the generated type doesn't model nullable arguments
+    p_trailer: (a.trailerId ?? null) as string,
+    p_driver_ids: driverIds,
+  });
+  if (error) return dbError("assignLoad", error);
+  if (conflicts.length && a.overrideReason) {
+    const { error: overrideError } = await supabase.rpc("record_load_override", {
+      p_load: a.loadId,
+      p_reason: `Overlaps ${conflicts.map((c) => c.loadNumber).join(", ")}: ${a.overrideReason}`,
+    });
+    if (overrideError) console.error("[dispatch.assignLoad.override]", { overrideError });
+  }
+  revalidatePath("/loads");
+  refresh();
+  return { status: "success", message: `Load ${load.load_number} assigned.` };
 }

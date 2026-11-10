@@ -346,3 +346,22 @@ begin
       ('b0000000-0000-4000-8000-000000000001', load_id, 2, 'delivery', 'Denver', 'CO', 'America/Denver');
   end loop;
 end $$;
+
+-- One open load with no truck yet, so the dispatch board has something to assign (0004b).
+do $$
+declare
+  v_load uuid;
+  p timestamptz := ((current_date + 3)::timestamp + time '09:00') at time zone 'America/Chicago';
+begin
+  insert into public.loads (organization_id, customer_id, customer_reference, linehaul_cents, fuel_surcharge_cents,
+    loaded_miles, deadhead_miles, commodity, equipment_type)
+  values ('a0000000-0000-4000-8000-000000000001', (select id from public.customers where name = 'Great Lakes Paper Co.'),
+    'PO-77310', 145000, 21000, 480, 30, 'Paper rolls', 'dry_van')
+  returning id into v_load;
+  insert into public.load_stops (organization_id, load_id, sequence, stop_type, facility_name, city, state, timezone,
+    appointment_start, appointment_end)
+  values
+    ('a0000000-0000-4000-8000-000000000001', v_load, 1, 'pickup', 'Great Lakes Paper Mill', 'Green Bay', 'WI', 'America/Chicago', p, p + interval '2 hours'),
+    ('a0000000-0000-4000-8000-000000000001', v_load, 2, 'delivery', 'Metro Print Center', 'Detroit', 'MI', 'America/Detroit',
+     p + interval '11 hours', p + interval '13 hours');
+end $$;
