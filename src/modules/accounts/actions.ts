@@ -265,7 +265,11 @@ export async function inviteMember(_prev: ActionState, formData: FormData): Prom
 <p>This link expires in 7 days. If you weren't expecting this, you can ignore this email.</p>`,
     });
   } catch (sendError) {
-    if (!(sendError instanceof EmailNotConfiguredError)) logError("inviteMember.email", sendError);
+    if (sendError instanceof EmailNotConfiguredError) {
+      console.warn("[accounts.inviteMember.email] RESEND_API_KEY is not set; invitation email not sent.");
+    } else {
+      logError("inviteMember.email", sendError);
+    }
     return {
       status: "success",
       message: `Invitation created, but the email to ${email} could not be sent. Copy the link below and send it yourself.`,
