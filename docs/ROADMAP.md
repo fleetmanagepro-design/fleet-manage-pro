@@ -66,7 +66,18 @@ Status of the MVP build. Updated at the end of every task.
 - Email through Resend from `@fleetmanagepro.com`: invitations (app) and sign-up / password reset (Supabase SMTP).
 - `0003d_user_deletion`: users who have used the app can be deleted (found in production).
 
+### Task 4a — Loads (11/10/2026)
+- Migration `0004_loads`: loads, stops (with local time zone), load drivers (team of two), accessorials, insert-only
+  status history; automatic load numbers; `save_load()` (atomic) and `change_load_status()` (rules + history).
+- Screens: load list with filters, new/edit load (stops add/remove/reorder, truck suggests its driver, expired drivers
+  disabled, overlap warning with owner/admin override), load detail with status changes, accessorials, profitability
+  (revenue, miles, RPM, empty %), assignment and history.
+- Tests: 44 new pgTAP (230 total), 26 new unit (184 total), 4 new e2e (20 total), including the spec's
+  "2-stop load in under a minute".
+
 ## Known gaps / follow-ups
+- Loads: Invoiced/Paid can't be set until invoicing exists; no direct costs/contribution yet (4c and expenses);
+  no document upload; actual arrival/departure times are stored but not editable in the UI yet.
 - Customer contacts can be added and removed but not edited in place.
 - No in-app "Delete organization" (owner only, with confirmation and data export) — needed once; done by SQL.
 - Marketing site at `fleetmanagepro.com` not built; the root domain is parked at GoDaddy.
@@ -79,9 +90,12 @@ Status of the MVP build. Updated at the end of every task.
 
 ## Next
 
-### Task 4 — Loads & dispatch (`0004_loads`)
-Loads, stops, load drivers, accessorials, status events; load list, load detail with profitability box,
-dispatch board; driver pay calculated on delivery (team drivers: each their own rule on the load's miles).
+### Task 4b — Dispatch board
+Trucks as rows, days as columns, loads as blocks; unassigned loads; assign from the board.
+
+### Task 4c — Delivery pay & load profitability
+Driver pay calculated on delivery from the rule in effect (team drivers each on their own rule), stored as a
+load-direct cost; contribution on the load page.
 
 ### After that (in order)
 5. `0005_expenses` — categories, expenses, fuel, recurring costs

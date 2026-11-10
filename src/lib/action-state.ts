@@ -27,7 +27,8 @@ export function formValues(formData: FormData): Record<string, string> {
 export function validationError(error: z.ZodError, formData: FormData): ActionState {
   const fieldErrors: Record<string, string[]> = {};
   for (const issue of error.issues) {
-    const key = String(issue.path[0] ?? "form");
+    // Nested fields (e.g. stops.1.city) keep their full path so the form can show the error in place.
+    const key = issue.path.length ? issue.path.map(String).join(".") : "form";
     (fieldErrors[key] ??= []).push(issue.message);
   }
   return {

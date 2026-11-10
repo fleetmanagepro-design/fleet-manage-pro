@@ -151,6 +151,14 @@ Fields: name, type (broker / shipper / both), MC number, contact(s), billing ema
 - Moving to `invoiced` creates an invoice (see 4.10).
 - Every status change creates a `load_events` record (who, when, from, to).
 
+**Decisions** (11/10/2026)
+- Load numbers are assigned automatically per company (1001, 1002, …) and can be changed; they stay unique.
+- Status moves forward freely. Moving back (or reactivating a cancelled load) is allowed for Owner, Admin and Dispatcher with a required reason, recorded in the load history. A delivered load must be moved back before it can be cancelled.
+- Stop appointments are entered in the facility's local time; the time zone is suggested from the stop's state and can be changed.
+- Dispatching needs a truck, a driver, a pickup and a delivery. A do-not-use or archived customer, a sold/archived truck or trailer, and an inactive driver or one with an expired CDL/medical card can't be put on an open load.
+- Overlap check uses each load's window (earliest appointment → latest appointment). Dispatchers are blocked; Owner/Admin can save with a reason, recorded in the history.
+- Revenue counts accessorials only when they are billed to the customer.
+
 **AC**
 - Dispatcher can create a 2-stop load and assign it in under 1 minute.
 - Load detail shows revenue, direct costs, contribution, estimated profit and RPM.

@@ -252,3 +252,97 @@ join (values
   ('Riverbend Foods', 'Dock office', null, '(563) 555-0189', 'Shipping'),
   ('Platte River Grain', 'Jo Anders', 'jo@platteriver.test', '(308) 555-0145', 'Logistics')
 ) as v(customer, name, email, phone, role) on v.customer = c.name;
+
+-- ---------------------------------------------------------------------------
+-- Loads (0004): ~6 months of Lakeside history (delivered), a few in progress,
+-- one planned, one cancelled; Prairie Haul gets a couple so isolation is visible.
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  lanes constant jsonb := '[
+    ["Joliet","IL","America/Chicago","Columbus","OH","America/New_York",355],
+    ["Chicago","IL","America/Chicago","Dallas","TX","America/Chicago",925],
+    ["Davenport","IA","America/Chicago","Atlanta","GA","America/New_York",880],
+    ["Green Bay","WI","America/Chicago","Indianapolis","IN","America/Indiana/Indianapolis",370],
+    ["Madison","WI","America/Chicago","Denver","CO","America/Denver",1010],
+    ["Indianapolis","IN","America/Indiana/Indianapolis","Harrisburg","PA","America/New_York",585],
+    ["Omaha","NE","America/Chicago","Kansas City","MO","America/Chicago",185],
+    ["Columbus","OH","America/New_York","Joliet","IL","America/Chicago",355],
+    ["Dallas","TX","America/Chicago","Memphis","TN","America/Chicago",450],
+    ["Denver","CO","America/Denver","Phoenix","AZ","America/Phoenix",820]
+  ]';
+  customers uuid[];
+  org constant uuid := 'a0000000-0000-4000-8000-000000000001';
+  n int;
+  lane jsonb;
+  truck record;
+  load_id uuid;
+  pickup timestamptz;
+  miles numeric;
+  st public.load_status;
+begin
+  select array_agg(id order by name) into customers
+  from public.customers where organization_id = org and status = 'active';
+
+  for n in 1..64 loop
+    lane := lanes -> (n % 10);
+    -- open loads use trucks whose drivers are current; history uses every truck
+    select t.id, t.unit_number into truck from public.trucks t
+    where t.organization_id = org
+      and t.unit_number = (case when n > 60 then (array['101','102','103','106'])[n - 60]
+                                else (101 + n % 12)::text end);
+    miles := (lane ->> 6)::numeric + (n % 7) * 5;
+    pickup := ((current_date - (186 - n * 3))::timestamp + time '08:00') at time zone (lane ->> 2);
+    st := case when n <= 58 then 'delivered' when n = 59 then 'cancelled' when n = 60 then 'delivered'
+               when n = 61 then 'in_transit' when n = 62 then 'at_pickup' when n = 63 then 'dispatched' else 'planned' end;
+    if n > 60 then pickup := ((current_date + (n - 62))::timestamp + time '08:00') at time zone (lane ->> 2); end if;
+
+    insert into public.loads (organization_id, customer_id, customer_reference, status, truck_id, trailer_id,
+      linehaul_cents, fuel_surcharge_cents, loaded_miles, deadhead_miles, commodity, weight_lbs, equipment_type,
+      delivered_at, cancelled_reason)
+    values (org, customers[1 + n % array_length(customers, 1)], 'PO-' || (48100 + n * 7), st, truck.id,
+      (select id from public.trailers where organization_id = org and unit_number = (5300 + 1 + n % 16)::text),
+      (miles * (210 + (n % 9) * 10))::bigint, (miles * 45)::bigint,
+      miles, 25 + (n % 6) * 18, (array['Paper products','Frozen food','Building materials','Dairy','Auto parts'])[1 + n % 5],
+      36000 + (n % 5) * 1500, case when n % 16 between 10 and 15 then 'reefer' else 'dry_van' end::public.trailer_type,
+      case when st = 'delivered' then pickup + interval '1 day' + (miles / 50) * interval '1 hour' end,
+      case when st = 'cancelled' then 'Shipper cancelled — product not ready' end)
+    returning id into load_id;
+
+    insert into public.load_stops (organization_id, load_id, sequence, stop_type, facility_name, city, state, timezone,
+      appointment_start, appointment_end)
+    values
+      (org, load_id, 1, 'pickup', (lane ->> 0) || ' Distribution Center', lane ->> 0, lane ->> 1, lane ->> 2,
+       pickup, pickup + interval '2 hours'),
+      (org, load_id, 2, 'delivery', (lane ->> 3) || ' Warehouse', lane ->> 3, lane ->> 4, lane ->> 5,
+       pickup + interval '1 day' + (miles / 50) * interval '1 hour',
+       pickup + interval '1 day' + (miles / 50) * interval '1 hour' + interval '3 hours');
+
+    insert into public.load_drivers (organization_id, load_id, driver_id, is_primary)
+    select org, load_id, d.id, row_number() over (order by d.last_name, d.first_name) = 1
+    from public.drivers d where d.organization_id = org and d.default_truck_id = truck.id;
+
+    if n % 9 = 0 and st = 'delivered' then
+      insert into public.load_accessorials (organization_id, load_id, type, amount_cents, billable_to_customer, notes)
+      values (org, load_id, 'detention', 15000, true, '3 hours at receiver');
+    end if;
+    if n % 13 = 0 and st = 'delivered' then
+      insert into public.load_accessorials (organization_id, load_id, type, amount_cents, billable_to_customer, notes)
+      values (org, load_id, 'lumper', 22500, true, 'Lumper receipt #' || n);
+    end if;
+  end loop;
+
+  -- Prairie Haul: two delivered loads
+  for n in 1..2 loop
+    insert into public.loads (organization_id, customer_id, status, truck_id, linehaul_cents, fuel_surcharge_cents,
+      loaded_miles, deadhead_miles, delivered_at)
+    values ('b0000000-0000-4000-8000-000000000001',
+      (select id from public.customers where name = 'Platte River Grain'), 'delivered',
+      (select id from public.trucks where unit_number = 'PH' || n), 98000, 18000, 410, 40, now() - n * interval '5 days')
+    returning id into load_id;
+    insert into public.load_stops (organization_id, load_id, sequence, stop_type, city, state, timezone) values
+      ('b0000000-0000-4000-8000-000000000001', load_id, 1, 'pickup', 'Kearney', 'NE', 'America/Chicago'),
+      ('b0000000-0000-4000-8000-000000000001', load_id, 2, 'delivery', 'Denver', 'CO', 'America/Denver');
+  end loop;
+end $$;
