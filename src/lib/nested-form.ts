@@ -7,7 +7,7 @@ export function nestedFormValues(formData: FormData): Record<string, unknown> {
   const lists: Record<string, Map<number, Record<string, string>>> = {};
   for (const [key, value] of formData.entries()) {
     if (typeof value !== "string" || key.startsWith("$")) continue;
-    const m = /^([a-zA-Z]+)\.(\d+)\.([a-zA-Z]+)$/.exec(key);
+    const m = /^([a-zA-Z]+)\.(\d+)\.([a-zA-Z][a-zA-Z0-9]*)$/.exec(key);
     if (!m) {
       out[key] = value;
       continue;

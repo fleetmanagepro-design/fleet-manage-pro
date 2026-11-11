@@ -213,6 +213,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"facilities": {
+                  Row: {
+                    "address_line1": string | null,"archived_at": string | null,"city": string,"created_at": string,"created_by": string | null,"id": string,"last_used_at": string | null,"name": string,"notes": string | null,"organization_id": string,"state": string,"timezone": string,"updated_at": string,"use_count": number,"zip": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "address_line1"?: string | null,"archived_at"?: string | null,"city": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"last_used_at"?: string | null,"name": string,"notes"?: string | null,"organization_id": string,"state": string,"timezone": string,"updated_at"?: string,"use_count"?: number,"zip"?: string | null
+                  }
+                  Update: {
+                    "address_line1"?: string | null,"archived_at"?: string | null,"city"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"last_used_at"?: string | null,"name"?: string,"notes"?: string | null,"organization_id"?: string,"state"?: string,"timezone"?: string,"updated_at"?: string,"use_count"?: number,"zip"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "facilities_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"invitations": {
                   Row: {
                     "accepted_at": string | null,"accepted_by": string | null,"created_at": string,"email": string,"expires_at": string,"id": string,"invited_by": string | null,"organization_id": string,"role": Database["public"]['Enums']["org_role"],"token_hash": string
@@ -538,6 +558,20 @@ isOneToOne: false
       referencedRelation: "organizations"
       referencedColumns: ["id"]
     }
+                  ]
+                },"us_zip_codes": {
+                  Row: {
+                    "city": string,"state": string,"timezone": string,"zip": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "city": string,"state": string,"timezone": string,"zip": string
+                  }
+                  Update: {
+                    "city"?: string,"state"?: string,"timezone"?: string,"zip"?: string
+                  }
+                  Relationships: [
+                    
                   ]
                 }
           }
