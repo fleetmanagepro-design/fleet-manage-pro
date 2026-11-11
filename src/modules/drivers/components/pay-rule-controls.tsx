@@ -91,14 +91,25 @@ export function DeductionForm({ driverId, today }: { driverId: string; today: st
             onChange={(ev) => setKind(ev.target.value)}>
             <NativeSelectOption value="percent_of_gross">% of weekly gross</NativeSelectOption>
             <NativeSelectOption value="fixed_weekly">Fixed per week</NativeSelectOption>
+            <NativeSelectOption value="per_mile">Weekly + per mile</NativeSelectOption>
           </NativeSelect>
         </FormField>
         {kind === "percent_of_gross" ? (
           <FormField id="deductionPercent" name="percent" label="Percent" inputMode="decimal" defaultValue={v.percent} errors={e.percent} />
         ) : (
-          <FormField id="deductionAmount" name="amount" label="USD / week" inputMode="decimal" defaultValue={v.amount} errors={e.amount} />
+          <FormField id="deductionAmount" name="amount" label={kind === "per_mile" ? "USD / week (optional)" : "USD / week"}
+            inputMode="decimal" defaultValue={v.amount} errors={e.amount} />
         )}
       </div>
+      {kind === "per_mile" && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <FormField id="deductionRate" name="ratePerMile" label="USD per mile" inputMode="decimal" placeholder="0.10"
+            defaultValue={v.ratePerMile} errors={e.ratePerMile} />
+          <FormField id="deductionFreeMiles" name="freeMiles" label="Free miles per week" inputMode="decimal" placeholder="0"
+            hint="Charged per mile only over this, counting loaded + empty miles; starts over every week."
+            defaultValue={v.freeMiles} errors={e.freeMiles} />
+        </div>
+      )}
       <FormField id="deductionStartsOn" name="startsOn" label="Starts" type="date" defaultValue={v.startsOn ?? today} errors={e.startsOn} />
       <div>
         <SubmitButton variant="outline" pendingLabel="Adding…">Add deduction</SubmitButton>

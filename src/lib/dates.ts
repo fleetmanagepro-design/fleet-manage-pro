@@ -35,6 +35,19 @@ export function formatCalendarDate(value: string | null | undefined): string {
   return `${String(m).padStart(2, "0")}/${String(d).padStart(2, "0")}/${y}`;
 }
 
+/** "YYYY-MM-DD" + n days. */
+export function addDays(day: string, n: number): string {
+  const [y, m, d] = parseIsoDate(day);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+}
+
+/** The Monday on or before `day` (pay weeks run Monday–Sunday). */
+export function mondayOf(day: string): string {
+  const [y, m, d] = parseIsoDate(day);
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay(); // 0 = Sunday
+  return addDays(day, dow === 0 ? -6 : 1 - dow);
+}
+
 /** Today's calendar date in a time zone, as "YYYY-MM-DD". */
 export function todayIn(timeZone: string, now: Date = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);

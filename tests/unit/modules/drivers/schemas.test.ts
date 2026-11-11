@@ -37,6 +37,14 @@ describe("deductionSchema", () => {
     expect(deductionSchema.parse({ ...base, kind: "percent_of_gross", percent: "10" })).toMatchObject({ percent: 10 });
     expect(deductionSchema.parse({ ...base, kind: "fixed_weekly", amount: "250" })).toMatchObject({ amount: 25000 });
   });
+  it("accepts weekly + per mile over free miles; the weekly part and free miles are optional", () => {
+    expect(deductionSchema.parse({ ...base, kind: "per_mile", amount: "300", ratePerMile: "0.10", freeMiles: "2,000" }))
+      .toMatchObject({ amount: 30000, ratePerMile: 10, freeMiles: 2000 });
+    expect(deductionSchema.parse({ ...base, kind: "per_mile", amount: "", ratePerMile: "0.05", freeMiles: "" }))
+      .toMatchObject({ amount: undefined, ratePerMile: 5, freeMiles: 0 });
+    expect(deductionSchema.safeParse({ ...base, kind: "per_mile", ratePerMile: "0", freeMiles: "0" }).success).toBe(false);
+    expect(deductionSchema.safeParse({ ...base, kind: "per_mile", ratePerMile: "0.10", freeMiles: "-5" }).success).toBe(false);
+  });
   it("rejects missing amounts and names", () => {
     expect(deductionSchema.safeParse({ ...base, kind: "fixed_weekly", amount: "" }).success).toBe(false);
     expect(deductionSchema.safeParse({ ...base, name: "", kind: "percent_of_gross", percent: "10" }).success).toBe(false);
