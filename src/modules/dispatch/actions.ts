@@ -9,7 +9,8 @@ import { nestedFormValues } from "@/lib/nested-form";
 import { createClient } from "@/lib/supabase/server";
 import { zonedLocalToUtc } from "@/lib/zoned-time";
 import { findConflicts } from "./overlap";
-import { getLoad, listAssignmentCandidates } from "./queries";
+import { getLoad, listAssignmentCandidates, lookupZip } from "./queries";
+import { type ZipInfo, zip5 } from "./stop-lookup";
 import {
   accessorialSchema,
   assignLoadSchema,
@@ -282,4 +283,16 @@ export async function removeDriverItem(_prev: ActionState, formData: FormData): 
   if (!data?.length) return errorState(NO_PERMISSION);
   refresh();
   return { status: "success", message: "Driver extra removed." };
+}
+
+/** ZIP → city, state, time zone for the stop form. Null when unknown or not allowed. */
+export async function lookupZipCode(zip: string): Promise<ZipInfo | null> {
+  const ctx = await authorizeAction(DISPATCH_EDITORS);
+  const z = typeof zip === "string" ? zip5(zip) : null;
+  if (!ctx || !z) return null;
+  try {
+    return await lookupZip(z);
+  } catch {
+    return null;
+  }
 }

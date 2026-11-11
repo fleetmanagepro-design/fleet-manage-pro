@@ -14,4 +14,11 @@ describe("nestedFormValues", () => {
       stops: [{ city: "Omaha", state: "NE" }, { city: "Denver" }],
     });
   });
+
+  it("keeps field names with digits (stops.0.addressLine1 was dropped before 11/11/2026)", () => {
+    const fd = new FormData();
+    fd.set("stops.0.addressLine1", "2525 Cottonwood Dr");
+    fd.set("stops.0.city", "Plainfield");
+    expect(nestedFormValues(fd)).toEqual({ stops: [{ addressLine1: "2525 Cottonwood Dr", city: "Plainfield" }] });
+  });
 });

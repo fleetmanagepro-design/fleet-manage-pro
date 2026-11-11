@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/database.types";
 import type { AssignmentCandidate } from "./overlap";
 import type { LoadStatus } from "./labels";
+import type { Facility, ZipInfo } from "./stop-lookup";
 
 export type LoadStop = Tables<"load_stops">;
 export type LoadAccessorial = Tables<"load_accessorials">;
@@ -142,7 +143,7 @@ export async function listAssignmentCandidates(
 /** Choices for the load form. Inactive/archived options are kept when already on the load. */
 export async function loadFormOptions(organizationId: string, current?: LoadDetail | null) {
   const supabase = await createClient();
-  const [customers, trucks, trailers, drivers] = await Promise.all([
+  const [customers, trucks, trailers, drivers, facilities] = await Promise.all([
     supabase.from("customers").select("id, name, status, archived_at").eq("organization_id", organizationId).order("name"),
     supabase.from("trucks").select("id, unit_number, status, archived_at").eq("organization_id", organizationId),
     supabase.from("trailers").select("id, unit_number, trailer_type, status, archived_at").eq("organization_id", organizationId),
@@ -151,8 +152,17 @@ export async function loadFormOptions(organizationId: string, current?: LoadDeta
       .select("id, first_name, last_name, status, archived_at, cdl_expires_on, medical_card_expires_on, default_truck_id")
       .eq("organization_id", organizationId)
       .order("last_name"),
+    // Remembered shippers / receivers (0004g), most used first; a small fleet has a few hundred.
+    supabase
+      .from("facilities")
+      .select("id, name, address_line1, city, state, zip, timezone, use_count")
+      .eq("organization_id", organizationId)
+      .is("archived_at", null)
+      .order("use_count", { ascending: false })
+      .order("last_used_at", { ascending: false })
+      .limit(1000),
   ]);
-  for (const r of [customers, trucks, trailers, drivers]) {
+  for (const r of [customers, trucks, trailers, drivers, facilities]) {
     if (r.error) {
       console.error("loadFormOptions failed", { error: r.error });
       throw new Error("Could not load form options.");
@@ -181,6 +191,7 @@ export async function loadFormOptions(organizationId: string, current?: LoadDeta
         cdlExpiresOn: d.cdl_expires_on,
         medicalCardExpiresOn: d.medical_card_expires_on,
       })),
+    facilities: (facilities.data ?? []) as Facility[],
   };
 }
 export type LoadFormOptions = Awaited<ReturnType<typeof loadFormOptions>>;
@@ -265,4 +276,15 @@ export async function listPayRulesForDrivers(organizationId: string, driverIds: 
     throw new Error("Could not load pay rules.");
   }
   return data ?? [];
+}
+
+/** City, state and time zone of a US ZIP code (0004f), or null when the ZIP isn't in the list. */
+export async function lookupZip(zip: string): Promise<ZipInfo | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("us_zip_codes").select("zip, city, state, timezone").eq("zip", zip).maybeSingle();
+  if (error) {
+    console.error("lookupZip failed", { error });
+    throw new Error("Could not look up the ZIP code.");
+  }
+  return data;
 }
