@@ -113,6 +113,14 @@ Status of the MVP build. Updated at the end of every task.
   since Task 4a. Loads saved before this fix have no street address on their stops.
 - **Tests:** 26 new pgTAP (325 total), 9 new unit (228 total), 2 new e2e (33 total).
 
+## Open questions for the owner (asked 11/11/2026, answer pending)
+1. **Team loads (two owner-operators on one load):** how is the load value split between them, e.g. 50/50 before the
+   company fee, or another split? Today each driver is paid on their own rule from the full load value (2 × 88%).
+2. **TONU (truck ordered, not used):** when the broker pays TONU on a cancelled load, does the driver get part of it,
+   and how much? Today TONU loads are not paid to drivers.
+
+The owner will go back through the app from the start to correct and add things; answer these on the way.
+
 ## Known gaps / follow-ups
 - Dispatch board: no drag-and-drop; loads without appointment times don't appear on it (they're in the list).
 - Loads: Invoiced/Paid can't be set until invoicing exists; contribution counts driver pay only until expenses exist (Task 5);
