@@ -21,7 +21,8 @@ import { AddDriverItemForm, RemoveDriverItemButton } from "@/modules/dispatch/co
 import { driverLoadPay } from "@/modules/drivers/pay";
 import { describePayRule, ruleInEffect } from "@/modules/drivers/pay-rules";
 import { canViewPay } from "@/modules/drivers/permissions";
-import { todayIn } from "@/lib/dates";
+import { formatCalendarDate, mondayOf, todayIn } from "@/lib/dates";
+import { loadPayDay } from "@/modules/drivers/calculations";
 import { canEditLoads } from "@/modules/dispatch/status";
 import { DetailList, NotBuiltYet, PageLoading, SectionCard } from "@/modules/fleet/components/asset-page";
 import { TRAILER_TYPE_LABELS } from "@/modules/fleet/labels";
@@ -222,8 +223,9 @@ async function Profitability({ load, organizationId, timezone, showPay, canEditE
     showPay ? listPayRulesForDrivers(organizationId, drivers.map((d) => d.id)) : Promise.resolve([]),
   ]);
   // The rule in effect on the pickup day pays the load (statements go by pickup week too).
-  const firstPickup = load.stops.find((s) => s.stop_type === "pickup")?.appointment_start;
-  const payDay = firstPickup ? todayIn(timezone, new Date(firstPickup)) : load.delivered_at ? todayIn(timezone, new Date(load.delivered_at)) : todayIn(timezone);
+  const knownPayDay = loadPayDay(load.stops, load.delivered_at, timezone);
+  const payDay = knownPayDay ?? todayIn(timezone);
+  const payWeek = knownPayDay ? mondayOf(knownPayDay) : null;
   const pay = drivers.map((d) => {
     const rule = ruleInEffect(rules.filter((r) => r.driver_id === d.id), payDay);
     const extras = items.filter((i) => i.driver_id === d.id).map((i) => i.amount_cents);
@@ -272,6 +274,11 @@ async function Profitability({ load, organizationId, timezone, showPay, canEditE
             </>
           ) : (
             <p className="text-xs text-destructive">No pay rule in effect on the pickup day — add one on the driver&apos;s page.</p>
+          )}
+          {payWeek && (
+            <Link href={`/statements/${p.driver.id}/${payWeek}`} className="mt-2 inline-block text-xs underline">
+              Pay statement, week of {formatCalendarDate(payWeek)} →
+            </Link>
           )}
         </div>
       ))}

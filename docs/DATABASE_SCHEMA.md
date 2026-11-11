@@ -132,6 +132,15 @@ A truck's drivers are `drivers.default_truck_id = trucks.id` (no `trucks.default
 
 **driver_deductions** (`0004c`): id, organization_id, driver_id, name, kind (`percent_of_gross`/`fixed_weekly`), percent numeric(5,2), amount_cents bigint, starts_on, ends_on, notes, created_by — exactly one of percent / amount_cents per kind; never deleted (end with `ends_on`); only name, ends_on, notes updatable; owner/admin/accounting only
 
+**driver_statements** (`0004d`): id, organization_id, driver_id, week_start date (Monday), load_count, gross_cents,
+company_fee_cents, extras_cents, deductions_cents, carried_in_cents (≤ 0), net_cents, finalized_by, finalized_at, voided_at,
+voided_by, void_reason — check: net = gross − fee + extras − deductions + carried_in; one live (not voided) statement per driver
+and week; written only by `finalize_driver_statement()` / `void_driver_statement()` (security definer, role-checked; finalize
+and void in week order, carried_in = previous live net if negative); owner/admin/accounting read
+**driver_statement_lines** (`0004d`): id, organization_id, statement_id, position, line_type (`load`/`extra`/`deduction`/`carryover`),
+load_id, deduction_id, description, detail, miles, value_cents, fee_cents, amount_cents (effect on net) — insert-only snapshot;
+lines must add up to the net; a load is on one live statement per driver
+
 ### Loads & dispatch
 ```
 load_status: planned, dispatched, at_pickup, in_transit, delivered, invoiced, paid, cancelled
@@ -213,7 +222,7 @@ One user per role in Lakeside; one owner in Prairie Haul.
 3b. `0003b_drivers` — drivers, pay rules, `org_today()` ✅
 3c. `0003c_customers` — customers, contacts ✅
 3d. `0003d_user_deletion` — users who have acted can be deleted (audit keeps their id) ✅
-4. `0004_loads` — loads, stops, drivers, accessorials, events, `organization_counters` ✅ (+ `0004b_assign_load`, `0004c_driver_pay` ✅)
+4. `0004_loads` — loads, stops, drivers, accessorials, events, `organization_counters` ✅ (+ `0004b_assign_load`, `0004c_driver_pay`, `0004d_driver_statements` ✅)
 4b. `0004b_assign_load` — `assign_load()` for the dispatch board ✅
 5. `0005_expenses` — categories, expenses, fuel details, recurring costs
 6. `0006_maintenance` — work orders, lines, PM, tires

@@ -10,7 +10,9 @@ import { todayIn } from "@/lib/dates";
 import { checkbox } from "@/lib/form-fields";
 import { createClient } from "@/lib/supabase/server";
 import { DRIVER_EDITORS } from "./permissions";
-import { deductionSchema, deletePayRuleSchema, driverSchema, endDeductionSchema, payRuleSchema } from "./schemas";
+import { finalizeBlockers } from "./calculations";
+import { deductionSchema, deletePayRuleSchema, driverSchema, endDeductionSchema, finalizeStatementSchema, payRuleSchema, voidStatementSchema } from "./schemas";
+import { getDriverWeekStatement } from "./statement-queries";
 
 const NO_PERMISSION = "You don't have permission to do that.";
 const UNEXPECTED = "Something went wrong. Please try again.";
@@ -23,6 +25,10 @@ function dbError(action: string, error: PostgrestError, formData?: FormData): Ac
   if (error.code === "42501") return errorState(NO_PERMISSION, formData);
   if (error.hint === "pay_rule_in_effect") {
     return errorState("This pay rule is already in effect and can't be changed. Add a new rule with a later date instead.", formData);
+  }
+  if (error.hint === "statement_order") return errorState(error.message + ".", formData);
+  if (error.hint === "statement_stale" || error.hint === "week_not_over" || error.hint === "reason_required") {
+    return errorState(`${error.message}. Reload the page and check the statement.`, formData);
   }
   console.error(`[drivers.${action}]`, { error });
   return errorState(UNEXPECTED, formData);
@@ -211,4 +217,53 @@ export async function endDeduction(_prev: ActionState, formData: FormData): Prom
   if (!data?.length) return errorState(NO_PERMISSION);
   refresh();
   return { status: "success", message: "Deduction ended." };
+}
+
+/**
+ * Finalize a driver's weekly statement. The numbers are recomputed here from the database —
+ * never taken from the form — and stored as an immutable snapshot (0004d).
+ */
+export async function finalizeStatement(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const ctx = await authorizeAction(DRIVER_EDITORS);
+  if (!ctx) return errorState(NO_PERMISSION);
+  const parsed = finalizeStatementSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return errorState(UNEXPECTED);
+  const { driverId, week } = parsed.data;
+  const { organizationId, timezone } = ctx.active;
+
+  const s = await getDriverWeekStatement(organizationId, driverId, week, timezone);
+  if (!s) return errorState(NO_PERMISSION);
+  if (s.finalized) return errorState("This week is already finalized.");
+  if (s.laterFinalized) return errorState("A later week is already finalized. Void it first to finalize this one.");
+  const blockers = finalizeBlockers(s.draft, todayIn(timezone));
+  if (blockers.length) return errorState(blockers.join(" "));
+
+  const d = s.draft;
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("finalize_driver_statement", {
+    p_org: organizationId,
+    p_driver: driverId,
+    p_week: week,
+    p_header: {
+      load_count: d.loadCount, gross_cents: d.grossCents, company_fee_cents: d.companyFeeCents, extras_cents: d.extrasCents,
+      deductions_cents: d.deductionsCents, carried_in_cents: d.carriedInCents, net_cents: d.netCents,
+    },
+    p_lines: d.lines,
+  });
+  if (error) return dbError("finalizeStatement", error);
+  refresh();
+  return { status: "success", message: "Statement finalized." };
+}
+
+export async function voidStatement(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const ctx = await authorizeAction(DRIVER_EDITORS);
+  if (!ctx) return errorState(NO_PERMISSION);
+  const parsed = voidStatementSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return validationError(parsed.error, formData);
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("void_driver_statement", { p_statement: parsed.data.statementId, p_reason: parsed.data.reason });
+  if (error) return dbError("voidStatement", error, formData);
+  refresh();
+  return { status: "success", message: "Statement voided." };
 }

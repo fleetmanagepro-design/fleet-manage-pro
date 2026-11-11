@@ -100,12 +100,24 @@ They start on a date and are ended (never deleted), so old statements stay expla
 
 **Which rule applies:** the rule in effect on the load's first pickup day (company time zone).
 
-**Pay period (statements, Task 4c-2):** Monday–Sunday. A load belongs to the week it was **picked up**, not delivered
-(a load picked up Sunday and delivered Tuesday is in the earlier week). Statement: loads with value → gross → −company fee
-→ +extras → −deductions → net pay. Finalized statements are an immutable snapshot (void with a reason).
+**Weekly statements (Task 4c-2, decisions of 11/11/2026):**
+- Pay week is Monday–Sunday in company time. A load belongs to the week of its **first pickup** (appointment), not its delivery
+  (picked up Sunday, delivered Tuesday → the earlier week). Without a pickup appointment, its delivery day counts.
+- Statement: loads (owner-operator: value − company fee; company driver: miles × rate) → **gross** → −company fee → +extras
+  → −deductions → + balance carried in → **net pay**.
+- **% deductions** (e.g. truck rent 10%) are taken from the **gross load value, before the company fee** ($3,800 → $380).
+  For company drivers, gross is their mileage pay.
+- A deduction applies to a week if it is active on any day of that week; fixed amounts are not prorated.
+- **Company drivers can have deductions too** (advances, escrow, …).
+- If deductions are larger than earnings, **the net goes negative and is carried into the next statement as a debt**.
+- Only delivered (or invoiced/paid) loads are paid. A week with loads picked up but not delivered yet, or loads without a pay
+  rule, can't be finalized; neither can a week that isn't over. Cancelled loads are not paid.
+- **Finalize** stores an immutable snapshot (the numbers are recomputed on the server, never taken from the browser).
+  A mistake is fixed by **voiding with a reason** and finalizing again. Weeks are finalized and voided in order, so the balance
+  carried forward is always the previous finalized net. A load is paid on one live statement only.
+- Owners, admins and accounting see and finalize statements; dispatchers never see pay. Print / Save as PDF from the browser.
 
-Until statements exist, driver pay is computed live on the load page from the rule in effect (owners, admins and accounting see it;
-dispatchers don't). It is stored when a statement is finalized, not on delivery.
+On the load page, driver pay is computed live from the rule in effect, with a link to that driver's statement for the week.
 
 Legacy rule shapes (flat per load, % of linehaul only, stop/detention pay) remain readable in the database but are no longer offered in the UI.
 

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { requireOrgRole } from "@/lib/auth";
-import { formatCalendarDate, todayIn } from "@/lib/dates";
+import { addDays, formatCalendarDate, mondayOf, todayIn } from "@/lib/dates";
 import { driverCompliance, isBlockedFromDriving } from "@/modules/drivers/compliance";
 import {
   DeductionForm,
@@ -21,8 +21,9 @@ import { DRIVER_TYPE_LABELS } from "@/modules/drivers/labels";
 import { describeExtras, describePayRule, isRuleLocked, ruleInEffect } from "@/modules/drivers/pay-rules";
 import { DRIVER_READERS, canEditDrivers, canViewPay } from "@/modules/drivers/permissions";
 import { getDriver, listDeductions, listPayRules } from "@/modules/drivers/queries";
+import { listDriverStatements } from "@/modules/drivers/statement-queries";
 import { formatCents } from "@/lib/money";
-import { DetailList, NotBuiltYet, PageLoading, SectionCard } from "@/modules/fleet/components/asset-page";
+import { DetailList, PageLoading, SectionCard } from "@/modules/fleet/components/asset-page";
 
 export const metadata = { title: "Driver · Fleet Manage Pro" };
 
@@ -109,9 +110,13 @@ async function DriverDetail({ params }: Pick<PageProps<"/drivers/[id]">, "params
           </SectionCard>
         )}
 
-        <NotBuiltYet title="Loads and pay history">
-          Loads driven, miles and calculated pay will appear here once dispatch is built.
-        </NotBuiltYet>
+        {canViewPay(active.role) && (
+          <SectionCard title="Pay statements" description="Weekly, Monday–Sunday; loads count in the week they were picked up.">
+            <Suspense fallback={<PageLoading />}>
+              <Statements organizationId={active.organizationId} driverId={driver.id} today={today} />
+            </Suspense>
+          </SectionCard>
+        )}
       </div>
     </div>
   );
@@ -204,6 +209,38 @@ async function Deductions({ organizationId, driverId, today, editable }: {
         </Table>
       )}
       {editable && <DeductionForm driverId={driverId} today={today} />}
+    </div>
+  );
+}
+
+async function Statements({ organizationId, driverId, today }: { organizationId: string; driverId: string; today: string }) {
+  const statements = await listDriverStatements(organizationId, driverId);
+  const lastWeek = addDays(mondayOf(today), -7);
+  return (
+    <div className="grid gap-3 text-sm">
+      <div className="flex flex-wrap gap-2">
+        <Link href={`/statements/${driverId}/${lastWeek}`} className={buttonVariants({ variant: "outline", size: "sm" })}>Last week&apos;s statement</Link>
+        <Link href={`/statements/${driverId}/${mondayOf(today)}`} className={buttonVariants({ variant: "outline", size: "sm" })}>This week so far</Link>
+      </div>
+      {statements.length === 0 ? (
+        <p className="text-muted-foreground">No finalized statements yet.</p>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow><TableHead>Week</TableHead><TableHead className="text-right">Loads</TableHead><TableHead className="text-right">Net pay</TableHead><TableHead>Status</TableHead></TableRow>
+          </TableHeader>
+          <TableBody>
+            {statements.map((s) => (
+              <TableRow key={s.id} data-testid={`driver-statement-${s.week_start}`}>
+                <TableCell><Link href={`/statements/${driverId}/${s.week_start}`} className="hover:underline">{formatCalendarDate(s.week_start)}</Link></TableCell>
+                <TableCell className="text-right tabular-nums">{s.load_count}</TableCell>
+                <TableCell className="text-right tabular-nums">{formatCents(s.net_cents)}</TableCell>
+                <TableCell>{s.voided_at ? <Badge variant="outline">Voided</Badge> : <Badge>Finalized</Badge>}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
     </div>
   );
 }

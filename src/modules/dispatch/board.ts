@@ -1,16 +1,11 @@
-import { addMonths, daysBetween, isCalendarDate, todayIn } from "@/lib/dates";
+import { addDays, addMonths, daysBetween, isCalendarDate, todayIn } from "@/lib/dates";
 import type { Window } from "./overlap";
 
 /** Dispatch board layout (PRODUCT_SPEC §4.4): trucks × days, loads as blocks. Pure functions. */
 
 export const BOARD_DAYS = 7;
 
-/** "YYYY-MM-DD" + n days. */
-export function addDays(day: string, n: number): string {
-  const [y, m, d] = day.split("-").map(Number);
-  const t = new Date(Date.UTC(y, m - 1, d + n));
-  return t.toISOString().slice(0, 10);
-}
+export { addDays };
 
 /** The board's first day: ?start=YYYY-MM-DD if valid and within ±2 years, else today. */
 export function boardStart(param: string | undefined, today: string): string {

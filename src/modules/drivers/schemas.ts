@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isCalendarDate } from "@/lib/dates";
+import { isCalendarDate, mondayOf } from "@/lib/dates";
 import {
   optionalCalendarDate,
   optionalText,
@@ -102,6 +102,16 @@ export const deductionSchema = z.discriminatedUnion("kind", [
 ], { error: "Choose how the deduction is calculated" });
 
 export const endDeductionSchema = z.object({ id: z.uuid(), driverId: z.uuid() });
+
+/** A pay week, identified by its Monday ("YYYY-MM-DD"). */
+export const payWeekSchema = z.string().refine((v) => isCalendarDate(v) && mondayOf(v) === v, "A pay week starts on a Monday.");
+
+export const finalizeStatementSchema = z.object({ driverId: z.uuid(), week: payWeekSchema });
+
+export const voidStatementSchema = z.object({
+  statementId: z.uuid(),
+  reason: z.string().trim().min(1, "Say why the statement is voided.").max(500, "Keep the reason under 500 characters."),
+});
 
 export const PAY_TYPE_VALUES = PAY_TYPES;
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addMonths, addYears, daysBetween, formatCalendarDate, formatDate, isCalendarDate, todayIn } from "@/lib/dates";
+import { addDays, addMonths, addYears, daysBetween, formatCalendarDate, formatDate, isCalendarDate, mondayOf, todayIn } from "@/lib/dates";
 
 describe("formatDate", () => {
   it("formats MM/DD/YYYY in the organization's time zone", () => {
@@ -53,5 +53,18 @@ describe("calendar dates", () => {
     expect(isCalendarDate("2026-11-09")).toBe(true);
     expect(isCalendarDate("2026-13-01")).toBe(false);
     expect(isCalendarDate("11/09/2026")).toBe(false);
+  });
+});
+
+describe("addDays / mondayOf", () => {
+  it("adds days across months and years", () => {
+    expect(addDays("2026-12-30", 3)).toBe("2027-01-02");
+    expect(addDays("2026-03-01", -1)).toBe("2026-02-28");
+  });
+  it("finds the Monday of a pay week", () => {
+    expect(mondayOf("2026-11-02")).toBe("2026-11-02"); // Monday
+    expect(mondayOf("2026-11-08")).toBe("2026-11-02"); // Sunday
+    expect(mondayOf("2026-11-04")).toBe("2026-11-02");
+    expect(mondayOf("2027-01-01")).toBe("2026-12-28"); // across the year
   });
 });

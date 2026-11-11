@@ -91,10 +91,23 @@ Status of the MVP build. Updated at the end of every task.
   (owner/admin/accounting only); driver extras section. Driver page: deductions section.
 - Tests: 14 new pgTAP (253 total), 8 new unit (199 total), 4 new e2e (27 total).
 
+### Task 4c-2 — Weekly driver statements (11/11/2026)
+- `/statements` ("Driver pay"): every driver with loads, deductions or a balance for the week (Mon–Sun, by pickup week),
+  gross, net, status; previous/next week. Defaults to last week.
+- Statement page per driver and week: loads (value, company fee, driver share — or miles × rate), extras, deductions
+  (% of gross before the fee, or fixed weekly), balance carried in, net pay. Finalize (immutable snapshot), void with reason,
+  Print / Save as PDF. Links from the load page and the driver page (list of finalized/voided statements).
+- Migration `0004d_driver_statements`: statements + lines, written only through `finalize_driver_statement()` /
+  `void_driver_statement()` which check role, week order, carried balance, delivered loads, one statement per load, totals.
+- Tests: 38 new pgTAP (291 total), 14 new unit (213 total), 3 new e2e (30 total).
+
 ## Known gaps / follow-ups
 - Dispatch board: no drag-and-drop; loads without appointment times don't appear on it (they're in the list).
 - Loads: Invoiced/Paid can't be set until invoicing exists; contribution counts driver pay only until expenses exist (Task 5);
   no document upload; actual arrival/departure times are stored but not editable in the UI yet.
+- Driver pay: a team load pays each driver on their own rule from the full load value (two owner-operators would each get
+  88%) — confirm how team loads split with the owner. Editing a load after its statement is finalized doesn't change the
+  statement (void and finalize again); a warning on the load page would help. TONU (cancelled but paid) loads aren't paid to drivers yet.
 - Customer contacts can be added and removed but not edited in place.
 - No in-app "Delete organization" (owner only, with confirmation and data export) — needed once; done by SQL.
 - Marketing site at `fleetmanagepro.com` not built; the root domain is parked at GoDaddy.
@@ -107,12 +120,11 @@ Status of the MVP build. Updated at the end of every task.
 
 ## Next
 
-### Task 4c-2 — Weekly driver statements
-Per driver per week (Mon–Sun, loads by pickup date in company time zone): loads with value → gross → −company fee
-→ +extras → −deductions → net pay; company drivers miles × rate. Finalize (immutable snapshot, void with reason), print/PDF.
+### Task 5 — Expenses (`0005_expenses`)
+Categories, expenses (load-direct, equipment, overhead), fuel, recurring costs; void instead of delete; contribution on the
+load page then includes load-direct expenses.
 
 ### After that (in order)
-5. `0005_expenses` — categories, expenses, fuel, recurring costs
 6. `0006_maintenance` — work orders, PM, tires
 7. `0007_invoicing` — invoices, payments, aging
 8. `0008_documents_alerts` — documents, alerts, CSV import

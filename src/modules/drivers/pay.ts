@@ -9,7 +9,8 @@ import type { PayRule } from "./pay-rules";
  * Integer math throughout: percent in basis points, miles in tenths, half-up rounding.
  */
 
-function roundDiv(numerator: number, denominator: number): number {
+/** Integer division rounded half away from zero. */
+export function roundDiv(numerator: number, denominator: number): number {
   const sign = Math.sign(numerator) * Math.sign(denominator);
   const n = Math.abs(numerator);
   const d = Math.abs(denominator);
