@@ -54,7 +54,13 @@ jobs:
         run: npm run build
 
       - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
+        # The runner's apt mirrors are sometimes unreachable (DNS failures, 11/11/2026). GitHub's Ubuntu image already
+        # ships Chrome's system libraries, so fall back to installing just the browser; the e2e tests still decide.
+        run: |
+          npx playwright install --with-deps chromium || {
+            echo "::warning::Installing system packages failed; installing the browser only"
+            npx playwright install chromium
+          }
 
       - name: End-to-end tests
         run: npm run test:e2e -- --trace off
