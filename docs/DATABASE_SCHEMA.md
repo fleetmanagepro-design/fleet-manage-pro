@@ -141,6 +141,16 @@ and void in week order, carried_in = previous live net if negative); owner/admin
 load_id, deduction_id, description, detail, miles, value_cents, fee_cents, amount_cents (effect on net) — insert-only snapshot;
 lines must add up to the net; a load is on one live statement per driver
 
+**us_zip_codes** (`0004f`): zip (pk), city, state, timezone. Reference data shared by every organization: the one table
+without `organization_id`, because it holds no tenant data. Every signed-in user can read it and no one can write it.
+Sources in `docs/THIRD_PARTY_DATA.md`.
+**facilities** (`0004g`): id, organization_id, name, address_line1, city, state, zip, timezone, notes, use_count,
+last_used_at, archived_at, created_by.
+- Unique per organization on lower(name) + lower(street) + ZIP.
+- Written by the `load_stops` insert trigger `remember_stop_facility()`, never inserted directly.
+- Members read; owner/admin/dispatcher may correct or archive (column grants).
+- No delete.
+
 ### Loads & dispatch
 ```
 load_status: planned, dispatched, at_pickup, in_transit, delivered, invoiced, paid, cancelled

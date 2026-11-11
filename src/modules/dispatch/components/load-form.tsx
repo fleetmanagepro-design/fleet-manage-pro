@@ -11,9 +11,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { initialActionState } from "@/lib/action-state";
 import { STATE_TIME_ZONES, STOP_TIME_ZONES, US_STATES } from "@/lib/us";
 import { TRAILER_TYPES, TRAILER_TYPE_LABELS } from "@/modules/fleet/labels";
-import { saveLoad } from "../actions";
+import { lookupZipCode, saveLoad } from "../actions";
 import { type LoadDraft, type StopDraft, emptyStop } from "../load-draft";
 import type { LoadFormOptions } from "../queries";
+import { SPLIT_TIME_ZONE_STATES, applyFacility, applyZip, zip5 } from "../stop-lookup";
+import { FacilityInput } from "./facility-input";
 
 type Props = { draft: LoadDraft; options: LoadFormOptions; orgTimezone: string; today: string; canOverride: boolean };
 
@@ -28,6 +30,22 @@ export function LoadForm({ draft, options, orgTimezone, today, canOverride }: Pr
 
   const updateStop = (i: number, patch: Partial<StopDraft>) =>
     setStops((prev) => prev.map((s, j) => (j === i ? { ...s, ...patch } : s)));
+  // What the ZIP lookup did for each stop (by stop key): filled from the ZIP, or not found.
+  const [zipNotes, setZipNotes] = useState<Partial<Record<string, "filled" | "unknown">>>({});
+  const clearZipNote = (key: string) => setZipNotes((n) => ({ ...n, [key]: undefined }));
+  const onZipChange = (key: string, value: string) => {
+    setStops((prev) => prev.map((s) => (s.key === key ? { ...s, zip: value } : s)));
+    const z = zip5(value);
+    if (!z) {
+      clearZipNote(key);
+      return;
+    }
+    void lookupZipCode(z).then((info) => {
+      // Ignore the answer if the ZIP was changed again meanwhile.
+      setStops((prev) => prev.map((s) => (s.key === key && zip5(s.zip) === z && info ? applyZip(s, info) : s)));
+      setZipNotes((n) => ({ ...n, [key]: info ? "filled" : "unknown" }));
+    });
+  };
   const moveStop = (i: number, by: -1 | 1) =>
     setStops((prev) => {
       const next = [...prev];
@@ -114,12 +132,21 @@ export function LoadForm({ draft, options, orgTimezone, today, canOverride }: Pr
                   </div>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <FormField id={id("facility")} name={`stops.${i}.facilityName`} label="Facility" value={s.facilityName}
-                    onChange={(ev) => updateStop(i, { facilityName: ev.target.value })} errors={se("facilityName")} />
+                  <FacilityInput id={id("facility")} name={`stops.${i}.facilityName`} value={s.facilityName}
+                    facilities={options.facilities} errors={se("facilityName")}
+                    onChange={(v) => updateStop(i, { facilityName: v })}
+                    onPick={(f) => {
+                      setStops((prev) => prev.map((x, j) => (j === i ? applyFacility(x, f) : x)));
+                      clearZipNote(s.key);
+                    }} />
                   <FormField id={id("address")} name={`stops.${i}.addressLine1`} label="Address" value={s.addressLine1}
                     onChange={(ev) => updateStop(i, { addressLine1: ev.target.value })} errors={se("addressLine1")} />
                 </div>
-                <div className="grid gap-3 sm:grid-cols-[1fr_6rem_7rem_14rem]">
+                <div className="grid gap-3 sm:grid-cols-[7rem_1fr_6rem_14rem]">
+                  <FormField id={id("zip")} name={`stops.${i}.zip`} label="ZIP" inputMode="numeric" value={s.zip}
+                    onChange={(ev) => onZipChange(s.key, ev.target.value)} errors={se("zip")}
+                    hint={zipNotes[s.key] === "filled" ? "City, state and time zone filled in from the ZIP."
+                      : zipNotes[s.key] === "unknown" ? "ZIP not in our list — enter the city and state." : undefined} />
                   <FormField id={id("city")} name={`stops.${i}.city`} label="City" value={s.city}
                     onChange={(ev) => updateStop(i, { city: ev.target.value })} errors={se("city")} />
                   <FormField id={id("state")} label="State" errors={se("state")}>
@@ -130,9 +157,8 @@ export function LoadForm({ draft, options, orgTimezone, today, canOverride }: Pr
                       {US_STATES.map(([c]) => <NativeSelectOption key={c} value={c}>{c}</NativeSelectOption>)}
                     </NativeSelect>
                   </FormField>
-                  <FormField id={id("zip")} name={`stops.${i}.zip`} label="ZIP" inputMode="numeric" value={s.zip}
-                    onChange={(ev) => updateStop(i, { zip: ev.target.value })} errors={se("zip")} />
-                  <FormField id={id("tz")} label="Local time zone" errors={se("timezone")}>
+                  <FormField id={id("tz")} label="Local time zone" errors={se("timezone")}
+                    hint={SPLIT_TIME_ZONE_STATES.has(s.state) ? `${s.state} has two time zones — check this one.` : undefined}>
                     <NativeSelect id={id("tz")} name={`stops.${i}.timezone`} value={s.timezone} className="w-full"
                       onChange={(ev) => updateStop(i, { timezone: ev.target.value })}>
                       {STOP_TIME_ZONES.map((z) => <NativeSelectOption key={z.value} value={z.value}>{z.label}</NativeSelectOption>)}

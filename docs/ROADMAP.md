@@ -103,6 +103,16 @@ Status of the MVP build. Updated at the end of every task.
   free miles per week (loaded + empty miles, starting over each week).
 - Tests: 46 new pgTAP (299 total), 20 new unit (219 total), 4 new e2e (31 total).
 
+### Stops: ZIP lookup + remembered facilities (11/11/2026)
+- **ZIP lookup.** Migration `0004f_us_zip_codes`: 41,689 US ZIP codes with city, state and time zone, with corrected
+  Kentucky/Indiana zones (`docs/THIRD_PARTY_DATA.md`). Typing a stop's ZIP fills city, state and zone; in two-zone states
+  the form asks to check the zone.
+- **Remembered facilities.** Migration `0004g_facilities`: every saved stop with a facility name is remembered per
+  organization. The facility field suggests matches (most used first) and picking one fills the whole stop.
+- **Fixed: stop street addresses were never saved.** The form parser dropped field names containing a digit (`addressLine1`)
+  since Task 4a. Loads saved before this fix have no street address on their stops.
+- **Tests:** 26 new pgTAP (325 total), 9 new unit (228 total), 2 new e2e (33 total).
+
 ## Open questions for the owner (asked 11/11/2026, answer pending)
 1. **Team loads (two owner-operators on one load):** how is the load value split between them, e.g. 50/50 before the
    company fee, or another split? Today each driver is paid on their own rule from the full load value (2 × 88%).
@@ -118,6 +128,7 @@ The owner will go back through the app from the start to correct and add things;
 - Driver pay: a team load pays each driver on their own rule from the full load value (two owner-operators would each get
   88%) — confirm how team loads split with the owner. Editing a load after its statement is finalized doesn't change the
   statement (void and finalize again); a warning on the load page would help. TONU (cancelled but paid) loads aren't paid to drivers yet.
+- Facilities: no screen yet to edit, merge or archive remembered facilities (the database already allows it).
 - Customer contacts can be added and removed but not edited in place.
 - No in-app "Delete organization" (owner only, with confirmation and data export) — needed once; done by SQL.
 - Marketing site at `fleetmanagepro.com` not built; the root domain is parked at GoDaddy.

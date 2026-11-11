@@ -126,6 +126,18 @@ On the load page, driver pay is computed live from the rule in effect, with a li
 
 Legacy rule shapes (flat per load, % of linehaul only, stop/detention pay) remain readable in the database but are no longer offered in the UI.
 
+### Stops: ZIP lookup and remembered facilities (decision of 11/11/2026)
+- **ZIP lookup.** Typing a stop's 5-digit ZIP fills in its city, state and local time zone. All three can still be changed.
+  In states with two time zones (e.g. KY, IN, TN, TX) the form asks to check the zone.
+  A ZIP that isn't in the list says so, and city and state are typed by hand.
+- **Remembered facilities.** Every stop saved with a facility name is remembered for the organization: name, street,
+  city, state, ZIP and time zone. Typing in the facility field suggests the matching ones, most used first.
+  Picking one fills the whole stop except its appointment.
+  - A stop keeps its own copy of the address, so changing a facility never changes past loads.
+  - Same name + street + ZIP is one facility.
+  - Facilities are never deleted (archive).
+  - A screen to manage facilities comes later.
+
 ## 4. Modules and screens
 
 Each module lists screens, key fields, business rules and **acceptance criteria (AC)**.
