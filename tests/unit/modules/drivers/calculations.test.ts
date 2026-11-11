@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  type StatementDeduction, type StatementLoad, buildStatement, carriedIn, finalizeBlockers, hasWeekActivity,
+  type StatementDeduction, type StatementLoad, buildStatement, carriedIn, deductionAmount, describeDeduction, finalizeBlockers, hasWeekActivity,
   isDeductionActive, isInWeek, loadPayDay,
 } from "@/modules/drivers/calculations";
 import type { PayRule } from "@/modules/drivers/pay-rules";
@@ -14,8 +14,8 @@ const load = (o: Partial<StatementLoad> = {}): StatementLoad => ({
   loadId: "l1", loadNumber: "1042", status: "delivered", route: "Joliet, IL → Columbus, OH",
   valueCents: 380000, loaded_miles: 1000, deadhead_miles: 50, rule: owner, extras: [], ...o,
 });
-const truckRent: StatementDeduction = { id: "d1", name: "Truck rent", kind: "percent_of_gross", percent: 10, amount_cents: null, starts_on: "2026-01-01", ends_on: null };
-const trailerRent: StatementDeduction = { id: "d2", name: "Trailer rent", kind: "fixed_weekly", percent: null, amount_cents: 25000, starts_on: "2026-01-01", ends_on: null };
+const truckRent: StatementDeduction = { id: "d1", name: "Truck rent", kind: "percent_of_gross", percent: 10, amount_cents: null, rate_cents_per_mile: null, free_miles: null, starts_on: "2026-01-01", ends_on: null };
+const trailerRent: StatementDeduction = { id: "d2", name: "Trailer rent", kind: "fixed_weekly", percent: null, amount_cents: 25000, rate_cents_per_mile: null, free_miles: null, starts_on: "2026-01-01", ends_on: null };
 
 describe("buildStatement — owner-operator", () => {
   it("value − company fee + extras − deductions (the user's example)", () => {
@@ -121,5 +121,49 @@ describe("weeks", () => {
   it("falls back to the delivery day without a pickup appointment", () => {
     expect(loadPayDay([{ stop_type: "pickup", sequence: 1, appointment_start: null }], "2026-11-03T02:00:00Z", "America/Chicago")).toBe("2026-11-02");
     expect(loadPayDay([], null, "America/Chicago")).toBeNull();
+  });
+});
+
+describe("per-mile deductions (truck / trailer rent by agreement)", () => {
+  const truckRentPerMile: StatementDeduction = {
+    id: "d9", name: "Truck rent", kind: "per_mile", percent: null, amount_cents: 30000, rate_cents_per_mile: 10, free_miles: 2000,
+    starts_on: "2026-01-01", ends_on: null,
+  };
+
+  it("fixed weekly part + rate per mile over the free miles, counting loaded + empty miles", () => {
+    // 2 loads: 1,000 + 50 and 1,500 + 50 = 2,600 mi; 600 over 2,000 → $60 + $300 = $360
+    const s = buildStatement({
+      weekStart: WEEK,
+      loads: [load(), load({ loadId: "l2", loadNumber: "1043", loaded_miles: 1500, deadhead_miles: 50 })],
+      deductions: [truckRentPerMile], carriedInCents: 0,
+    });
+    const line = s.lines.find((l) => l.line_type === "deduction")!;
+    expect(line).toMatchObject({ amount_cents: -36000, miles: 600 });
+    expect(line.detail).toBe("$300.00 weekly + 600 mi × $0.10 over 2,000 mi (2,600 mi this week)");
+    expect(s.deductionsCents).toBe(36000);
+  });
+
+  it("under or exactly at the free miles: only the fixed part", () => {
+    expect(deductionAmount(truckRentPerMile, 0, 19_999).amount).toBe(30000);
+    expect(deductionAmount(truckRentPerMile, 0, 20_000).amount).toBe(30000);
+    expect(deductionAmount(truckRentPerMile, 0, 20_001).amount).toBe(30001); // 0.1 mi × 10¢ = 1¢
+  });
+
+  it("no loads: the fixed part still applies; without a fixed part nothing is deducted", () => {
+    expect(buildStatement({ weekStart: WEEK, loads: [], deductions: [truckRentPerMile], carriedInCents: 0 }).netCents).toBe(-30000);
+    expect(deductionAmount({ ...truckRentPerMile, amount_cents: null }, 0, 0)).toMatchObject({ amount: 0, miles: 0 });
+  });
+
+  it("zero free miles charges every mile, rounding half up to the cent", () => {
+    const d = { ...truckRentPerMile, amount_cents: null, free_miles: 0, rate_cents_per_mile: 5 };
+    expect(deductionAmount(d, 0, 10_005).amount).toBe(5003); // 1,000.5 mi × 5¢ = 5,002.5¢
+    expect(deductionAmount(d, 0, 10_005).detail).toBe("1,000.5 mi × $0.05 (1,000.5 mi this week)");
+  });
+
+  it("describes every kind for the driver page", () => {
+    expect(describeDeduction(truckRent)).toBe("10% of gross");
+    expect(describeDeduction(trailerRent)).toBe("$250.00 / week");
+    expect(describeDeduction(truckRentPerMile)).toBe("$300.00 / week + $0.10/mi over 2,000 mi a week");
+    expect(describeDeduction({ ...truckRentPerMile, amount_cents: null, free_miles: 0 })).toBe("$0.10/mi (all miles)");
   });
 });

@@ -73,6 +73,36 @@ test("a week with no loads goes negative and the debt is carried into the next w
   await expect(shown(page, "statement-status")).toHaveText("Draft");
 });
 
+test("truck rent by agreement: fixed weekly + per mile over free miles (loaded + empty)", async ({ page }) => {
+  await signInAs(page, "admin@lakesidefreight.test");
+  await page.goto("/drivers");
+  await page.getByTestId("driver-Carter-James").getByRole("link", { name: "James Carter" }).click();
+  await page.getByLabel("Deduction", { exact: true }).fill("Truck rent");
+  await page.getByLabel("Calculated as").selectOption("per_mile");
+  await page.getByLabel("USD / week (optional)").fill("100");
+  await page.getByLabel("USD per mile").fill("0.05");
+  await page.getByLabel("Free miles per week").fill("300");
+  await page.getByLabel("Starts").fill("2026-01-01");
+  await page.getByRole("button", { name: "Add deduction" }).click();
+  await expect(page.getByTestId("deduction-Truck rent")).toContainText("$100.00 / week + $0.05/mi over 300 mi a week");
+
+  await page.goto("/loads");
+  await page.getByTestId("load-1012").getByRole("link", { name: "1012" }).click(); // truck 101, James Carter
+  await page.getByTestId("driver-pay-Carter").getByRole("link", { name: /Pay statement, week of/ }).click();
+  const line = shown(page, "statement-deduction-Truck rent");
+  await expect(line).toContainText(/\$100\.00 weekly \+ [\d,.]+ mi × \$0\.05 over 300 mi \([\d,.]+ mi this week\)/);
+  const text = await line.innerText();
+  const week = Number(/\(([\d,.]+) mi this week\)/.exec(text)![1].replace(/,/g, ""));
+  const expected = 10000 + Math.round(Math.max(0, week - 300) * 5);
+  await expect(line).toContainText(usd(-expected));
+
+  await page.goto("/drivers");
+  await page.getByTestId("driver-Carter-James").getByRole("link", { name: "James Carter" }).click();
+  page.once("dialog", (d) => d.accept());
+  await page.getByRole("button", { name: "End Truck rent" }).click();
+  await expect(page.getByRole("button", { name: "End Truck rent" })).toHaveCount(0);
+});
+
 test("dispatchers never see driver pay statements", async ({ page }) => {
   await signInAs(page, "dispatch@lakesidefreight.test");
   await expect(page.getByRole("link", { name: "Driver pay" })).toHaveCount(0);

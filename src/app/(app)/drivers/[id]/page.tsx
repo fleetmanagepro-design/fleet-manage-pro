@@ -22,6 +22,7 @@ import { describeExtras, describePayRule, isRuleLocked, ruleInEffect } from "@/m
 import { DRIVER_READERS, canEditDrivers, canViewPay } from "@/modules/drivers/permissions";
 import { getDriver, listDeductions, listPayRules } from "@/modules/drivers/queries";
 import { listDriverStatements } from "@/modules/drivers/statement-queries";
+import { describeDeduction } from "@/modules/drivers/calculations";
 import { formatCents } from "@/lib/money";
 import { DetailList, PageLoading, SectionCard } from "@/modules/fleet/components/asset-page";
 
@@ -195,7 +196,7 @@ async function Deductions({ organizationId, driverId, today, editable }: {
               return (
                 <TableRow key={d.id} data-testid={`deduction-${d.name}`}>
                   <TableCell className="font-medium">{d.name}</TableCell>
-                  <TableCell>{d.kind === "percent_of_gross" ? `${Number(d.percent)}% of gross` : `${formatCents(d.amount_cents ?? 0)} / week`}</TableCell>
+                  <TableCell>{describeDeduction({ ...d, percent: d.percent === null ? null : Number(d.percent), free_miles: d.free_miles === null ? null : Number(d.free_miles) })}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {formatCalendarDate(d.starts_on)} – {d.ends_on ? formatCalendarDate(d.ends_on) : "ongoing"}
                   </TableCell>

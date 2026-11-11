@@ -121,7 +121,9 @@ async function weekRows(organizationId: string, weekStart: string, timeZone: str
         extras: items.filter((i) => i.load_id === l.id && i.driver_id === driver.id)
           .map((i) => ({ description: i.description, amountCents: i.amount_cents })),
       })),
-      deductions: deductions.filter((d) => d.driver_id === driver.id).map((d) => ({ ...d, percent: d.percent === null ? null : Number(d.percent) })),
+      deductions: deductions.filter((d) => d.driver_id === driver.id).map((d) => ({
+        ...d, percent: d.percent === null ? null : Number(d.percent), free_miles: d.free_miles === null ? null : Number(d.free_miles),
+      })),
       carriedInCents: carriedIn(previous?.net_cents),
     });
     const hasLoads = draft.loadCount + draft.pending.length + draft.missingRule.length > 0;

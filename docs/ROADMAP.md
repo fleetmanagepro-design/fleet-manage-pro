@@ -99,7 +99,9 @@ Status of the MVP build. Updated at the end of every task.
   Print / Save as PDF. Links from the load page and the driver page (list of finalized/voided statements).
 - Migration `0004d_driver_statements`: statements + lines, written only through `finalize_driver_statement()` /
   `void_driver_statement()` which check role, week order, carried balance, delivered loads, one statement per load, totals.
-- Tests: 38 new pgTAP (291 total), 14 new unit (213 total), 3 new e2e (30 total).
+- Migration `0004e_per_mile_deductions`: truck/trailer rent by agreement — optional weekly amount + rate per mile over
+  free miles per week (loaded + empty miles, starting over each week).
+- Tests: 46 new pgTAP (299 total), 20 new unit (219 total), 4 new e2e (31 total).
 
 ## Known gaps / follow-ups
 - Dispatch board: no drag-and-drop; loads without appointment times don't appear on it (they're in the list).

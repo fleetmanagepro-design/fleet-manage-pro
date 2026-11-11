@@ -191,7 +191,9 @@ export async function addDeduction(_prev: ActionState, formData: FormData): Prom
     name: d.name,
     kind: d.kind,
     percent: d.kind === "percent_of_gross" ? d.percent : null,
-    amount_cents: d.kind === "fixed_weekly" ? d.amount : null,
+    amount_cents: d.kind === "fixed_weekly" ? d.amount : d.kind === "per_mile" ? nullable(d.amount) : null,
+    rate_cents_per_mile: d.kind === "per_mile" ? d.ratePerMile : null,
+    free_miles: d.kind === "per_mile" ? d.freeMiles : null,
     starts_on: d.startsOn,
     notes: nullable(d.notes),
   });

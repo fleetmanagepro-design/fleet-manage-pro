@@ -95,7 +95,12 @@ The owner-operator's percentage applies to that final value.
 **Driver extras** on a load (e.g. "unloaded the trailer himself" $100) are paid to the driver in full, no company fee.
 They are entered on the load by dispatch or accounting.
 
-**Deductions** are free-form per driver: name + either % of the week's gross (e.g. truck rent 10%) or a fixed amount per week (e.g. trailer rent $250).
+**Deductions** are free-form per driver, set by the agreement with each driver (amounts differ per driver): a name plus one of
+- % of the week's gross (e.g. truck rent 10%),
+- a fixed amount per week (e.g. trailer rent $250), or
+- **weekly + per mile** (decision of 11/11/2026): an optional fixed weekly amount plus a rate per mile for the miles over a
+  number of free miles per week. Example: truck rent $300/week + $0.10/mi over 2,000 mi; a 2,600-mile week → $300 + 600 × $0.10 = $360.
+  Miles are **all miles (loaded + empty)** of the week's paid loads; the free miles **start over every week**.
 They start on a date and are ended (never deleted), so old statements stay explainable.
 
 **Which rule applies:** the rule in effect on the load's first pickup day (company time zone).

@@ -1,5 +1,6 @@
 import { addDays, todayIn } from "@/lib/dates";
-import { type Cents, sumCents } from "@/lib/money";
+import { formatMiles } from "@/lib/miles";
+import { type Cents, formatCents, sumCents } from "@/lib/money";
 import type { LoadStatus } from "@/modules/dispatch/labels";
 import { driverLoadPay, roundDiv } from "./pay";
 import { type PayRule, describePayRule } from "./pay-rules";
@@ -9,7 +10,8 @@ import { type PayRule, describePayRule } from "./pay-rules";
  *   week: Monday–Sunday in company time; a load belongs to the week of its first pickup
  *   loads: owner-operator = value − company fee, company driver = miles × rate; extras paid in full
  *   deductions: % of the week's gross (gross = load value, before the company fee; for company drivers,
- *               their mileage pay), or a fixed amount per week; any deduction active on a day of the week applies
+ *               their mileage pay), a fixed amount per week, or a fixed amount (optional) + a rate per mile over
+ *               a number of free miles per week (all miles: loaded + empty); any deduction active on a day of the week applies
  *   balance: a negative net is carried into the next statement as a debt
  * Pure functions; amounts are integer cents.
  */
@@ -49,9 +51,12 @@ export type StatementLoad = {
 export type StatementDeduction = {
   id: string;
   name: string;
-  kind: "percent_of_gross" | "fixed_weekly";
+  kind: "percent_of_gross" | "fixed_weekly" | "per_mile";
   percent: number | null;
+  /** fixed_weekly: the amount; per_mile: the optional fixed weekly part. */
   amount_cents: Cents | null;
+  rate_cents_per_mile: number | null;
+  free_miles: number | null;
   starts_on: string;
   ends_on: string | null;
 };
@@ -103,6 +108,7 @@ export function buildStatement(input: {
   let fee = 0;
   let extras = 0;
   let loadCount = 0;
+  let weekTenths = 0;
 
   for (const l of input.loads) {
     if (l.status === "cancelled") continue;
@@ -119,6 +125,7 @@ export function buildStatement(input: {
     gross += isShare ? l.valueCents : pay.baseCents;
     fee += pay.companyFeeCents ?? 0;
     loadCount += 1;
+    weekTenths += Math.round((l.loaded_miles ?? 0) * 10) + Math.round((l.deadhead_miles ?? 0) * 10);
     lines.push({
       line_type: "load",
       load_id: l.loadId,
@@ -144,14 +151,11 @@ export function buildStatement(input: {
     .sort((a, b) => a.starts_on.localeCompare(b.starts_on) || a.name.localeCompare(b.name));
   let deductions = 0;
   for (const d of active) {
-    const amount = d.kind === "percent_of_gross"
-      ? roundDiv(gross * Math.round((d.percent ?? 0) * 100), 10_000)
-      : (d.amount_cents ?? 0);
+    const { amount, detail, miles } = deductionAmount(d, gross, weekTenths);
     deductions += amount;
     lines.push({
-      line_type: "deduction", load_id: null, deduction_id: d.id, description: d.name,
-      detail: d.kind === "percent_of_gross" ? `${pct(d.percent ?? 0)}% of gross` : "Weekly",
-      miles: null, value_cents: d.kind === "percent_of_gross" ? gross : null, fee_cents: null,
+      line_type: "deduction", load_id: null, deduction_id: d.id, description: d.name, detail,
+      miles, value_cents: d.kind === "percent_of_gross" ? gross : null, fee_cents: null,
       amount_cents: amount === 0 ? 0 : -amount,
     });
   }
@@ -169,6 +173,37 @@ export function buildStatement(input: {
     weekStart: input.weekStart, lines, loadCount, grossCents: gross, companyFeeCents: fee, extrasCents: extras,
     deductionsCents: deductions, carriedInCents: carried, netCents: net, pending, missingRule,
   };
+}
+
+/** One deduction for a week with `gross` cents and `weekTenths` tenths of a mile (loaded + empty). */
+export function deductionAmount(
+  d: Pick<StatementDeduction, "kind" | "percent" | "amount_cents" | "rate_cents_per_mile" | "free_miles">,
+  gross: Cents,
+  weekTenths: number,
+): { amount: Cents; detail: string; miles: number | null } {
+  if (d.kind === "percent_of_gross") {
+    return { amount: roundDiv(gross * Math.round((d.percent ?? 0) * 100), 10_000), detail: `${pct(d.percent ?? 0)}% of gross`, miles: null };
+  }
+  if (d.kind === "fixed_weekly") return { amount: d.amount_cents ?? 0, detail: "Weekly", miles: null };
+  const fixed = d.amount_cents ?? 0;
+  const freeTenths = Math.round((d.free_miles ?? 0) * 10);
+  const overTenths = Math.max(0, weekTenths - freeTenths);
+  const rate = d.rate_cents_per_mile ?? 0;
+  const perMile = `${formatMiles(overTenths / 10)} mi × ${formatCents(rate)}` + (freeTenths > 0 ? ` over ${formatMiles(freeTenths / 10)} mi` : "");
+  return {
+    amount: fixed + roundDiv(rate * overTenths, 10),
+    detail: `${fixed > 0 ? `${formatCents(fixed)} weekly + ` : ""}${perMile} (${formatMiles(weekTenths / 10)} mi this week)`,
+    miles: overTenths / 10,
+  };
+}
+
+/** "10% of gross", "$250.00 / week", "$300.00 / week + $0.10/mi over 2,000 mi a week" (driver page). */
+export function describeDeduction(d: Pick<StatementDeduction, "kind" | "percent" | "amount_cents" | "rate_cents_per_mile" | "free_miles">): string {
+  if (d.kind === "percent_of_gross") return `${pct(d.percent ?? 0)}% of gross`;
+  if (d.kind === "fixed_weekly") return `${formatCents(d.amount_cents ?? 0)} / week`;
+  const fixed = d.amount_cents ? `${formatCents(d.amount_cents)} / week + ` : "";
+  const free = d.free_miles ? ` over ${formatMiles(d.free_miles)} mi a week` : " (all miles)";
+  return `${fixed}${formatCents(d.rate_cents_per_mile ?? 0)}/mi${free}`;
 }
 
 /** Why a draft can't be finalized yet ([] = it can). */

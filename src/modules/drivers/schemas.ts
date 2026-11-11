@@ -6,6 +6,7 @@ import {
   optionalUpperText,
   optionalUsState,
 } from "@/lib/form-fields";
+import { parseMiles } from "@/lib/miles";
 import { MoneyError, parseDollarsToCents } from "@/lib/money";
 import {
   CDL_CLASSES,
@@ -99,6 +100,20 @@ const deductionBase = z.object({
 export const deductionSchema = z.discriminatedUnion("kind", [
   deductionBase.extend({ kind: z.literal("percent_of_gross"), percent: percentValue }),
   deductionBase.extend({ kind: z.literal("fixed_weekly"), amount: requiredCents("the weekly amount") }),
+  // Truck / trailer rent by agreement: optional fixed weekly part + rate per mile over free miles a week (decision of 11/11/2026)
+  deductionBase.extend({
+    kind: z.literal("per_mile"),
+    amount: z.preprocess(blank, requiredCents("the weekly amount").optional()),
+    ratePerMile: requiredCents("the rate per mile"),
+    freeMiles: z.preprocess((v) => blank(v) ?? "0", z.string().transform((v, ctx) => {
+      try {
+        return parseMiles(v);
+      } catch {
+        ctx.addIssue({ code: "custom", message: "Enter the free miles as a number (0 if every mile counts)" });
+        return z.NEVER;
+      }
+    })),
+  }),
 ], { error: "Choose how the deduction is calculated" });
 
 export const endDeductionSchema = z.object({ id: z.uuid(), driverId: z.uuid() });
