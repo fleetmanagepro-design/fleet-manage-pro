@@ -94,9 +94,8 @@ export function LoadForm({ draft, options, orgTimezone, today, canOverride }: Pr
           <FormField id="loadNumber" label="Load #" defaultValue={draft.loadNumber} errors={e.loadNumber}
             placeholder={draft.id ? undefined : "Automatic"} hint={draft.id ? undefined : "Leave empty for the next number."} />
         </div>
-        <div className="grid gap-3 sm:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-3">
           <FormField id="linehaul" label="Linehaul (USD)" inputMode="decimal" defaultValue={draft.linehaul} errors={e.linehaul} />
-          <FormField id="fuelSurcharge" label="Fuel surcharge (USD)" inputMode="decimal" defaultValue={draft.fuelSurcharge} errors={e.fuelSurcharge} />
           <FormField id="loadedMiles" label="Loaded miles" inputMode="decimal" defaultValue={draft.loadedMiles} errors={e.loadedMiles} />
           <FormField id="deadheadMiles" label="Deadhead miles" inputMode="decimal" defaultValue={draft.deadheadMiles} errors={e.deadheadMiles} />
         </div>

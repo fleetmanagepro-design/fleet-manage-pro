@@ -84,7 +84,7 @@ create temp table new_load (id uuid);
 grant all on new_load to authenticated;
 insert into new_load select public.save_load(
   jsonb_build_object('organization_id', 'a0000000-0000-4000-8000-000000000001', 'customer_id', (select a_customer from ids),
-    'truck_id', (select a_truck from ids), 'linehaul_cents', 120000, 'fuel_surcharge_cents', 18000, 'loaded_miles', 355),
+    'truck_id', (select a_truck from ids), 'linehaul_cents', 138000, 'loaded_miles', 355),
   pg_temp.stops(), array[(select a_driver from ids)]);
 select is((select load_number from public.loads where id = (select id from new_load)), '1066', 'load number assigned automatically');
 select is((select count(*)::int from public.load_stops where load_id = (select id from new_load)), 2, 'stops saved');

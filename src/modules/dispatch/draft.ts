@@ -8,7 +8,7 @@ const dollars = (cents: number) => formatCents(cents).replace("$", "");
 /** Empty form for a new load: one pickup and one delivery in the company's time zone. */
 export function newLoadDraft(orgTimezone: string): LoadDraft {
   return {
-    loadNumber: "", customerId: "", customerReference: "", linehaul: "", fuelSurcharge: "", loadedMiles: "",
+    loadNumber: "", customerId: "", customerReference: "", linehaul: "", loadedMiles: "",
     deadheadMiles: "", commodity: "", weightLbs: "", equipmentType: "", truckId: "", trailerId: "", driver1Id: "",
     driver2Id: "", notes: "",
     stops: [emptyStop("pickup", orgTimezone), emptyStop("delivery", orgTimezone)],
@@ -23,7 +23,6 @@ export function loadToDraft(load: LoadDetail): LoadDraft {
     customerId: load.customer_id,
     customerReference: load.customer_reference ?? "",
     linehaul: dollars(load.linehaul_cents),
-    fuelSurcharge: dollars(load.fuel_surcharge_cents),
     loadedMiles: load.loaded_miles === null ? "" : String(load.loaded_miles),
     deadheadMiles: String(load.deadhead_miles ?? ""),
     commodity: load.commodity ?? "",

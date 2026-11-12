@@ -304,7 +304,7 @@ begin
       delivered_at, cancelled_reason)
     values (org, customers[1 + n % array_length(customers, 1)], 'PO-' || (48100 + n * 7), st, truck.id,
       (select id from public.trailers where organization_id = org and unit_number = (5300 + 1 + n % 16)::text),
-      (miles * (210 + (n % 9) * 10))::bigint, (miles * 45)::bigint,
+      (miles * (210 + (n % 9) * 10))::bigint + (miles * 45)::bigint, 0,
       miles, 25 + (n % 6) * 18, (array['Paper products','Frozen food','Building materials','Dairy','Auto parts'])[1 + n % 5],
       36000 + (n % 5) * 1500, case when n % 16 between 10 and 15 then 'reefer' else 'dry_van' end::public.trailer_type,
       case when st = 'delivered' then pickup + interval '1 day' + (miles / 50) * interval '1 hour' end,
@@ -340,7 +340,7 @@ begin
       loaded_miles, deadhead_miles, delivered_at)
     values ('b0000000-0000-4000-8000-000000000001',
       (select id from public.customers where name = 'Platte River Grain'), 'delivered',
-      (select id from public.trucks where unit_number = 'PH' || n), 98000, 18000, 410, 40, now() - n * interval '5 days')
+      (select id from public.trucks where unit_number = 'PH' || n), 116000, 0, 410, 40, now() - n * interval '5 days')
     returning id into load_id;
     insert into public.load_stops (organization_id, load_id, sequence, stop_type, city, state, timezone) values
       ('b0000000-0000-4000-8000-000000000001', load_id, 1, 'pickup', 'Kearney', 'NE', 'America/Chicago'),
@@ -357,7 +357,7 @@ begin
   insert into public.loads (organization_id, customer_id, customer_reference, linehaul_cents, fuel_surcharge_cents,
     loaded_miles, deadhead_miles, commodity, equipment_type)
   values ('a0000000-0000-4000-8000-000000000001', (select id from public.customers where name = 'Great Lakes Paper Co.'),
-    'PO-77310', 145000, 21000, 480, 30, 'Paper rolls', 'dry_van')
+    'PO-77310', 166000, 0, 480, 30, 'Paper rolls', 'dry_van')
   returning id into v_load;
   insert into public.load_stops (organization_id, load_id, sequence, stop_type, facility_name, city, state, timezone,
     appointment_start, appointment_end)

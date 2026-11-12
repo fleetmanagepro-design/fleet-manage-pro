@@ -108,7 +108,7 @@ export async function saveLoad(_prev: ActionState, formData: FormData): Promise<
       truck_id: l.truckId ?? "",
       trailer_id: l.trailerId ?? "",
       linehaul_cents: l.linehaul,
-      fuel_surcharge_cents: l.fuelSurcharge,
+      fuel_surcharge_cents: 0, // no separate fuel surcharge (decision of 11/12/2026)
       loaded_miles: l.loadedMiles ?? null,
       deadhead_miles: l.deadheadMiles ?? 0,
       commodity: l.commodity ?? null,

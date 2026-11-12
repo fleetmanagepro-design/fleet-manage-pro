@@ -89,7 +89,6 @@ export const loadFormSchema = z
     customerId: z.uuid({ error: "Choose a customer" }),
     customerReference: optText(100),
     linehaul: dollars("linehaul", true),
-    fuelSurcharge: dollars("fuel surcharge", false),
     loadedMiles: miles("loaded miles"),
     deadheadMiles: miles("deadhead miles"),
     commodity: optText(200),

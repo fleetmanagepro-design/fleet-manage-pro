@@ -60,7 +60,7 @@ These definitions are used everywhere. Implement once in `calculations.ts`.
 - MVP: miles are entered manually per load (Mapbox auto-calculation is Phase 2).
 
 ### Revenue
-- **Load revenue** ("load value") = linehaul + fuel surcharge + accessorials billed to the customer (detention, layover, lumper reimbursement, TONU, on-time bonus, etc.) − late penalties the broker deducts.
+- **Load revenue** ("load value") = linehaul + accessorials billed to the customer (detention, layover, lumper reimbursement, TONU, on-time bonus, etc.) − late penalties the broker deducts.
 - Revenue is recognized on the load's **delivery date** for reporting periods.
 
 ### Costs — three levels
@@ -182,7 +182,7 @@ Fields: name, type (broker / shipper / both), MC number, contact(s), billing ema
 **AC**: cannot delete a customer with loads; can mark inactive.
 
 ### 4.4 Loads & dispatch
-**Load fields**: internal load #, customer, customer reference / PO #, rate confirmation document, linehaul amount, fuel surcharge, accessorials (list of type + amount), commodity, weight, equipment type, stops, assigned truck, trailer, driver(s), loaded miles, deadhead miles, notes.
+**Load fields**: internal load #, customer, customer reference / PO #, rate confirmation document, linehaul amount (all-in: there is no separate fuel surcharge — decision of 11/12/2026), accessorials (list of type + amount), commodity, weight, equipment type, stops, assigned truck, trailer, driver(s), loaded miles, deadhead miles, notes.
 
 **Stops**: ordered list; each has type (pickup / delivery), facility name, address, city, state, ZIP, appointment window, actual arrival / departure.
 
