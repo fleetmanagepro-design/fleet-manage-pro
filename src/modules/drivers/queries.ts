@@ -4,11 +4,15 @@ import type { Tables } from "@/lib/supabase/database.types";
 import type { DriverStatus } from "./labels";
 
 export type Driver = Tables<"drivers">;
-export type DriverWithTruck = Driver & { default_truck: { id: string; unit_number: string } | null };
+export type DriverWithTruck = Driver & {
+  default_truck: { id: string; unit_number: string } | null;
+  default_trailer: { id: string; unit_number: string } | null;
+};
 export type DriverPayRule = Tables<"driver_pay_rules">;
 export type DriverDeduction = Tables<"driver_deductions">;
 
-const WITH_TRUCK = "*, default_truck:trucks!drivers_organization_id_default_truck_id_fkey ( id, unit_number )";
+const WITH_TRUCK = `*, default_truck:trucks!drivers_organization_id_default_truck_id_fkey ( id, unit_number ),
+  default_trailer:trailers!drivers_organization_id_default_trailer_id_fkey ( id, unit_number )`;
 
 export async function listDrivers(
   organizationId: string,
@@ -71,6 +75,24 @@ export async function listDriversForTruck(organizationId: string, truckId: strin
 }
 
 /** Trucks a driver can be assigned to by default: not archived, not sold. */
+/** Trailers a driver can be given as default: not sold or archived (plus the current one). */
+export async function listAssignableTrailers(organizationId: string, includeId?: string | null) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("trailers")
+    .select("id, unit_number, trailer_type, status, archived_at")
+    .eq("organization_id", organizationId);
+  if (error) {
+    console.error("listAssignableTrailers failed", { error });
+    throw new Error("Could not load trailers.");
+  }
+  const collator = new Intl.Collator("en-US", { numeric: true });
+  return (data ?? [])
+    .filter((t) => t.id === includeId || (!t.archived_at && t.status !== "sold"))
+    .sort((a, b) => collator.compare(a.unit_number, b.unit_number))
+    .map((t) => ({ id: t.id, unitNumber: `${t.unit_number} · ${t.trailer_type.replace("_", " ")}` }));
+}
+
 export async function listAssignableTrucks(organizationId: string, includeId?: string | null) {
   const supabase = await createClient();
   const { data, error } = await supabase

@@ -14,6 +14,7 @@ import { TRAILER_TYPES, TRAILER_TYPE_LABELS } from "@/modules/fleet/labels";
 import { lookupZipCode, saveLoad } from "../actions";
 import { type LoadDraft, type StopDraft, emptyStop } from "../load-draft";
 import type { LoadFormOptions } from "../queries";
+import { type Assignment, pickDriver, pickTruck } from "../assignment";
 import { SPLIT_TIME_ZONE_STATES, applyFacility, applyZip, zip5 } from "../stop-lookup";
 import { FacilityInput } from "./facility-input";
 
@@ -23,8 +24,9 @@ export function LoadForm({ draft, options, orgTimezone, today, canOverride }: Pr
   const [state, action] = useActionState(saveLoad, initialActionState);
   const [pending, startTransition] = useTransition();
   const [stops, setStops] = useState<StopDraft[]>(draft.stops);
-  const [truckId, setTruckId] = useState(draft.truckId);
-  const [driver1Id, setDriver1Id] = useState(draft.driver1Id);
+  // Truck, trailer and driver follow each other (equipment is tied to the driver).
+  const [assignment, setAssignment] = useState<Assignment>({ truckId: draft.truckId, trailerId: draft.trailerId, driver1Id: draft.driver1Id });
+  const { truckId, trailerId, driver1Id } = assignment;
   const e = state.fieldErrors ?? {};
   const showOverride = canOverride && state.data?.needsOverride === "true";
 
@@ -54,17 +56,10 @@ export function LoadForm({ draft, options, orgTimezone, today, canOverride }: Pr
       return next;
     });
 
-  // Picking a truck suggests its default driver.
-  const onTruckChange = (id: string) => {
-    setTruckId(id);
-    if (!driver1Id) {
-      const d = options.drivers.find((x) => x.defaultTruckId === id);
-      if (d) setDriver1Id(d.id);
-    }
-  };
-
   const expired = (d: LoadFormOptions["drivers"][number]) =>
     (!!d.cdlExpiresOn && d.cdlExpiresOn < today) || (!!d.medicalCardExpiresOn && d.medicalCardExpiresOn < today);
+  const onDriverChange = (id: string) => setAssignment((a) => pickDriver(a, id, options.drivers));
+  const onTruckChange = (id: string) => setAssignment((a) => pickTruck(a, id, options.drivers.filter((d) => !expired(d))));
 
   return (
     <form
@@ -96,6 +91,47 @@ export function LoadForm({ draft, options, orgTimezone, today, canOverride }: Pr
           <FormField id="linehaul" label="Linehaul (USD)" inputMode="decimal" defaultValue={draft.linehaul} errors={e.linehaul} />
           <FormField id="loadedMiles" label="Loaded miles" inputMode="decimal" defaultValue={draft.loadedMiles} errors={e.loadedMiles} />
           <FormField id="deadheadMiles" label="Deadhead miles" inputMode="decimal" defaultValue={draft.deadheadMiles} errors={e.deadheadMiles} />
+        </div>
+      </section>
+
+      <section className="grid gap-3">
+        <h2 className="text-sm font-medium">Assignment</h2>
+        <p className="-mt-2 text-xs text-muted-foreground">Picking the driver fills in their truck and trailer; you can still change them.</p>
+        <div className="grid gap-3 sm:grid-cols-4">
+          <FormField id="driver1Id" label="Driver" errors={e.driver1Id}>
+            <NativeSelect id="driver1Id" name="driver1Id" value={driver1Id} className="w-full" onChange={(ev) => onDriverChange(ev.target.value)}
+              aria-invalid={e.driver1Id ? true : undefined}>
+              <NativeSelectOption value="">Not assigned</NativeSelectOption>
+              {options.drivers.map((d) => (
+                <NativeSelectOption key={d.id} value={d.id} disabled={expired(d)}>
+                  {d.label}{expired(d) ? " — CDL/medical expired" : ""}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </FormField>
+          <FormField id="truckId" label="Truck" errors={e.truckId}>
+            <NativeSelect id="truckId" name="truckId" value={truckId} className="w-full" onChange={(ev) => onTruckChange(ev.target.value)}>
+              <NativeSelectOption value="">Not assigned</NativeSelectOption>
+              {options.trucks.map((t) => <NativeSelectOption key={t.id} value={t.id}>{t.label}</NativeSelectOption>)}
+            </NativeSelect>
+          </FormField>
+          <FormField id="trailerId" label="Trailer" errors={e.trailerId}>
+            <NativeSelect id="trailerId" name="trailerId" value={trailerId} className="w-full"
+              onChange={(ev) => setAssignment((a) => ({ ...a, trailerId: ev.target.value }))}>
+              <NativeSelectOption value="">Not assigned</NativeSelectOption>
+              {options.trailers.map((t) => <NativeSelectOption key={t.id} value={t.id}>{t.label}</NativeSelectOption>)}
+            </NativeSelect>
+          </FormField>
+          <FormField id="driver2Id" label="Team driver (optional)" errors={e.driver2Id}>
+            <NativeSelect id="driver2Id" name="driver2Id" defaultValue={draft.driver2Id} className="w-full">
+              <NativeSelectOption value="">None</NativeSelectOption>
+              {options.drivers.map((d) => (
+                <NativeSelectOption key={d.id} value={d.id} disabled={expired(d)}>
+                  {d.label}{expired(d) ? " — CDL/medical expired" : ""}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </FormField>
         </div>
       </section>
 
@@ -190,44 +226,6 @@ export function LoadForm({ draft, options, orgTimezone, today, canOverride }: Pr
         </div>
       </section>
 
-      <section className="grid gap-3">
-        <h2 className="text-sm font-medium">Assignment</h2>
-        <div className="grid gap-3 sm:grid-cols-4">
-          <FormField id="truckId" label="Truck" errors={e.truckId}>
-            <NativeSelect id="truckId" name="truckId" value={truckId} className="w-full" onChange={(ev) => onTruckChange(ev.target.value)}>
-              <NativeSelectOption value="">Not assigned</NativeSelectOption>
-              {options.trucks.map((t) => <NativeSelectOption key={t.id} value={t.id}>{t.label}</NativeSelectOption>)}
-            </NativeSelect>
-          </FormField>
-          <FormField id="trailerId" label="Trailer" errors={e.trailerId}>
-            <NativeSelect id="trailerId" name="trailerId" defaultValue={draft.trailerId} className="w-full">
-              <NativeSelectOption value="">Not assigned</NativeSelectOption>
-              {options.trailers.map((t) => <NativeSelectOption key={t.id} value={t.id}>{t.label}</NativeSelectOption>)}
-            </NativeSelect>
-          </FormField>
-          <FormField id="driver1Id" label="Driver" errors={e.driver1Id}>
-            <NativeSelect id="driver1Id" name="driver1Id" value={driver1Id} className="w-full" onChange={(ev) => setDriver1Id(ev.target.value)}
-              aria-invalid={e.driver1Id ? true : undefined}>
-              <NativeSelectOption value="">Not assigned</NativeSelectOption>
-              {options.drivers.map((d) => (
-                <NativeSelectOption key={d.id} value={d.id} disabled={expired(d)}>
-                  {d.label}{expired(d) ? " — CDL/medical expired" : ""}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </FormField>
-          <FormField id="driver2Id" label="Team driver (optional)" errors={e.driver2Id}>
-            <NativeSelect id="driver2Id" name="driver2Id" defaultValue={draft.driver2Id} className="w-full">
-              <NativeSelectOption value="">None</NativeSelectOption>
-              {options.drivers.map((d) => (
-                <NativeSelectOption key={d.id} value={d.id} disabled={expired(d)}>
-                  {d.label}{expired(d) ? " — CDL/medical expired" : ""}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </FormField>
-        </div>
-      </section>
 
       <section className="grid gap-3">
         <h2 className="text-sm font-medium">Freight</h2>

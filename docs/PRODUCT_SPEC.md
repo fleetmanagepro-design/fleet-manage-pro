@@ -241,13 +241,16 @@ Trailer detail: maintenance history, tires by position, maintenance CPM, total c
 **AC**: trailer maintenance CPM is visible per trailer and comparable across the fleet.
 
 ### 4.7 Drivers
-Fields: name, phone, email, type (company driver / owner-operator / team), hire date, status, CDL number + state + class + expiry, medical card expiry, pay rule (see §3), default truck, emergency contact, documents.
+Fields: name, phone, email, type (company driver / owner-operator / team), hire date, status, CDL number + state + class + expiry, medical card expiry, pay rule (see §3), default truck, default trailer, emergency contact, documents.
 
 **Rules** (decided 11/09/2026)
 - Drivers are never deleted: set status Inactive/Terminated, or archive.
 - Pay rules are history. A raise is a new rule with an "effective from" date; a rule that is already in effect can't be changed or deleted (only future rules can). The rule used for a load is the latest one effective on or before the delivery date.
 - Team drivers: each driver is paid with their own rule on the load's miles (e.g. $0.32/mi × all miles each); the rate is not split.
 - The default truck is set on the driver; a truck shows the drivers who have it as default (two for a team).
+- Equipment is tied to the driver (decision of 11/12/2026): the driver also has a default trailer. On a load (and on the
+  dispatch board), picking the driver fills in their truck and trailer; picking a truck first suggests its driver and that
+  driver's trailer. A truck or trailer chosen by hand is kept. On the load form, Assignment comes before Stops.
 - Who sees pay: Owner, Admin, Accounting. Dispatch and Maintenance see drivers without pay; Viewers see no drivers.
 
 **AC**: CDL and medical card expiry produce alerts at 60 and 30 days and on expiry; assigning an expired driver to a load shows a blocking warning.

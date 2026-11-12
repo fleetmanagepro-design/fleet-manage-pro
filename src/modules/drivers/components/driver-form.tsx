@@ -42,13 +42,15 @@ function toForm(d: Driver): Record<string, string> {
   const v = {
     firstName: d.first_name, lastName: d.last_name, phone: d.phone, email: d.email, driverType: d.driver_type,
     hireDate: d.hire_date, status: d.status, cdlNumber: d.cdl_number, cdlState: d.cdl_state, cdlClass: d.cdl_class,
-    cdlExpiresOn: d.cdl_expires_on, medicalCardExpiresOn: d.medical_card_expires_on, defaultTruckId: d.default_truck_id,
+    cdlExpiresOn: d.cdl_expires_on, medicalCardExpiresOn: d.medical_card_expires_on, defaultTruckId: d.default_truck_id, defaultTrailerId: d.default_trailer_id,
     emergencyContactName: d.emergency_contact_name, emergencyContactPhone: d.emergency_contact_phone, notes: d.notes,
   };
   return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, x ?? ""]));
 }
 
-export function DriverForm({ driver, trucks }: { driver?: Driver; trucks: { id: string; unitNumber: string }[] }) {
+type Equipment = { id: string; unitNumber: string }[];
+
+export function DriverForm({ driver, trucks, trailers }: { driver?: Driver; trucks: Equipment; trailers: Equipment }) {
   const [state, action] = useActionState(driver ? updateDriver : createDriver, initialActionState);
   const e = state.fieldErrors ?? {};
   const v = state.values ?? (driver ? toForm(driver) : {});
@@ -86,8 +88,13 @@ export function DriverForm({ driver, trucks }: { driver?: Driver; trucks: { id: 
             defaultValue={v.medicalCardExpiresOn} errors={e.medicalCardExpiresOn} />
         </div>
       </fieldset>
-      <Select id="defaultTruckId" label="Default truck" value={v.defaultTruckId} errors={e.defaultTruckId} empty="None"
-        options={trucks.map((t) => [t.id, t.unitNumber] as const)} />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Select id="defaultTruckId" label="Default truck" value={v.defaultTruckId} errors={e.defaultTruckId} empty="None"
+          options={trucks.map((t) => [t.id, t.unitNumber] as const)} />
+        <Select id="defaultTrailerId" label="Default trailer" value={v.defaultTrailerId} errors={e.defaultTrailerId} empty="None"
+          options={trailers.map((t) => [t.id, t.unitNumber] as const)} />
+      </div>
+      <p className="-mt-2 text-xs text-muted-foreground">Picking this driver on a load fills in the truck and trailer.</p>
       <div className="grid gap-3 sm:grid-cols-2">
         <FormField id="emergencyContactName" label="Emergency contact" defaultValue={v.emergencyContactName}
           errors={e.emergencyContactName} />

@@ -38,6 +38,7 @@ export const driverSchema = z
     cdlExpiresOn: optionalCalendarDate,
     medicalCardExpiresOn: optionalCalendarDate,
     defaultTruckId: z.preprocess(blank, z.uuid().optional()),
+    defaultTrailerId: z.preprocess(blank, z.uuid().optional()),
     emergencyContactName: optionalText(200),
     emergencyContactPhone: optionalText(30),
     notes: optionalText(5000),

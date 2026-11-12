@@ -79,6 +79,11 @@ async function DriverDetail({ params }: Pick<PageProps<"/drivers/[id]">, "params
                   {driver.default_truck.unit_number}
                 </Link>
               ) : null],
+              ["Default trailer", driver.default_trailer ? (
+                <Link key="trailer" href={`/trailers/${driver.default_trailer.id}`} className="hover:underline">
+                  {driver.default_trailer.unit_number}
+                </Link>
+              ) : null],
               ["Emergency contact", [driver.emergency_contact_name, driver.emergency_contact_phone].filter(Boolean).join(" · ") || null],
               ["Notes", driver.notes],
             ]}

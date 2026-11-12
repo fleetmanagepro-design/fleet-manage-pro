@@ -149,7 +149,7 @@ export async function loadFormOptions(organizationId: string, current?: LoadDeta
     supabase.from("trailers").select("id, unit_number, trailer_type, status, archived_at").eq("organization_id", organizationId),
     supabase
       .from("drivers")
-      .select("id, first_name, last_name, status, archived_at, cdl_expires_on, medical_card_expires_on, default_truck_id")
+      .select("id, first_name, last_name, status, archived_at, cdl_expires_on, medical_card_expires_on, default_truck_id, default_trailer_id")
       .eq("organization_id", organizationId)
       .order("last_name"),
     // Remembered shippers / receivers (0004g), most used first; a small fleet has a few hundred.
@@ -188,6 +188,7 @@ export async function loadFormOptions(organizationId: string, current?: LoadDeta
         id: d.id,
         label: `${d.first_name} ${d.last_name}`,
         defaultTruckId: d.default_truck_id,
+        defaultTrailerId: d.default_trailer_id,
         cdlExpiresOn: d.cdl_expires_on,
         medicalCardExpiresOn: d.medical_card_expires_on,
       })),
