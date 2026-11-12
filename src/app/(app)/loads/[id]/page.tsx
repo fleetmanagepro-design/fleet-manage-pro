@@ -110,11 +110,6 @@ async function LoadDetailPage({ params }: Pick<PageProps<"/loads/[id]">, "params
                     <TableCell className="text-right tabular-nums">{formatCents(load.linehaul_cents)}</TableCell>
                     <TableCell />
                   </TableRow>
-                  <TableRow>
-                    <TableCell>Fuel surcharge</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatCents(load.fuel_surcharge_cents)}</TableCell>
-                    <TableCell />
-                  </TableRow>
                   {load.accessorials.map((a) => (
                     <TableRow key={a.id} data-testid={`accessorial-${a.type}`}>
                       <TableCell>

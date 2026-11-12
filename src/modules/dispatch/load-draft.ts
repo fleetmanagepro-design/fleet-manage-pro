@@ -19,7 +19,6 @@ export type LoadDraft = {
   customerId: string;
   customerReference: string;
   linehaul: string;
-  fuelSurcharge: string;
   loadedMiles: string;
   deadheadMiles: string;
   commodity: string;

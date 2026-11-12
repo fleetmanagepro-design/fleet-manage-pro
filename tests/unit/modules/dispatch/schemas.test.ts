@@ -7,7 +7,7 @@ const stop = (o: Record<string, string> = {}) => ({ stopType: "pickup", city: "O
 describe("loadFormSchema", () => {
   const load = (o: Record<string, unknown> = {}) =>
     loadFormSchema.safeParse({
-      customerId: C, linehaul: "1,850.00", fuelSurcharge: "", loadedMiles: "612.5", deadheadMiles: "",
+      customerId: C, linehaul: "1,850.00", loadedMiles: "612.5", deadheadMiles: "",
       stops: [stop({ appointmentStart: "2026-12-01T07:00" }), stop({ stopType: "delivery", city: "Denver", state: "CO", timezone: "America/Denver", appointmentStart: "2026-12-02T09:30" })],
       ...o,
     });
@@ -15,7 +15,7 @@ describe("loadFormSchema", () => {
   it("parses money in cents, miles exactly and stop times to UTC", () => {
     const r = load();
     expect(r.success).toBe(true);
-    expect(r.data).toMatchObject({ linehaul: 185000, fuelSurcharge: 0, loadedMiles: 612.5 });
+    expect(r.data).toMatchObject({ linehaul: 185000, loadedMiles: 612.5 });
     expect(r.data?.stops[0].appointmentStartUtc).toBe("2026-12-01T13:00:00.000Z");
     expect(r.data?.stops[1].appointmentStartUtc).toBe("2026-12-02T16:30:00.000Z");
   });

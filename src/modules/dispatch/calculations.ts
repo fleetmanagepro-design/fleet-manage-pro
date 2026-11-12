@@ -20,7 +20,8 @@ export type LoadMoney = {
 const toTenths = (miles: number | null | undefined) => Math.round((miles ?? 0) * 10);
 
 /**
- * Load value (revenue) = linehaul + fuel surcharge + accessorials billed to the customer
+ * Load value (revenue) = linehaul + accessorials billed to the customer. There is no separate fuel surcharge
+ * (decision of 11/12/2026): new and edited loads save 0; the column stays in the sum for older rows.
  * (e.g. on-time bonus) − late penalties the broker deducts. Can be negative only in theory.
  */
 export function loadRevenueCents(load: LoadMoney, accessorials: readonly AccessorialLike[] = []): Cents {

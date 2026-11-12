@@ -21,8 +21,8 @@ test("dispatcher creates a 2-stop load and assigns it in under a minute", async 
   await page.getByRole("link", { name: "New load" }).click();
 
   await page.getByLabel("Customer", { exact: true }).selectOption({ label: "Blue Prairie Logistics" });
-  await page.getByLabel("Linehaul (USD)").fill("1,850.00");
-  await page.getByLabel("Fuel surcharge (USD)").fill("310");
+  await page.getByLabel("Linehaul (USD)").fill("2,160.00");
+  await expect(page.getByLabel("Fuel surcharge (USD)")).toHaveCount(0); // removed 11/12/2026
   await page.getByLabel("Loaded miles").fill("612.5");
   await page.getByLabel("Deadhead miles").fill("37.5");
   await fillStop(page, 1, "Omaha", "NE", `${chicagoDate(20)}T07:00`);
