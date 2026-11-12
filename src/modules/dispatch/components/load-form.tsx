@@ -82,7 +82,7 @@ export function LoadForm({ draft, options, orgTimezone, today, canOverride }: Pr
 
       <section className="grid gap-3">
         <h2 className="text-sm font-medium">Customer &amp; rate</h2>
-        <div className="grid gap-3 sm:grid-cols-[1fr_12rem_10rem]">
+        <div className="grid gap-3 sm:grid-cols-[1fr_14rem]">
           <FormField id="customerId" label="Customer" errors={e.customerId}>
             <NativeSelect id="customerId" name="customerId" defaultValue={draft.customerId} className="w-full"
               aria-invalid={e.customerId ? true : undefined}>
@@ -91,8 +91,6 @@ export function LoadForm({ draft, options, orgTimezone, today, canOverride }: Pr
             </NativeSelect>
           </FormField>
           <FormField id="customerReference" label="Customer ref / PO #" defaultValue={draft.customerReference} errors={e.customerReference} />
-          <FormField id="loadNumber" label="Load #" defaultValue={draft.loadNumber} errors={e.loadNumber}
-            placeholder={draft.id ? undefined : "Automatic"} hint={draft.id ? undefined : "Leave empty for the next number."} />
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
           <FormField id="linehaul" label="Linehaul (USD)" inputMode="decimal" defaultValue={draft.linehaul} errors={e.linehaul} />
@@ -164,13 +162,17 @@ export function LoadForm({ draft, options, orgTimezone, today, canOverride }: Pr
                     </NativeSelect>
                   </FormField>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-[1fr_1fr_12rem]">
                   <FormField id={id("start")} name={`stops.${i}.appointmentStart`} label="Appointment from (local)" type="datetime-local"
                     value={s.appointmentStart} onChange={(ev) => updateStop(i, { appointmentStart: ev.target.value })}
                     errors={se("appointmentStart")} />
                   <FormField id={id("end")} name={`stops.${i}.appointmentEnd`} label="Appointment to (local, optional)" type="datetime-local"
                     value={s.appointmentEnd} onChange={(ev) => updateStop(i, { appointmentEnd: ev.target.value })}
                     errors={se("appointmentEnd")} />
+                  {s.stopType === "pickup" && (
+                    <FormField id={id("ref")} name={`stops.${i}.referenceNumber`} label="Pickup #" value={s.referenceNumber}
+                      onChange={(ev) => updateStop(i, { referenceNumber: ev.target.value })} errors={se("referenceNumber")} />
+                  )}
                 </div>
               </li>
             );

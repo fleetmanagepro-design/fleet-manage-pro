@@ -88,6 +88,7 @@ async function LoadDetailPage({ params }: Pick<PageProps<"/loads/[id]">, "params
                     {s.sequence}. {s.stop_type === "pickup" ? "Pickup" : "Delivery"}
                   </span>
                   <span className="font-medium">{s.facility_name ?? `${s.city}, ${s.state}`}</span>
+                  {s.reference_number && <span data-testid={`load-stop-${s.sequence}-ref`}>Pickup # {s.reference_number}</span>}
                   <span className="text-muted-foreground">
                     {[s.address_line1, `${s.city}, ${s.state}`, s.zip].filter(Boolean).join(" · ")}
                   </span>

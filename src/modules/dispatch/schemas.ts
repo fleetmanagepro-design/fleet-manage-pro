@@ -63,6 +63,7 @@ const stopSchema = z
     timezone: z.string().min(1, { error: "Choose a time zone" }),
     appointmentStart: localTime,
     appointmentEnd: localTime,
+    referenceNumber: optText(50),
   })
   .transform((s, ctx) => {
     const toUtc = (v: string | undefined) => {
@@ -85,7 +86,6 @@ const stopSchema = z
 export const loadFormSchema = z
   .object({
     id: optUuid,
-    loadNumber: optText(30),
     customerId: z.uuid({ error: "Choose a customer" }),
     customerReference: optText(100),
     linehaul: dollars("linehaul", true),

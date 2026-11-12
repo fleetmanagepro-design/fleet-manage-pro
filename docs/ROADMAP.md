@@ -117,6 +117,11 @@ Status of the MVP build. Updated at the end of every task.
 - The load form has only Linehaul; the fuel surcharge field and row are gone. Loads saved from now on store 0. The owner
   chose not to touch older loads.
 
+### Loads: pickup number; automatic load numbers only (11/12/2026)
+- Pickup stops have a **Pickup #** field, shown on the load page.
+- **Load #** is no longer on the form. Every new load gets the next number, and the database refuses to change one
+  (migration `0004h_pickup_number_auto_load_number`).
+
 ## Open questions for the owner (asked 11/11/2026, answer pending)
 1. **Team loads (two owner-operators on one load):** how is the load value split between them, e.g. 50/50 before the
    company fee, or another split? Today each driver is paid on their own rule from the full load value (2 × 88%).

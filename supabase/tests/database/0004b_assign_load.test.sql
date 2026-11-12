@@ -12,12 +12,16 @@ create function pg_temp.logout() returns void language sql as $$
   select set_config('request.jwt.claims', '', true);
 $$;
 
--- An unassigned planned load in Org A
-insert into public.loads (organization_id, customer_id, load_number)
-values ('a0000000-0000-4000-8000-000000000001', (select id from public.customers where name = 'Riverbend Foods'), 'UN-1');
+-- An unassigned planned load in Org A (its number is assigned automatically)
+create temp table new_load as
+with l as (
+  insert into public.loads (organization_id, customer_id)
+  values ('a0000000-0000-4000-8000-000000000001', (select id from public.customers where name = 'Riverbend Foods'))
+  returning id
+) select id from l;
 
 create temp table ids as select
-  (select id from public.loads where load_number = 'UN-1') as load,
+  (select id from new_load) as load,
   (select id from public.loads where organization_id = 'b0000000-0000-4000-8000-000000000001' limit 1) as b_load,
   (select id from public.trucks where organization_id = 'a0000000-0000-4000-8000-000000000001' and unit_number = '110') as truck,
   (select id from public.trucks where organization_id = 'b0000000-0000-4000-8000-000000000001' and unit_number = 'PH2') as b_truck,

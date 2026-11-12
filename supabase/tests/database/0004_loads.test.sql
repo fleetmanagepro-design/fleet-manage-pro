@@ -96,16 +96,17 @@ select throws_ok($$ insert into public.loads (organization_id, customer_id, stat
   '42501', null, 'status cannot be set directly on insert');
 select throws_ok($$ update public.loads set status = 'delivered' where id = (select id from new_load) $$,
   '42501', null, 'status cannot be updated directly');
-select throws_ok($$ select public.save_load(
-                    jsonb_build_object('organization_id', 'a0000000-0000-4000-8000-000000000001',
-                                       'customer_id', (select a_customer from ids), 'load_number', '1066'),
-                    pg_temp.stops(), '{}') $$,
-  '23505', null, 'load numbers are unique per organization');
+-- Load numbers are always automatic and never change (0004h, decision of 11/12/2026).
 select lives_ok($$ select public.save_load(
                    jsonb_build_object('organization_id', 'a0000000-0000-4000-8000-000000000001',
                                       'customer_id', (select a_customer from ids), 'load_number', 'LK-77'),
-                   pg_temp.stops(), '{}') $$,
-  'a load number can be entered by hand');
+                   jsonb_set(pg_temp.stops(), '{0,reference_number}', '"PU-55821"'), '{}') $$,
+  'a load number sent by the caller is ignored');
+select is((select count(*)::int from public.loads where load_number = 'LK-77'), 0, 'no hand-typed load number');
+select is((select reference_number from public.load_stops s join public.loads l on l.id = s.load_id
+           where l.load_number = '1067' and s.sequence = 1), 'PU-55821', 'the pickup number is saved on the stop');
+select throws_ok($$ update public.loads set load_number = 'X-1' where id = (select id from new_load) $$,
+  '42501', null, 'users cannot change a load number');
 select throws_ok($$ select public.save_load(
                     jsonb_build_object('organization_id', 'a0000000-0000-4000-8000-000000000001', 'customer_id', (select a_dnu_customer from ids)),
                     pg_temp.stops(), '{}') $$,
@@ -126,7 +127,7 @@ select throws_ok($$ select public.save_load(
 -- =============================================================================
 -- Status changes
 -- =============================================================================
-select throws_ok($$ select public.change_load_status((select id from public.loads where load_number = 'LK-77'), 'dispatched') $$,
+select throws_ok($$ select public.change_load_status((select id from public.loads where load_number = '1067'), 'dispatched') $$,
   'P0001', 'Assign a truck and a driver and add a pickup and a delivery first', 'dispatching needs truck, driver, pickup and delivery');
 select lives_ok($$ select public.change_load_status((select id from new_load), 'dispatched') $$, 'dispatch a ready load');
 select lives_ok($$ select public.change_load_status((select id from new_load), 'in_transit') $$, 'skip forward to in transit');
@@ -155,6 +156,9 @@ select is((select count(*)::int from public.load_events where load_id = (select 
 select throws_ok($$ select public.record_load_override((select id from new_load), 'Truck free earlier') $$,
   '42501', null, 'dispatcher cannot override the overlap warning');
 select pg_temp.logout();
+
+select throws_ok($$ update public.loads set load_number = 'X-1' where id = (select id from new_load) $$,
+  'P0001', 'Load numbers are assigned automatically and can''t be changed', 'not even the database owner changes a load number');
 
 select pg_temp.login('10000000-0000-4000-8000-000000000002'); -- admin
 select lives_ok($$ select public.record_load_override((select id from new_load), 'Truck free earlier') $$, 'admin can record an override');

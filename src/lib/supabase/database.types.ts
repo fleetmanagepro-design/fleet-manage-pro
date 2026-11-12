@@ -371,14 +371,14 @@ isOneToOne: false
                   ]
                 },"load_stops": {
                   Row: {
-                    "address_line1": string | null,"appointment_end": string | null,"appointment_start": string | null,"arrived_at": string | null,"city": string,"created_at": string,"departed_at": string | null,"facility_name": string | null,"id": string,"load_id": string,"notes": string | null,"organization_id": string,"sequence": number,"state": string,"stop_type": Database["public"]['Enums']["stop_type"],"timezone": string,"updated_at": string,"zip": string | null
+                    "address_line1": string | null,"appointment_end": string | null,"appointment_start": string | null,"arrived_at": string | null,"city": string,"created_at": string,"departed_at": string | null,"facility_name": string | null,"id": string,"load_id": string,"notes": string | null,"organization_id": string,"reference_number": string | null,"sequence": number,"state": string,"stop_type": Database["public"]['Enums']["stop_type"],"timezone": string,"updated_at": string,"zip": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "address_line1"?: string | null,"appointment_end"?: string | null,"appointment_start"?: string | null,"arrived_at"?: string | null,"city": string,"created_at"?: string,"departed_at"?: string | null,"facility_name"?: string | null,"id"?: string,"load_id": string,"notes"?: string | null,"organization_id": string,"sequence": number,"state": string,"stop_type": Database["public"]['Enums']["stop_type"],"timezone": string,"updated_at"?: string,"zip"?: string | null
+                    "address_line1"?: string | null,"appointment_end"?: string | null,"appointment_start"?: string | null,"arrived_at"?: string | null,"city": string,"created_at"?: string,"departed_at"?: string | null,"facility_name"?: string | null,"id"?: string,"load_id": string,"notes"?: string | null,"organization_id": string,"reference_number"?: string | null,"sequence": number,"state": string,"stop_type": Database["public"]['Enums']["stop_type"],"timezone": string,"updated_at"?: string,"zip"?: string | null
                   }
                   Update: {
-                    "address_line1"?: string | null,"appointment_end"?: string | null,"appointment_start"?: string | null,"arrived_at"?: string | null,"city"?: string,"created_at"?: string,"departed_at"?: string | null,"facility_name"?: string | null,"id"?: string,"load_id"?: string,"notes"?: string | null,"organization_id"?: string,"sequence"?: number,"state"?: string,"stop_type"?: Database["public"]['Enums']["stop_type"],"timezone"?: string,"updated_at"?: string,"zip"?: string | null
+                    "address_line1"?: string | null,"appointment_end"?: string | null,"appointment_start"?: string | null,"arrived_at"?: string | null,"city"?: string,"created_at"?: string,"departed_at"?: string | null,"facility_name"?: string | null,"id"?: string,"load_id"?: string,"notes"?: string | null,"organization_id"?: string,"reference_number"?: string | null,"sequence"?: number,"state"?: string,"stop_type"?: Database["public"]['Enums']["stop_type"],"timezone"?: string,"updated_at"?: string,"zip"?: string | null
                   }
                   Relationships: [
                     {
