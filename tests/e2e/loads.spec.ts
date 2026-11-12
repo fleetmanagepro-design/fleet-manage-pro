@@ -27,6 +27,10 @@ test("dispatcher creates a 2-stop load and assigns it in under a minute", async 
   await page.getByLabel("Deadhead miles").fill("37.5");
   await fillStop(page, 1, "Omaha", "NE", `${chicagoDate(20)}T07:00`);
   await fillStop(page, 2, "Denver", "CO", `${chicagoDate(21)}T09:30`);
+  // Load numbers are automatic only; pickups carry a pickup number (11/12/2026)
+  await expect(page.getByLabel("Load #")).toHaveCount(0);
+  await page.getByTestId("stop-1").getByLabel("Pickup #").fill("PU-48213");
+  await expect(page.getByTestId("stop-2").getByLabel("Pickup #")).toHaveCount(0);
   // Choosing the truck suggests its default driver
   await page.getByLabel("Truck", { exact: true }).selectOption({ label: "108" });
   await expect(page.getByLabel("Driver", { exact: true })).not.toHaveValue("");
@@ -39,6 +43,7 @@ test("dispatcher creates a 2-stop load and assigns it in under a minute", async 
   // Denver stop shown in Mountain time, Omaha in Central
   await expect(page.getByTestId("load-stop-1")).toContainText("07:00 CST");
   await expect(page.getByTestId("load-stop-2")).toContainText("09:30 MST");
+  await expect(page.getByTestId("load-stop-1-ref")).toHaveText("Pickup # PU-48213");
 
   // Status: forward freely, back only with a reason, delivered needs miles
   await page.getByLabel("Move to").selectOption("in_transit");

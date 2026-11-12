@@ -41,6 +41,7 @@ export function loadToDraft(load: LoadDetail): LoadDraft {
       city: s.city,
       state: s.state,
       zip: s.zip ?? "",
+      referenceNumber: s.reference_number ?? "",
       timezone: s.timezone,
       appointmentStart: s.appointment_start ? utcToZonedLocal(s.appointment_start, s.timezone) : "",
       appointmentEnd: s.appointment_end ? utcToZonedLocal(s.appointment_end, s.timezone) : "",

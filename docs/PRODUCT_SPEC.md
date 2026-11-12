@@ -182,7 +182,7 @@ Fields: name, type (broker / shipper / both), MC number, contact(s), billing ema
 **AC**: cannot delete a customer with loads; can mark inactive.
 
 ### 4.4 Loads & dispatch
-**Load fields**: internal load #, customer, customer reference / PO #, rate confirmation document, linehaul amount (all-in: there is no separate fuel surcharge — decision of 11/12/2026), accessorials (list of type + amount), commodity, weight, equipment type, stops, assigned truck, trailer, driver(s), loaded miles, deadhead miles, notes.
+**Load fields**: internal load #, customer, customer reference / PO #, pickup # per pickup stop, rate confirmation document, linehaul amount (all-in: there is no separate fuel surcharge — decision of 11/12/2026), accessorials (list of type + amount), commodity, weight, equipment type, stops, assigned truck, trailer, driver(s), loaded miles, deadhead miles, notes.
 
 **Stops**: ordered list; each has type (pickup / delivery), facility name, address, city, state, ZIP, appointment window, actual arrival / departure.
 
@@ -200,7 +200,8 @@ Fields: name, type (broker / shipper / both), MC number, contact(s), billing ema
 - Every status change creates a `load_events` record (who, when, from, to).
 
 **Decisions** (11/10/2026)
-- Load numbers are assigned automatically per company (1001, 1002, …) and can be changed; they stay unique.
+- Load numbers are assigned automatically per company (1001, 1002, …), are unique, and can't be typed or changed by hand (decision of 11/12/2026, replacing "can be changed").
+- Each pickup stop has a **Pickup #** (the shipper's pickup number); deliveries don't (decision of 11/12/2026).
 - Status moves forward freely. Moving back (or reactivating a cancelled load) is allowed for Owner, Admin and Dispatcher with a required reason, recorded in the load history. A delivered load must be moved back before it can be cancelled.
 - Stop appointments are entered in the facility's local time; the time zone is suggested from the stop's state and can be changed.
 - Dispatching needs a truck, a driver, a pickup and a delivery. A do-not-use or archived customer, a sold/archived truck or trailer, and an inactive driver or one with an expired CDL/medical card can't be put on an open load.

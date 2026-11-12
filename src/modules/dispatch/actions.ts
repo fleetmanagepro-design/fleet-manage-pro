@@ -49,9 +49,6 @@ function dbError(action: string, error: PostgrestError): ActionState {
       ? { status: "error", message: "Please fix the highlighted fields.", fieldErrors: { [known.field]: [known.message] } }
       : errorState(known.message);
   }
-  if (error.code === "23505" && error.message.includes("loads_number_uniq")) {
-    return { status: "error", message: "Please fix the highlighted fields.", fieldErrors: { loadNumber: ["Another load already has this number."] } };
-  }
   if (error.code === "42501") return errorState(NO_PERMISSION);
   console.error(`[dispatch.${action}]`, { error });
   return errorState(UNEXPECTED);
@@ -75,6 +72,8 @@ export async function saveLoad(_prev: ActionState, formData: FormData): Promise<
     timezone: s.timezone,
     appointment_start: s.appointmentStartUtc,
     appointment_end: s.appointmentEndUtc,
+    // Only pickups carry a pickup number (a stop switched to delivery drops it).
+    reference_number: s.stopType === "pickup" ? (s.referenceNumber ?? null) : null,
   }));
 
   // Overlapping truck/driver assignments: warn; owner/admin may override with a reason.
@@ -102,7 +101,6 @@ export async function saveLoad(_prev: ActionState, formData: FormData): Promise<
     p_load: {
       id: l.id ?? "",
       organization_id: orgId,
-      load_number: l.loadNumber ?? "",
       customer_id: l.customerId,
       customer_reference: l.customerReference ?? null,
       truck_id: l.truckId ?? "",

@@ -11,6 +11,8 @@ export type StopDraft = {
   timezone: string;
   appointmentStart: string;
   appointmentEnd: string;
+  /** Pickup number on a pickup stop. */
+  referenceNumber: string;
 };
 
 export type LoadDraft = {
@@ -38,6 +40,6 @@ const newKey = () => `s${Date.now()}-${nextKey++}`;
 export function emptyStop(stopType: "pickup" | "delivery", timezone: string): StopDraft {
   return {
     key: newKey(), stopType, facilityName: "", addressLine1: "", city: "", state: "", zip: "",
-    timezone, appointmentStart: "", appointmentEnd: "",
+    timezone, appointmentStart: "", appointmentEnd: "", referenceNumber: "",
   };
 }
