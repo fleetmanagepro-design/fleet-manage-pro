@@ -397,3 +397,15 @@ select ld.organization_id, ld.load_id, ld.driver_id, 'Unloaded the trailer', 100
 from public.load_drivers ld join public.loads l on l.id = ld.load_id
 where l.organization_id = 'a0000000-0000-4000-8000-000000000001' and l.status = 'delivered'
   and ld.is_primary and l.load_number::int % 6 = 0;
+
+-- ---------------------------------------------------------------------------
+-- Equipment tied to the driver (0004i): each Lakeside driver on truck 1NN pulls trailer 53NN.
+-- ---------------------------------------------------------------------------
+update public.drivers d
+set default_trailer_id = tr.id
+from public.trucks t, public.trailers tr
+where d.organization_id = 'a0000000-0000-4000-8000-000000000001'
+  and t.id = d.default_truck_id
+  and tr.organization_id = d.organization_id
+  and t.unit_number ~ '^1[0-9]{2}$'
+  and tr.unit_number = '53' || substr(t.unit_number, 2);

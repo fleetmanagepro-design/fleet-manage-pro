@@ -189,17 +189,23 @@ isOneToOne: false
                   ]
                 },"drivers": {
                   Row: {
-                    "archived_at": string | null,"archived_by": string | null,"cdl_class": Database["public"]['Enums']["cdl_class"] | null,"cdl_expires_on": string | null,"cdl_number": string | null,"cdl_state": string | null,"created_at": string,"created_by": string | null,"default_truck_id": string | null,"driver_type": Database["public"]['Enums']["driver_type"],"email": string | null,"emergency_contact_name": string | null,"emergency_contact_phone": string | null,"first_name": string,"hire_date": string | null,"id": string,"last_name": string,"medical_card_expires_on": string | null,"notes": string | null,"organization_id": string,"phone": string | null,"status": Database["public"]['Enums']["driver_status"],"updated_at": string
+                    "archived_at": string | null,"archived_by": string | null,"cdl_class": Database["public"]['Enums']["cdl_class"] | null,"cdl_expires_on": string | null,"cdl_number": string | null,"cdl_state": string | null,"created_at": string,"created_by": string | null,"default_trailer_id": string | null,"default_truck_id": string | null,"driver_type": Database["public"]['Enums']["driver_type"],"email": string | null,"emergency_contact_name": string | null,"emergency_contact_phone": string | null,"first_name": string,"hire_date": string | null,"id": string,"last_name": string,"medical_card_expires_on": string | null,"notes": string | null,"organization_id": string,"phone": string | null,"status": Database["public"]['Enums']["driver_status"],"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "archived_at"?: string | null,"archived_by"?: string | null,"cdl_class"?: Database["public"]['Enums']["cdl_class"] | null,"cdl_expires_on"?: string | null,"cdl_number"?: string | null,"cdl_state"?: string | null,"created_at"?: string,"created_by"?: string | null,"default_truck_id"?: string | null,"driver_type"?: Database["public"]['Enums']["driver_type"],"email"?: string | null,"emergency_contact_name"?: string | null,"emergency_contact_phone"?: string | null,"first_name": string,"hire_date"?: string | null,"id"?: string,"last_name": string,"medical_card_expires_on"?: string | null,"notes"?: string | null,"organization_id": string,"phone"?: string | null,"status"?: Database["public"]['Enums']["driver_status"],"updated_at"?: string
+                    "archived_at"?: string | null,"archived_by"?: string | null,"cdl_class"?: Database["public"]['Enums']["cdl_class"] | null,"cdl_expires_on"?: string | null,"cdl_number"?: string | null,"cdl_state"?: string | null,"created_at"?: string,"created_by"?: string | null,"default_trailer_id"?: string | null,"default_truck_id"?: string | null,"driver_type"?: Database["public"]['Enums']["driver_type"],"email"?: string | null,"emergency_contact_name"?: string | null,"emergency_contact_phone"?: string | null,"first_name": string,"hire_date"?: string | null,"id"?: string,"last_name": string,"medical_card_expires_on"?: string | null,"notes"?: string | null,"organization_id": string,"phone"?: string | null,"status"?: Database["public"]['Enums']["driver_status"],"updated_at"?: string
                   }
                   Update: {
-                    "archived_at"?: string | null,"archived_by"?: string | null,"cdl_class"?: Database["public"]['Enums']["cdl_class"] | null,"cdl_expires_on"?: string | null,"cdl_number"?: string | null,"cdl_state"?: string | null,"created_at"?: string,"created_by"?: string | null,"default_truck_id"?: string | null,"driver_type"?: Database["public"]['Enums']["driver_type"],"email"?: string | null,"emergency_contact_name"?: string | null,"emergency_contact_phone"?: string | null,"first_name"?: string,"hire_date"?: string | null,"id"?: string,"last_name"?: string,"medical_card_expires_on"?: string | null,"notes"?: string | null,"organization_id"?: string,"phone"?: string | null,"status"?: Database["public"]['Enums']["driver_status"],"updated_at"?: string
+                    "archived_at"?: string | null,"archived_by"?: string | null,"cdl_class"?: Database["public"]['Enums']["cdl_class"] | null,"cdl_expires_on"?: string | null,"cdl_number"?: string | null,"cdl_state"?: string | null,"created_at"?: string,"created_by"?: string | null,"default_trailer_id"?: string | null,"default_truck_id"?: string | null,"driver_type"?: Database["public"]['Enums']["driver_type"],"email"?: string | null,"emergency_contact_name"?: string | null,"emergency_contact_phone"?: string | null,"first_name"?: string,"hire_date"?: string | null,"id"?: string,"last_name"?: string,"medical_card_expires_on"?: string | null,"notes"?: string | null,"organization_id"?: string,"phone"?: string | null,"status"?: Database["public"]['Enums']["driver_status"],"updated_at"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "drivers_organization_id_default_trailer_id_fkey"
+      columns: ["organization_id","default_trailer_id"]
+isOneToOne: false
+      referencedRelation: "trailers"
+      referencedColumns: ["organization_id","id"]
+    },{
       foreignKeyName: "drivers_organization_id_default_truck_id_fkey"
       columns: ["organization_id","default_truck_id"]
 isOneToOne: false

@@ -124,7 +124,7 @@ Role matrix per table is defined in §5. Financial visibility for dispatchers (c
 A truck's drivers are `drivers.default_truck_id = trucks.id` (no `trucks.default_driver_id`, so there is one source of truth and teams work).
 
 ### Drivers
-**drivers**: id, organization_id, first_name, last_name, phone, email, driver_type (`company`/`owner_operator`/`team`), hire_date, status (`active`/`inactive`/`terminated`), cdl_number, cdl_state, cdl_class (`A`/`B`/`C`), cdl_expires_on, medical_card_expires_on, default_truck_id, emergency_contact_name, emergency_contact_phone, notes, archived_at — CDL unique per (org, state, number) among non-archived
+**drivers**: id, organization_id, first_name, last_name, phone, email, driver_type (`company`/`owner_operator`/`team`), hire_date, status (`active`/`inactive`/`terminated`), cdl_number, cdl_state, cdl_class (`A`/`B`/`C`), cdl_expires_on, medical_card_expires_on, default_truck_id, default_trailer_id (0004i), emergency_contact_name, emergency_contact_phone, notes, archived_at — CDL unique per (org, state, number) among non-archived
 
 **driver_pay_rules**: id, organization_id, driver_id, effective_from date, pay_type (`per_mile`/`percent`/`flat`), rate_cents_per_mile int, miles_basis (`loaded`/`all`), percent numeric(5,2), percent_basis (`linehaul`/`linehaul_fsc`/`total`), flat_cents bigint, stop_pay_cents bigint, detention_pay_cents_per_hour bigint
 — owner-operators: `pay_type = 'percent'`, `percent` = driver share (100 − company fee), `percent_basis = 'total'`; company drivers: `per_mile`

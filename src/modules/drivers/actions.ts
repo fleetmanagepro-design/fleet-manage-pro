@@ -51,6 +51,7 @@ function driverColumns(d: z.infer<typeof driverSchema>) {
     cdl_expires_on: nullable(d.cdlExpiresOn),
     medical_card_expires_on: nullable(d.medicalCardExpiresOn),
     default_truck_id: nullable(d.defaultTruckId),
+    default_trailer_id: nullable(d.defaultTrailerId),
     emergency_contact_name: nullable(d.emergencyContactName),
     emergency_contact_phone: nullable(d.emergencyContactPhone),
     notes: nullable(d.notes),
@@ -59,7 +60,11 @@ function driverColumns(d: z.infer<typeof driverSchema>) {
 
 function driverDbError(action: string, error: PostgrestError, formData: FormData): ActionState {
   if (error.code === "23505") return fieldError("cdlNumber", "Another active driver already has this CDL number in this state.", formData);
-  if (error.code === "23503") return fieldError("defaultTruckId", "Choose a truck from your fleet.", formData);
+  if (error.code === "23503") {
+    return error.message.includes("trailer")
+      ? fieldError("defaultTrailerId", "Choose a trailer from your fleet.", formData)
+      : fieldError("defaultTruckId", "Choose a truck from your fleet.", formData);
+  }
   return dbError(action, error, formData);
 }
 

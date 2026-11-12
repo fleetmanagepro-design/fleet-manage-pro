@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { initialActionState } from "@/lib/action-state";
 import { assignLoad } from "../actions";
+import { type Assignment, pickDriver, pickTruck } from "../assignment";
 import type { LoadFormOptions } from "../queries";
 
 type Props = { loadId: string; loadNumber: string; options: LoadFormOptions; today: string; canOverride: boolean };
@@ -15,8 +16,8 @@ type Props = { loadId: string; loadNumber: string; options: LoadFormOptions; tod
 export function AssignForm({ loadId, loadNumber, options, today, canOverride }: Props) {
   const [state, action] = useActionState(assignLoad, initialActionState);
   const [pending, startTransition] = useTransition();
-  const [truckId, setTruckId] = useState("");
-  const [driver1Id, setDriver1Id] = useState("");
+  const [assignment, setAssignment] = useState<Assignment>({ truckId: "", trailerId: "", driver1Id: "" });
+  const { truckId, trailerId, driver1Id } = assignment;
   const e = state.fieldErrors ?? {};
   const expired = (d: LoadFormOptions["drivers"][number]) =>
     (!!d.cdlExpiresOn && d.cdlExpiresOn < today) || (!!d.medicalCardExpiresOn && d.medicalCardExpiresOn < today);
@@ -38,20 +39,9 @@ export function AssignForm({ loadId, loadNumber, options, today, canOverride }: 
       <FormMessage state={state} />
       <input type="hidden" name="loadId" value={loadId} />
       <div className="grid gap-2 sm:grid-cols-2">
-        <FormField id={id("truck")} label="Truck" errors={e.truckId}>
-          <NativeSelect id={id("truck")} name="truckId" value={truckId} size="sm" className="w-full"
-            onChange={(ev) => {
-              setTruckId(ev.target.value);
-              const d = options.drivers.find((x) => x.defaultTruckId === ev.target.value && !expired(x));
-              if (d) setDriver1Id(d.id);
-            }}>
-            <NativeSelectOption value="">Choose…</NativeSelectOption>
-            {options.trucks.map((t) => <NativeSelectOption key={t.id} value={t.id}>{t.label}</NativeSelectOption>)}
-          </NativeSelect>
-        </FormField>
         <FormField id={id("driver")} label="Driver" errors={e.driver1Id}>
           <NativeSelect id={id("driver")} name="driver1Id" value={driver1Id} size="sm" className="w-full"
-            onChange={(ev) => setDriver1Id(ev.target.value)}>
+            onChange={(ev) => setAssignment((a) => pickDriver(a, ev.target.value, options.drivers))}>
             <NativeSelectOption value="">Choose…</NativeSelectOption>
             {options.drivers.map((d) => (
               <NativeSelectOption key={d.id} value={d.id} disabled={expired(d)}>
@@ -60,8 +50,16 @@ export function AssignForm({ loadId, loadNumber, options, today, canOverride }: 
             ))}
           </NativeSelect>
         </FormField>
+        <FormField id={id("truck")} label="Truck" errors={e.truckId}>
+          <NativeSelect id={id("truck")} name="truckId" value={truckId} size="sm" className="w-full"
+            onChange={(ev) => setAssignment((a) => pickTruck(a, ev.target.value, options.drivers.filter((d) => !expired(d))))}>
+            <NativeSelectOption value="">Choose…</NativeSelectOption>
+            {options.trucks.map((t) => <NativeSelectOption key={t.id} value={t.id}>{t.label}</NativeSelectOption>)}
+          </NativeSelect>
+        </FormField>
         <FormField id={id("trailer")} label="Trailer (optional)" errors={e.trailerId}>
-          <NativeSelect id={id("trailer")} name="trailerId" defaultValue="" size="sm" className="w-full">
+          <NativeSelect id={id("trailer")} name="trailerId" value={trailerId} size="sm" className="w-full"
+            onChange={(ev) => setAssignment((a) => ({ ...a, trailerId: ev.target.value }))}>
             <NativeSelectOption value="">None</NativeSelectOption>
             {options.trailers.map((t) => <NativeSelectOption key={t.id} value={t.id}>{t.label}</NativeSelectOption>)}
           </NativeSelect>
