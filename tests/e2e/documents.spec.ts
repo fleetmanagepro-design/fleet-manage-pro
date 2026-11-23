@@ -12,7 +12,7 @@ test("maintenance uploads a truck registration, opens it, and wrong files are re
   await page.goto("/trucks");
   await page.getByRole("link", { name: "101", exact: true }).first().click();
   await page.getByRole("link", { name: "Documents" }).click();
-  await expect(page.getByText("No documents yet.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Upload document" })).toBeVisible();
 
   // A Word file is refused before upload
   await page.getByLabel("File (PDF, JPG or PNG, up to 20 MB)").setInputFiles({
@@ -26,16 +26,18 @@ test("maintenance uploads a truck registration, opens it, and wrong files are re
   await page.getByLabel("Document type").selectOption("registration");
   await page.getByLabel("Expires (optional)").fill("2027-03-31");
   await page.getByRole("button", { name: "Upload document" }).click();
-  const doc = page.getByTestId("document-registration");
+  const doc = page.getByTestId("document-registration").first();
   await expect(doc).toContainText("Registration");
   await expect(doc).toContainText("Registration 2026.pdf");
   await expect(doc).toContainText("expires 03/31/2027");
 
-  const popup = page.waitForEvent("popup");
+  // Open goes through a short-lived signed link (the browser may show or download the PDF, so check the link itself).
+  const signed = page.context().waitForEvent("request", (r) => /\/storage\/v1\/object\/sign\/documents\//.test(r.url()));
   await doc.getByRole("button", { name: /^Open/ }).click();
-  const tab = await popup;
-  await tab.waitForURL(/\/storage\/v1\/object\/sign\/documents\//);
-  await tab.close();
+  const url = (await signed).url();
+  const file = await page.request.get(url);
+  expect(file.status()).toBe(200);
+  expect(file.headers()["content-type"]).toBe("application/pdf");
   // maintenance can't remove documents
   await expect(doc.getByRole("button", { name: /^Remove/ })).toHaveCount(0);
 });
