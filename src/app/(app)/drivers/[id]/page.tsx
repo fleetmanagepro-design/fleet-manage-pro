@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DocumentsSection } from "@/modules/documents/components/documents-section";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { z } from "zod";
@@ -115,6 +116,13 @@ async function DriverDetail({ params }: Pick<PageProps<"/drivers/[id]">, "params
             </Suspense>
           </SectionCard>
         )}
+
+        <SectionCard title="Documents" description="CDL, medical card, MVR and other files. PDF, JPG or PNG; private to your company.">
+          <Suspense fallback={<PageLoading />}>
+            <DocumentsSection organizationId={active.organizationId} role={active.role} entity="driver" entityId={driver.id}
+              timeZone={active.timezone} today={today} readOnly={archived} />
+          </Suspense>
+        </SectionCard>
 
         {canViewPay(active.role) && (
           <SectionCard title="Pay statements" description="Weekly, Monday–Sunday; loads count in the week they were picked up.">

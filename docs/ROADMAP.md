@@ -129,6 +129,14 @@ Status of the MVP build. Updated at the end of every task.
   a truck still suggests its driver. Equipment chosen by hand is kept.
 - On the load form, Assignment moved above Stops.
 
+### Documents on drivers, trucks and trailers (11/23/2026)
+- Migration `0008a_asset_documents`: private Storage bucket `documents` with policies, a `documents` table and archive.
+- The browser uploads straight to Storage (Vercel limits request size), then the server records the document. The
+  database takes size and type from Storage.
+- Documents section on the driver page and the truck/trailer Documents tab: upload, open (1-minute signed link),
+  expiry flags, remove (archive).
+- CI now starts Supabase Storage.
+
 ## Open questions for the owner (asked 11/11/2026, answer pending)
 1. **Team loads (two owner-operators on one load):** how is the load value split between them, e.g. 50/50 before the
    company fee, or another split? Today each driver is paid on their own rule from the full load value (2 × 88%).
@@ -145,6 +153,8 @@ The owner will go back through the app from the start to correct and add things;
   88%) — confirm how team loads split with the owner. Editing a load after its statement is finalized doesn't change the
   statement (void and finalize again); a warning on the load page would help. TONU (cancelled but paid) loads aren't paid to drivers yet.
 - Facilities: no screen yet to edit, merge or archive remembered facilities (the database already allows it).
+- Documents: roles are temporary (decided with the users work); no documents on loads/expenses yet; no alerts for
+  expiring documents yet (Task 8); a file uploaded but not recorded (browser closed mid-way) stays in Storage unused.
 - Customer contacts can be added and removed but not edited in place.
 - No in-app "Delete organization" (owner only, with confirmation and data export) — needed once; done by SQL.
 - Marketing site at `fleetmanagepro.com` not built; the root domain is parked at GoDaddy.

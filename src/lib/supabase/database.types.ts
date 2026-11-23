@@ -71,6 +71,44 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"documents": {
+                  Row: {
+                    "archived_at": string | null,"archived_by": string | null,"doc_type": string,"driver_id": string | null,"entity_type": string,"expires_on": string | null,"file_name": string,"id": string,"mime_type": string,"notes": string | null,"organization_id": string,"size_bytes": number,"storage_path": string,"trailer_id": string | null,"truck_id": string | null,"uploaded_at": string,"uploaded_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"archived_by"?: string | null,"doc_type": string,"driver_id"?: string | null,"entity_type": string,"expires_on"?: string | null,"file_name": string,"id"?: string,"mime_type": string,"notes"?: string | null,"organization_id": string,"size_bytes": number,"storage_path": string,"trailer_id"?: string | null,"truck_id"?: string | null,"uploaded_at"?: string,"uploaded_by"?: string | null
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"archived_by"?: string | null,"doc_type"?: string,"driver_id"?: string | null,"entity_type"?: string,"expires_on"?: string | null,"file_name"?: string,"id"?: string,"mime_type"?: string,"notes"?: string | null,"organization_id"?: string,"size_bytes"?: number,"storage_path"?: string,"trailer_id"?: string | null,"truck_id"?: string | null,"uploaded_at"?: string,"uploaded_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "documents_organization_id_driver_id_fkey"
+      columns: ["organization_id","driver_id"]
+isOneToOne: false
+      referencedRelation: "drivers"
+      referencedColumns: ["organization_id","id"]
+    },{
+      foreignKeyName: "documents_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "documents_organization_id_trailer_id_fkey"
+      columns: ["organization_id","trailer_id"]
+isOneToOne: false
+      referencedRelation: "trailers"
+      referencedColumns: ["organization_id","id"]
+    },{
+      foreignKeyName: "documents_organization_id_truck_id_fkey"
+      columns: ["organization_id","truck_id"]
+isOneToOne: false
+      referencedRelation: "trucks"
+      referencedColumns: ["organization_id","id"]
+    }
+                  ]
                 },"driver_deductions": {
                   Row: {
                     "amount_cents": number | null,"created_at": string,"created_by": string | null,"driver_id": string,"ends_on": string | null,"free_miles": number | null,"id": string,"kind": Database["public"]['Enums']["deduction_kind"],"name": string,"notes": string | null,"organization_id": string,"percent": number | null,"rate_cents_per_mile": number | null,"starts_on": string,"updated_at": string
@@ -588,11 +626,20 @@ isOneToOne: false
             "accept_invitation":
 { Args: { "p_token": string }; Returns: string
                            },
+"archive_document":
+{ Args: { "p_document": string }; Returns: undefined
+                           },
 "assign_load":
 { Args: { "p_driver_ids": (string)[],"p_load": string,"p_trailer": string,"p_truck": string }; Returns: undefined
                            },
+"can_add_documents":
+{ Args: { "p_entity": string,"p_org": string }; Returns: boolean
+                           },
 "can_edit_load":
 { Args: { "p_load": string }; Returns: boolean
+                           },
+"can_view_documents":
+{ Args: { "p_entity": string,"p_org": string }; Returns: boolean
                            },
 "change_load_status":
 { Args: { "p_deadhead_miles"?: number,"p_delivered_at"?: string,"p_load": string,"p_loaded_miles"?: number,"p_reason"?: string,"p_to": Database["public"]['Enums']["load_status"] }; Returns: undefined
@@ -636,6 +683,9 @@ isOneToOne: false
                            },
 "save_load":
 { Args: { "p_driver_ids": (string)[],"p_load": Json,"p_stops": Json }; Returns: string
+                           },
+"try_uuid":
+{ Args: { "p": string }; Returns: string
                            },
 "void_driver_statement":
 { Args: { "p_reason": string,"p_statement": string }; Returns: undefined

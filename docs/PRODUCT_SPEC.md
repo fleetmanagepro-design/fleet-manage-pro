@@ -309,6 +309,15 @@ Upload PDF/JPG/PNG (max 20 MB) to Supabase Storage; link to load, truck, trailer
 
 **AC**: files are private per organization (Storage policies), accessed via short-lived signed URLs.
 
+**Built 11/23/2026 for drivers, trucks and trailers** (loads, expenses, work orders come later):
+- **Types.** Driver: CDL, medical card, MVR, drug test, application, other. Truck: registration, insurance, annual
+  inspection, lease/title, IFTA/permits, other. Trailer: registration, annual inspection, lease/title, other.
+- **Files.** PDF, JPG and PNG only (no HEIC), up to 20 MB. Optional expiry date: expired or due within 30 days is
+  flagged in the list.
+- **Who.** For now, a document is seen by whoever sees the driver, truck or trailer. Everyone but viewers adds documents.
+  Owner/admin remove them, which archives the record and keeps the file. Final roles are decided with the users work
+  (owner's decision).
+
 ### 4.13 Alerts
 Generated daily and shown in an alert center + dashboard:
 expiring registrations, inspections, insurance, CDL, medical cards · PM due/overdue · invoices overdue · loads delivered but not invoiced after 2 days.

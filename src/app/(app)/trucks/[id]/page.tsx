@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DocumentsSection } from "@/modules/documents/components/documents-section";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { z } from "zod";
@@ -46,7 +47,6 @@ const NOT_BUILT: Record<string, string> = {
   loads: "Loads assigned to this truck will appear here once dispatch is built.",
   expenses: "Fuel, repairs and fixed costs for this truck will appear here once expenses are built.",
   maintenance: "Work orders, PM schedules and tires will appear here once maintenance is built.",
-  documents: "Registration, insurance and inspection documents will appear here once documents are built.",
 };
 
 async function TruckDetail({ params, searchParams }: Pick<PageProps<"/trucks/[id]">, "params" | "searchParams">) {
@@ -84,7 +84,14 @@ async function TruckDetail({ params, searchParams }: Pick<PageProps<"/trucks/[id
 
       <AssetTabs basePath={basePath} current={tab} />
 
-      {tab !== "overview" ? (
+      {tab === "documents" ? (
+        <SectionCard title="Documents" description="PDF, JPG or PNG. Files are private to your company.">
+          <Suspense fallback={<PageLoading />}>
+            <DocumentsSection organizationId={active.organizationId} role={role} entity="truck" entityId={truck.id}
+              timeZone={active.timezone} today={today} readOnly={archived} />
+          </Suspense>
+        </SectionCard>
+      ) : tab !== "overview" ? (
         <NotBuiltYet title={tab[0].toUpperCase() + tab.slice(1)}>{NOT_BUILT[tab]}</NotBuiltYet>
       ) : (
         <div className="grid items-start gap-5 lg:grid-cols-2">
