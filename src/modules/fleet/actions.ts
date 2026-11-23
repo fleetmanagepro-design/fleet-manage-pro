@@ -132,7 +132,8 @@ export async function createTruck(_prev: ActionState, formData: FormData): Promi
     .single();
   if (error) return dbError(error, formData, "truck");
   revalidatePath(PATH.truck);
-  redirect(`/trucks/${data.id}`);
+  // Next step after adding a truck: its documents (registration, insurance, …).
+  redirect(`/trucks/${data.id}?tab=documents`);
 }
 
 export async function updateTruck(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -175,7 +176,7 @@ export async function createTrailer(_prev: ActionState, formData: FormData): Pro
     .single();
   if (error) return dbError(error, formData, "trailer");
   revalidatePath(PATH.trailer);
-  redirect(`/trailers/${data.id}`);
+  redirect(`/trailers/${data.id}?tab=documents`);
 }
 
 export async function updateTrailer(_prev: ActionState, formData: FormData): Promise<ActionState> {

@@ -136,6 +136,7 @@ Status of the MVP build. Updated at the end of every task.
 - Documents section on the driver page and the truck/trailer Documents tab: upload, open (1-minute signed link),
   expiry flags, remove (archive).
 - CI now starts Supabase Storage.
+- A newly added truck or trailer opens on its Documents tab (11/23/2026).
 
 ## Open questions for the owner (asked 11/11/2026, answer pending)
 1. **Team loads (two owner-operators on one load):** how is the load value split between them, e.g. 50/50 before the

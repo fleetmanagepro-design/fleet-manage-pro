@@ -33,6 +33,10 @@ test("maintenance adds a truck, edits it and records odometer readings", async (
   await page.getByRole("button", { name: "Add truck" }).click();
 
   await expect(page.getByRole("heading", { name: new RegExp(`Truck ${unit}`) })).toBeVisible();
+  // A new truck opens on its Documents tab, ready for registration and insurance (11/23/2026).
+  await expect(page).toHaveURL(/\/trucks\/[0-9a-f-]+\?tab=documents$/);
+  await expect(page.getByRole("button", { name: "Upload document" })).toBeVisible();
+  await page.getByRole("link", { name: "Overview" }).click();
   // Next keeps the previous page hidden in the DOM, so only look at visible text.
   await expect(page.getByText("2022 Kenworth T680").filter({ visible: true })).toBeVisible();
   await expect(page.getByText("$142,500.00").filter({ visible: true })).toBeVisible();
