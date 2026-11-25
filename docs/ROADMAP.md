@@ -144,6 +144,14 @@ Status of the MVP build. Updated at the end of every task.
 2. **TONU (truck ordered, not used):** when the broker pays TONU on a cancelled load, does the driver get part of it,
    and how much? Today TONU loads are not paid to drivers.
 
+3. **Expenses (asked 11/23/2026, postponed by the owner):**
+   - **Driver pay as an expense.** Should it be written automatically, per load, when a weekly statement is finalized,
+     instead of being entered by hand?
+   - **Fuel for owner-operators.** Who pays: the owner-operator (not a company expense), the company with a deduction
+     on the statement, or does it depend on the driver?
+   - **Who enters and sees expenses.** This is decided with the users work. The temporary proposal: owner, admin,
+     accounting and maintenance enter expenses; owner, admin and accounting see them.
+
 The owner will go back through the app from the start to correct and add things; answer these on the way.
 
 ## Known gaps / follow-ups
@@ -168,7 +176,7 @@ The owner will go back through the app from the start to correct and add things;
 
 ## Next
 
-### Task 5 — Expenses (`0005_expenses`)
+### Task 5 — Expenses (`0005_expenses`) — postponed by the owner (11/25/2026)
 Categories, expenses (load-direct, equipment, overhead), fuel, recurring costs; void instead of delete; contribution on the
 load page then includes load-direct expenses.
 
