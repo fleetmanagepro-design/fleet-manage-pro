@@ -138,6 +138,10 @@ Status of the MVP build. Updated at the end of every task.
 - CI now starts Supabase Storage.
 - A newly added truck or trailer opens on its Documents tab (11/23/2026).
 
+### Global search (11/25/2026)
+- A search box in the menu finds loads (number, pickup #, ref/PO, stop city), drivers, trucks, trailers and customers.
+  "/" focuses it and the keyboard moves through results. It runs as the user, so RLS limits what each role finds.
+
 ## Open questions for the owner (asked 11/11/2026, answer pending)
 1. **Team loads (two owner-operators on one load):** how is the load value split between them, e.g. 50/50 before the
    company fee, or another split? Today each driver is paid on their own rule from the full load value (2 × 88%).

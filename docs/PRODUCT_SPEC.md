@@ -318,6 +318,16 @@ Upload PDF/JPG/PNG (max 20 MB) to Supabase Storage; link to load, truck, trailer
   Owner/admin remove them, which archives the record and keeps the file. Final roles are decided with the users work
   (owner's decision).
 
+### 4.12a Global search (decision of 11/25/2026)
+One search box at the top of the menu, on every page (press "/" to jump to it). It finds:
+- **loads** by load #, pickup #, customer ref/PO # or a stop's city;
+- **drivers** by name (every word counts: "james car"), phone or CDL #;
+- **trucks and trailers** by unit #, VIN (or part of it) or plate;
+- **customers** by name or MC #.
+
+Results are grouped loads → drivers → trucks → trailers → customers. Arrow keys and Enter open a result. Each role finds
+only what it may see (e.g. viewers find no drivers).
+
 ### 4.13 Alerts
 Generated daily and shown in an alert center + dashboard:
 expiring registrations, inspections, insurance, CDL, medical cards · PM due/overdue · invoices overdue · loads delivered but not invoiced after 2 days.

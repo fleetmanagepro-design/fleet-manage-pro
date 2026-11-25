@@ -6,6 +6,7 @@ import { signOut } from "@/modules/accounts/actions";
 import { OrganizationSwitcher } from "@/modules/accounts/components/organization-switcher";
 import { ROLE_LABELS, canManageMembers, type OrgRole } from "@/modules/accounts/permissions";
 import { canViewDrivers, canViewPay } from "@/modules/drivers/permissions";
+import { GlobalSearch } from "@/modules/search/components/global-search";
 
 type NavItem = { href: string; label: string; visible: (role: OrgRole) => boolean };
 
@@ -32,6 +33,7 @@ export async function AppSidebar() {
         <span className="text-xs text-muted-foreground" data-testid="active-role">{ROLE_LABELS[active.role]}</span>
       </div>
       <OrganizationSwitcher memberships={memberships} activeId={active.organizationId} />
+      <GlobalSearch />
       <nav aria-label="Main" className="flex flex-row flex-wrap gap-1 md:flex-col">
         {NAV.filter((item) => item.visible(active.role)).map((item) => (
           <Link key={item.href} href={item.href} className="rounded-md px-2 py-1.5 text-sm hover:bg-muted">
