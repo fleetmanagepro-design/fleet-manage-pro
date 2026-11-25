@@ -17,7 +17,7 @@ async function fillStop(page: Page, n: number, city: string, state: string, star
 test("dispatcher creates a 2-stop load and assigns it in under a minute", async ({ page }) => {
   await signInAs(page, "dispatch@lakesidefreight.test");
   const started = Date.now();
-  await page.getByRole("link", { name: "Loads" }).click();
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Loads" }).click();
   await page.getByRole("link", { name: "New load" }).click();
 
   await page.getByLabel("Customer", { exact: true }).selectOption({ label: "Blue Prairie Logistics" });
@@ -120,7 +120,7 @@ test("expired drivers can't be picked; viewers can't edit loads", async ({ page 
 
   await page.context().clearCookies();
   await signInAs(page, "viewer@lakesidefreight.test");
-  await page.getByRole("link", { name: "Loads" }).click();
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Loads" }).click();
   await expect(page.getByRole("link", { name: "New load" })).toHaveCount(0);
   await page.getByTestId("load-1064").getByRole("link", { name: "1064" }).click();
   await expect(page.getByRole("heading", { name: /Load 1064/ })).toBeVisible();

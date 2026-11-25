@@ -152,6 +152,13 @@ Status of the MVP build. Updated at the end of every task.
 - Loads list: pickup date range filter, done in the database.
 - Dispatch board: "Week starting" date field (range widened to ±5 years).
 
+### Dashboard, first version (11/25/2026)
+- Period presets plus a custom range.
+- Stat cards (pay cards for pay roles only), a revenue bar chart (inline SVG, no chart library) with hover and a table
+  view, open loads by status, expiring items, top/lowest trucks, loads in progress and unassigned loads.
+- Calculations in `src/modules/analytics/calculations.ts` with unit tests.
+- Costs, profit, CPM, receivables and maintenance cards follow their modules.
+
 ## Open questions for the owner (asked 11/11/2026, answer pending)
 1. **Team loads (two owner-operators on one load):** how is the load value split between them, e.g. 50/50 before the
    company fee, or another split? Today each driver is paid on their own rule from the full load value (2 × 88%).

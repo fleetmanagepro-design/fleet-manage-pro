@@ -71,6 +71,9 @@
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
+  --viz-1: #257de0;
+  --viz-1-soft: #cce3fd;
+  --viz-grid: #e5e5e5;
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
@@ -106,6 +109,9 @@
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
+  --viz-1: #338ced;
+  --viz-1-soft: #0f4a96;
+  --viz-grid: #333333;
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
