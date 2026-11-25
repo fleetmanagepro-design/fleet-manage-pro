@@ -325,6 +325,13 @@ One search box at the top of the menu, on every page (press "/" to jump to it). 
 - **trucks and trailers** by unit #, VIN (or part of it) or plate;
 - **customers** by name or MC #.
 
+Each list also has its own search box (same rule: every word must match), kept in the URL (`?q=`):
+- **Loads:** load #, pickup #, PO, facility, city, customer. Searches all loads, not only the newest.
+- **Trucks:** unit #, VIN, plate, make/model. **Trailers:** unit #, VIN, plate, type.
+- **Drivers:** name, phone, email, CDL #, truck. **Customers:** name or MC # (since Task 3c).
+- **Dispatch board:** a truck row stays when the truck or its driver matches (with all its loads) or one of its
+  loads matches (only those loads); unassigned loads are filtered too. The search stays when changing weeks.
+
 Results are grouped loads → drivers → trucks → trailers → customers. Arrow keys and Enter open a result. Each role finds
 only what it may see (e.g. viewers find no drivers).
 

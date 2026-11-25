@@ -32,6 +32,8 @@ const LIST_SELECT = `*,
   accessorials:load_accessorials ( type, amount_cents, billable_to_customer )`;
 
 export type LoadFilter = {
+  /** From searchTerm(): load #, customer ref/PO, pickup #, facility, stop city or customer name. */
+  search?: string;
   status?: LoadStatus;
   customerId?: string;
   truckId?: string;
@@ -55,6 +57,38 @@ export async function listLoads(organizationId: string, filter: LoadFilter = {},
       throw new Error("Could not load loads.");
     }
     loadIds = (data ?? []).map((d) => d.load_id);
+    if (loadIds.length === 0) return [];
+  }
+  if (filter.search) {
+    const like = `%${filter.search}%`;
+    const [direct, viaStops, viaCustomers] = await Promise.all([
+      supabase.from("loads").select("id").eq("organization_id", organizationId)
+        .or(`load_number.ilike.${like},customer_reference.ilike.${like}`).limit(500),
+      supabase.from("load_stops").select("load_id").eq("organization_id", organizationId)
+        .or(`reference_number.ilike.${like},city.ilike.${like},facility_name.ilike.${like}`).limit(1000),
+      supabase.from("customers").select("id").eq("organization_id", organizationId).ilike("name", like).limit(50),
+    ]);
+    for (const r of [direct, viaStops, viaCustomers]) {
+      if (r.error) {
+        console.error("listLoads search failed", { error: r.error });
+        throw new Error("Could not load loads.");
+      }
+    }
+    let customerLoads: string[] = [];
+    const customerIds = (viaCustomers.data ?? []).map((c) => c.id);
+    if (customerIds.length) {
+      const r = await supabase.from("loads").select("id").eq("organization_id", organizationId).in("customer_id", customerIds).limit(500);
+      if (r.error) {
+        console.error("listLoads search failed", { error: r.error });
+        throw new Error("Could not load loads.");
+      }
+      customerLoads = (r.data ?? []).map((l) => l.id);
+    }
+    const found = new Set([
+      ...(direct.data ?? []).map((l) => l.id), ...(viaStops.data ?? []).map((s) => s.load_id), ...customerLoads,
+    ]);
+    // Capped so the id list stays a reasonable request; the list shows at most `limit` loads anyway.
+    loadIds = (loadIds ? loadIds.filter((id) => found.has(id)) : [...found]).slice(0, 300);
     if (loadIds.length === 0) return [];
   }
   let q = supabase.from("loads").select(LIST_SELECT).eq("organization_id", organizationId);

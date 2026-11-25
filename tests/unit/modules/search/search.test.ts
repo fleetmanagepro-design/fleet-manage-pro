@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { matchesTerm } from "@/lib/text-search";
 import { type SearchHit, groupHits, matchesAll, searchTerm, searchWords } from "@/modules/search/search";
 
 describe("searchTerm", () => {
@@ -30,5 +31,17 @@ describe("groupHits", () => {
     const groups = groupHits([hit("customer", "c1"), hit("load", "l1"), hit("truck", "t1"), hit("load", "l2"), hit("load", "l3")], 2);
     expect(groups.map((g) => g.kind)).toEqual(["load", "truck", "customer"]);
     expect(groups[0].hits.map((h) => h.id)).toEqual(["l1", "l2"]);
+  });
+});
+
+describe("matchesTerm (list pages)", () => {
+  it("matches every word across a row's fields; no term matches everything", () => {
+    expect(matchesTerm(["201", "1FUJHHDR0JD610173", "Freightliner", null], "freight 201")).toBe(true);
+    expect(matchesTerm(["201", "Freightliner"], "kenworth")).toBe(false);
+    expect(matchesTerm(["anything"], null)).toBe(true);
+  });
+  it("reads the first value of a repeated query parameter", () => {
+    expect(searchTerm(["ab", "cd"])).toBe("ab");
+    expect(searchTerm(undefined)).toBeNull();
   });
 });

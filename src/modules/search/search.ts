@@ -12,22 +12,7 @@ export const SEARCH_LABELS: Record<SearchKind, string> = {
   load: "Loads", driver: "Drivers", truck: "Trucks", trailer: "Trailers", customer: "Customers",
 };
 
-/**
- * What was typed, made safe for a PostgREST `or=(…ilike…)` filter: characters that delimit or wildcard the
- * filter are dropped, spaces collapsed. Null when there is too little to search (< 2 characters).
- */
-export function searchTerm(input: string): string | null {
-  const t = input.replace(/[,()*%\\:"'`;]/g, " ").replace(/\s+/g, " ").trim().slice(0, 60);
-  return t.length >= 2 ? t : null;
-}
-
-export const searchWords = (term: string) => term.toLowerCase().split(" ").filter(Boolean);
-
-/** Every word appears somewhere in the text (case-insensitive): "john car" matches "John Carter". */
-export const matchesAll = (text: string, words: readonly string[]) => {
-  const t = text.toLowerCase();
-  return words.every((w) => t.includes(w));
-};
+export { matchesAll, searchTerm, searchWords } from "@/lib/text-search";
 
 /** Hits grouped in display order, each group capped. */
 export function groupHits(hits: readonly SearchHit[], perGroup = 5): { kind: SearchKind; hits: SearchHit[] }[] {

@@ -1,12 +1,14 @@
 import Link from "next/link";
+import { Input } from "@/components/ui/input";
+import { searchTerm } from "@/lib/text-search";
 import { Suspense } from "react";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireOrg } from "@/lib/auth";
 import { formatCalendarDate, todayIn } from "@/lib/dates";
 import { formatCents } from "@/lib/money";
 import { formatInZone, zonedLocalToUtc } from "@/lib/zoned-time";
-import { addDays, boardDays, boardStart } from "@/modules/dispatch/board";
+import { addDays, boardDays, boardStart, filterBoard } from "@/modules/dispatch/board";
 import { loadRevenueCents } from "@/modules/dispatch/calculations";
 import { AssignForm } from "@/modules/dispatch/components/assign-form";
 import { DispatchBoard } from "@/modules/dispatch/components/board";
@@ -35,10 +37,13 @@ async function Board({ searchParams }: Pick<PageProps<"/dispatch">, "searchParam
   const fromIso = zonedLocalToUtc(`${days[0]}T00:00`, tz);
   const toIso = zonedLocalToUtc(`${addDays(days[days.length - 1], 1)}T00:00`, tz);
   const editable = canEditLoads(active.role);
-  const [data, options] = await Promise.all([
+  const term = searchTerm(sp.q);
+  const keepQ = term ? `&q=${encodeURIComponent(term)}` : "";
+  const [all, options] = await Promise.all([
     boardData(active.organizationId, fromIso, toIso),
     editable ? loadFormOptions(active.organizationId) : Promise.resolve(null),
   ]);
+  const data = filterBoard(all, term);
 
   return (
     <div className="grid gap-5">
@@ -50,12 +55,20 @@ async function Board({ searchParams }: Pick<PageProps<"/dispatch">, "searchParam
           </p>
         </div>
         <nav aria-label="Week" className="flex gap-2">
-          <Link href={`/dispatch?start=${addDays(start, -7)}`} className={buttonVariants({ variant: "outline", size: "sm" })}>← Previous week</Link>
+          <Link href={`/dispatch?start=${addDays(start, -7)}${keepQ}`} className={buttonVariants({ variant: "outline", size: "sm" })}>← Previous week</Link>
           <Link href="/dispatch" className={buttonVariants({ variant: "outline", size: "sm" })}>Today</Link>
-          <Link href={`/dispatch?start=${addDays(start, 7)}`} className={buttonVariants({ variant: "outline", size: "sm" })}>Next week →</Link>
+          <Link href={`/dispatch?start=${addDays(start, 7)}${keepQ}`} className={buttonVariants({ variant: "outline", size: "sm" })}>Next week →</Link>
           {editable && <Link href="/loads/new" className={buttonVariants({ size: "sm" })}>New load</Link>}
         </nav>
       </div>
+
+      <form method="get" role="search" className="flex flex-wrap items-center gap-3 text-sm">
+        {start !== today && <input type="hidden" name="start" value={start} />}
+        <Input name="q" type="search" defaultValue={term ?? ""} placeholder="Truck, driver, load #, city, customer"
+          aria-label="Search the board" className="h-7 w-72" />
+        <Button type="submit" size="sm" variant="outline">Search</Button>
+        {term && <Link href={start !== today ? `/dispatch?start=${start}` : "/dispatch"} className="text-muted-foreground hover:underline">Clear</Link>}
+      </form>
 
       <DispatchBoard days={days} today={today} timeZone={tz} trucks={data.trucks} loads={data.loads} />
 
@@ -65,7 +78,7 @@ async function Board({ searchParams }: Pick<PageProps<"/dispatch">, "searchParam
         </CardHeader>
         <CardContent>
           {data.unassigned.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Every open load has a truck.</p>
+            <p className="text-sm text-muted-foreground">{term ? "No unassigned loads match the search." : "Every open load has a truck."}</p>
           ) : (
             <ul className="grid gap-4 lg:grid-cols-2">
               {data.unassigned.map((l) => {

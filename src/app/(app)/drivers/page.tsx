@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { matchesTerm, searchTerm } from "@/lib/text-search";
 import { Suspense } from "react";
 import { ComplianceSummary } from "@/components/expiry-badges";
 import { buttonVariants } from "@/components/ui/button";
@@ -30,7 +31,9 @@ async function Drivers({ searchParams }: Pick<PageProps<"/drivers">, "searchPara
   const sp = await searchParams;
   const status = DRIVER_STATUSES.includes(sp.status as DriverStatus) ? (sp.status as DriverStatus) : undefined;
   const includeArchived = sp.archived === "1";
-  const drivers = await listDrivers(active.organizationId, { status, includeArchived });
+  const term = searchTerm(sp.q);
+  const drivers = (await listDrivers(active.organizationId, { status, includeArchived }))
+    .filter((d) => matchesTerm([d.first_name, d.last_name, d.phone, d.email, d.cdl_number, d.default_truck?.unit_number], term));
   const today = todayIn(active.timezone);
 
   return (
@@ -39,12 +42,12 @@ async function Drivers({ searchParams }: Pick<PageProps<"/drivers">, "searchPara
         <h1 className="text-2xl font-semibold tracking-tight">Drivers</h1>
         {canEditDrivers(active.role) && <Link href="/drivers/new" className={buttonVariants()}>Add driver</Link>}
       </div>
-      <ListFilters status={status} includeArchived={includeArchived} statusOptions={STATUS_OPTIONS} />
+      <ListFilters status={status} includeArchived={includeArchived} statusOptions={STATUS_OPTIONS} search={term} searchPlaceholder="Name, phone, CDL #, truck" />
       <Card>
         <CardContent>
           {drivers.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              {status || includeArchived ? "No drivers match these filters." : "No drivers yet."}
+              {status || includeArchived || term ? "No drivers match these filters." : "No drivers yet."}
             </p>
           ) : (
             <Table>
