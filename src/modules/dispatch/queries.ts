@@ -1,4 +1,6 @@
 import "server-only";
+import { addDays } from "@/lib/dates";
+import { zonedLocalToUtc } from "@/lib/zoned-time";
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/database.types";
 import type { AssignmentCandidate } from "./overlap";
@@ -32,6 +34,10 @@ const LIST_SELECT = `*,
   accessorials:load_accessorials ( type, amount_cents, billable_to_customer )`;
 
 export type LoadFilter = {
+  /** Pickup between these calendar days (inclusive) in `timeZone`. */
+  pickupFrom?: string;
+  pickupTo?: string;
+  timeZone?: string;
   /** From searchTerm(): load #, customer ref/PO, pickup #, facility, stop city or customer name. */
   search?: string;
   status?: LoadStatus;
@@ -57,6 +63,20 @@ export async function listLoads(organizationId: string, filter: LoadFilter = {},
       throw new Error("Could not load loads.");
     }
     loadIds = (data ?? []).map((d) => d.load_id);
+    if (loadIds.length === 0) return [];
+  }
+  if (filter.pickupFrom || filter.pickupTo) {
+    const tz = filter.timeZone ?? "America/Chicago";
+    let stops = supabase.from("load_stops").select("load_id").eq("organization_id", organizationId).eq("stop_type", "pickup");
+    if (filter.pickupFrom) stops = stops.gte("appointment_start", zonedLocalToUtc(`${filter.pickupFrom}T00:00`, tz));
+    if (filter.pickupTo) stops = stops.lt("appointment_start", zonedLocalToUtc(`${addDays(filter.pickupTo, 1)}T00:00`, tz));
+    const { data, error } = await stops.limit(2000);
+    if (error) {
+      console.error("listLoads pickup filter failed", { error });
+      throw new Error("Could not load loads.");
+    }
+    const ids = new Set((data ?? []).map((s) => s.load_id));
+    loadIds = (loadIds ? loadIds.filter((id) => ids.has(id)) : [...ids]).slice(0, 300);
     if (loadIds.length === 0) return [];
   }
   if (filter.search) {

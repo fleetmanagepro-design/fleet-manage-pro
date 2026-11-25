@@ -8,11 +8,11 @@ export const BOARD_DAYS = 7;
 
 export { addDays };
 
-/** The board's first day: ?start=YYYY-MM-DD if valid and within ±2 years, else today. */
+/** The board's first day: ?start=YYYY-MM-DD (picked with the date field) if valid and within ±5 years, else today. */
 export function boardStart(param: string | undefined, today: string): string {
   if (!param || !isCalendarDate(param)) return today;
   const span = Math.abs(daysBetween(today, param));
-  return span <= daysBetween(addMonths(today, -24), today) ? param : today;
+  return span <= daysBetween(addMonths(today, -60), today) ? param : today;
 }
 
 export function boardDays(start: string, count = BOARD_DAYS): string[] {

@@ -16,7 +16,8 @@ describe("board days", () => {
   it("accepts a valid start parameter and falls back to today", () => {
     expect(boardStart("2026-11-03", "2026-11-10")).toBe("2026-11-03");
     expect(boardStart("not-a-date", "2026-11-10")).toBe("2026-11-10");
-    expect(boardStart("2020-01-01", "2026-11-10")).toBe("2026-11-10");
+    expect(boardStart("2020-01-01", "2026-11-10")).toBe("2026-11-10"); // more than 5 years away
+    expect(boardStart("2023-03-15", "2026-11-10")).toBe("2023-03-15"); // any day within 5 years
     expect(boardStart(undefined, "2026-11-10")).toBe("2026-11-10");
   });
 });
