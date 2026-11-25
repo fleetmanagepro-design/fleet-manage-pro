@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Input } from "@/components/ui/input";
+import { searchTerm } from "@/lib/text-search";
 import { Suspense } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,7 +45,8 @@ async function Loads({ searchParams }: Pick<PageProps<"/loads">, "searchParams">
   const { active } = await requireOrg();
   const sp = await searchParams;
   const status = LOAD_STATUSES.includes(sp.status as LoadStatus) ? (sp.status as LoadStatus) : undefined;
-  const filter = { status, customerId: pick(sp.customer), truckId: pick(sp.truck), driverId: pick(sp.driver) };
+  const term = searchTerm(sp.q);
+  const filter = { search: term ?? undefined, status, customerId: pick(sp.customer), truckId: pick(sp.truck), driverId: pick(sp.driver) };
   const [loads, options] = await Promise.all([listLoads(active.organizationId, filter), loadFormOptions(active.organizationId)]);
   const filtered = Object.values(filter).some(Boolean);
 
@@ -54,6 +57,8 @@ async function Loads({ searchParams }: Pick<PageProps<"/loads">, "searchParams">
         {canEditLoads(active.role) && <Link href="/loads/new" className={buttonVariants()}>New load</Link>}
       </div>
       <form method="get" role="search" className="flex flex-wrap items-center gap-3 text-sm">
+        <Input name="q" type="search" defaultValue={term ?? ""} placeholder="Load #, pickup #, PO, city, customer"
+          aria-label="Search this list" className="h-7 w-64" />
         <NativeSelect name="status" defaultValue={status ?? ""} aria-label="Filter by status" size="sm" className="min-w-36">
           <NativeSelectOption value="">All statuses</NativeSelectOption>
           {LOAD_STATUSES.map((s) => <NativeSelectOption key={s} value={s}>{LOAD_STATUS_LABELS[s]}</NativeSelectOption>)}

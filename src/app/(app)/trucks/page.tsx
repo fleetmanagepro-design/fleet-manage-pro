@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { matchesTerm, searchTerm } from "@/lib/text-search";
 import { Suspense } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,7 +28,9 @@ async function Trucks({ searchParams }: Pick<PageProps<"/trucks">, "searchParams
   const sp = await searchParams;
   const status = parseStatusFilter(sp.status);
   const includeArchived = sp.archived === "1";
-  const trucks = await listTrucks(active.organizationId, { status, includeArchived });
+  const term = searchTerm(sp.q);
+  const trucks = (await listTrucks(active.organizationId, { status, includeArchived }))
+    .filter((t) => matchesTerm([t.unit_number, t.vin, t.plate, t.make, t.model, t.year], term));
   const today = todayIn(active.timezone);
 
   return (
@@ -38,12 +41,12 @@ async function Trucks({ searchParams }: Pick<PageProps<"/trucks">, "searchParams
           <Link href="/trucks/new" className={buttonVariants()}>Add truck</Link>
         )}
       </div>
-      <ListFilters status={status} includeArchived={includeArchived} />
+      <ListFilters status={status} includeArchived={includeArchived} search={term} searchPlaceholder="Unit #, VIN, plate, make" />
       <Card>
         <CardContent>
           {trucks.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              {status || includeArchived ? "No trucks match these filters." : "No trucks yet."}
+              {status || includeArchived || term ? "No trucks match these filters." : "No trucks yet."}
             </p>
           ) : (
             <Table>

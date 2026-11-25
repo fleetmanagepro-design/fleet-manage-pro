@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Input } from "@/components/ui/input";
 import type { ReactNode } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
@@ -64,13 +65,22 @@ export function ListFilters({
   status,
   includeArchived,
   statusOptions = ASSET_STATUS_OPTIONS,
+  search,
+  searchPlaceholder,
 }: {
   status?: string;
   includeArchived: boolean;
   statusOptions?: readonly (readonly [string, string])[];
+  /** Shows a search box (name `q`) when a placeholder is given. */
+  search?: string | null;
+  searchPlaceholder?: string;
 }) {
   return (
     <form method="get" className="flex flex-wrap items-center gap-3 text-sm" role="search">
+      {searchPlaceholder && (
+        <Input name="q" type="search" defaultValue={search ?? ""} placeholder={searchPlaceholder} aria-label="Search this list"
+          className="h-7 w-64" />
+      )}
       <NativeSelect name="status" defaultValue={status ?? ""} aria-label="Filter by status" size="sm" className="min-w-40">
         <NativeSelectOption value="">All statuses</NativeSelectOption>
         {statusOptions.map(([value, label]) => (

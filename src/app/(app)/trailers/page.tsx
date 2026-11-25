@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { matchesTerm, searchTerm } from "@/lib/text-search";
 import { Suspense } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,7 +29,9 @@ async function Trailers({ searchParams }: Pick<PageProps<"/trailers">, "searchPa
   const sp = await searchParams;
   const status = parseStatusFilter(sp.status);
   const includeArchived = sp.archived === "1";
-  const trailers = await listTrailers(active.organizationId, { status, includeArchived });
+  const term = searchTerm(sp.q);
+  const trailers = (await listTrailers(active.organizationId, { status, includeArchived }))
+    .filter((t) => matchesTerm([t.unit_number, t.vin, t.plate, t.make, t.trailer_type.replace("_", " ")], term));
   const today = todayIn(active.timezone);
 
   return (
@@ -39,12 +42,12 @@ async function Trailers({ searchParams }: Pick<PageProps<"/trailers">, "searchPa
           <Link href="/trailers/new" className={buttonVariants()}>Add trailer</Link>
         )}
       </div>
-      <ListFilters status={status} includeArchived={includeArchived} />
+      <ListFilters status={status} includeArchived={includeArchived} search={term} searchPlaceholder="Unit #, VIN, plate, type" />
       <Card>
         <CardContent>
           {trailers.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              {status || includeArchived ? "No trailers match these filters." : "No trailers yet."}
+              {status || includeArchived || term ? "No trailers match these filters." : "No trailers yet."}
             </p>
           ) : (
             <Table>

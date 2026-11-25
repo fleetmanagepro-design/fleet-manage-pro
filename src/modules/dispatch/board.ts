@@ -1,4 +1,5 @@
 import { addDays, addMonths, daysBetween, isCalendarDate, todayIn } from "@/lib/dates";
+import { matchesTerm } from "@/lib/text-search";
 import type { Window } from "./overlap";
 
 /** Dispatch board layout (PRODUCT_SPEC §4.4): trucks × days, loads as blocks. Pure functions. */
@@ -53,4 +54,41 @@ export function packLanes(spans: readonly Span[]): { lanes: number[]; laneCount:
     lanes[i] = lane;
   }
   return { lanes, laneCount: Math.max(1, laneEnds.length) };
+}
+
+type SearchableLoad = {
+  truck_id: string | null;
+  load_number: string;
+  customer_reference: string | null;
+  customer: { name: string } | null;
+  truck: { unit_number: string } | null;
+  stops: { city: string; facility_name: string | null; reference_number: string | null }[];
+  drivers: { driver: { first_name: string; last_name: string } | null }[];
+};
+
+export const loadSearchFields = (l: SearchableLoad) => [
+  l.load_number, l.customer_reference, l.customer?.name, l.truck?.unit_number,
+  ...l.stops.flatMap((s) => [s.city, s.facility_name, s.reference_number]),
+  ...l.drivers.flatMap((d) => (d.driver ? [d.driver.first_name, d.driver.last_name] : [])),
+];
+
+/**
+ * The board narrowed to a search (decision of 11/25/2026): a truck row stays when the truck or its driver matches
+ * (then with all its loads) or when one of its loads matches (then with the matching loads only).
+ * Unassigned loads stay when they match. No term: everything.
+ */
+export function filterBoard<T extends { id: string; unit_number: string; drivers: string[] }, L extends SearchableLoad>(
+  data: { trucks: T[]; loads: L[]; unassigned: L[] },
+  term: string | null,
+): { trucks: T[]; loads: L[]; unassigned: L[] } {
+  if (!term) return data;
+  const loadMatches = (l: L) => matchesTerm(loadSearchFields(l), term);
+  const truckMatches = new Set(data.trucks.filter((t) => matchesTerm([t.unit_number, ...t.drivers], term)).map((t) => t.id));
+  const loads = data.loads.filter((l) => (l.truck_id && truckMatches.has(l.truck_id)) || loadMatches(l));
+  const withLoads = new Set(loads.map((l) => l.truck_id));
+  return {
+    trucks: data.trucks.filter((t) => truckMatches.has(t.id) || withLoads.has(t.id)),
+    loads,
+    unassigned: data.unassigned.filter(loadMatches),
+  };
 }
