@@ -3,7 +3,7 @@ import { signInAs } from "./support/auth";
 
 test("dispatcher sees the week and assigns an unassigned load from the board", async ({ page }) => {
   await signInAs(page, "dispatch@lakesidefreight.test");
-  await page.getByRole("link", { name: "Dispatch board" }).click();
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Dispatch board" }).click();
 
   // seed: open loads 1061–1064 on trucks 101, 102, 103, 106; truck 104 is in the shop
   await expect(page.getByTestId("board-truck-101").getByTestId("board-load-1061")).toBeVisible();

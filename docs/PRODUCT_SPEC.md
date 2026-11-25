@@ -170,6 +170,20 @@ Lists: Top 5 and bottom 5 trucks by profit · Top 5 costliest trailers by mainte
 - Loads in under 2 seconds for an org with 50 trucks and 2 years of data.
 - Each card links to the underlying list.
 
+**First version built 11/25/2026** (before expenses, invoicing and maintenance exist):
+- **Cards:** revenue, loads delivered, total miles, RPM, empty mile %, and for owner/admin/accounting driver pay and
+  contribution (revenue − driver pay).
+- **Revenue chart:** per day up to a month, per week up to a quarter, per month beyond. It has hover details and a
+  table view.
+- **Lists:**
+  - open loads by status
+  - expiring in 30 days (CDL/medical, registration, inspection, insurance, documents)
+  - top and lowest trucks by revenue (by profit once expenses exist)
+  - loads in progress
+  - unassigned loads for the next 7 days
+- **Not shown yet:** costs, profit, CPM, receivables and maintenance. They're named as coming, never faked.
+- Revenue counts delivered loads on their delivery day in company time.
+
 ### 4.3 Customers
 Fields: name, type (broker / shipper / both), MC number, contact(s), billing email, payment terms (days), notes, status (active / do-not-use).
 
