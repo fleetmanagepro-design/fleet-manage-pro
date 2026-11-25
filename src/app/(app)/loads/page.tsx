@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { searchTerm } from "@/lib/text-search";
+import { pickupDateRange } from "@/modules/dispatch/load-filters";
 import { Suspense } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -46,9 +47,10 @@ async function Loads({ searchParams }: Pick<PageProps<"/loads">, "searchParams">
   const sp = await searchParams;
   const status = LOAD_STATUSES.includes(sp.status as LoadStatus) ? (sp.status as LoadStatus) : undefined;
   const term = searchTerm(sp.q);
-  const filter = { search: term ?? undefined, status, customerId: pick(sp.customer), truckId: pick(sp.truck), driverId: pick(sp.driver) };
+  const range = pickupDateRange(sp.from, sp.to);
+  const filter = { search: term ?? undefined, pickupFrom: range.from, pickupTo: range.to, timeZone: active.timezone, status, customerId: pick(sp.customer), truckId: pick(sp.truck), driverId: pick(sp.driver) };
   const [loads, options] = await Promise.all([listLoads(active.organizationId, filter), loadFormOptions(active.organizationId)]);
-  const filtered = Object.values(filter).some(Boolean);
+  const filtered = [filter.search, filter.pickupFrom, filter.pickupTo, filter.status, filter.customerId, filter.truckId, filter.driverId].some(Boolean);
 
   return (
     <div className="grid max-w-7xl gap-4">
@@ -75,6 +77,14 @@ async function Loads({ searchParams }: Pick<PageProps<"/loads">, "searchParams">
           <NativeSelectOption value="">All drivers</NativeSelectOption>
           {options.drivers.map((d) => <NativeSelectOption key={d.id} value={d.id}>{d.label}</NativeSelectOption>)}
         </NativeSelect>
+        <label className="flex items-center gap-1.5">
+          <span className="text-muted-foreground">Pickup from</span>
+          <Input name="from" type="date" defaultValue={range.from ?? ""} aria-label="Pickup from" className="h-7 w-36" />
+        </label>
+        <label className="flex items-center gap-1.5">
+          <span className="text-muted-foreground">to</span>
+          <Input name="to" type="date" defaultValue={range.to ?? ""} aria-label="Pickup to" className="h-7 w-36" />
+        </label>
         <Button type="submit" size="sm" variant="outline">Apply</Button>
         {filtered && <Link href="/loads" className="text-muted-foreground hover:underline">Clear</Link>}
       </form>

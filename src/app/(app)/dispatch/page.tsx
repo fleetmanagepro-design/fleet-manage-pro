@@ -63,10 +63,13 @@ async function Board({ searchParams }: Pick<PageProps<"/dispatch">, "searchParam
       </div>
 
       <form method="get" role="search" className="flex flex-wrap items-center gap-3 text-sm">
-        {start !== today && <input type="hidden" name="start" value={start} />}
+        <label className="flex items-center gap-1.5">
+          <span className="text-muted-foreground">Week starting</span>
+          <Input name="start" type="date" defaultValue={start} aria-label="Week starting" className="h-7 w-36" />
+        </label>
         <Input name="q" type="search" defaultValue={term ?? ""} placeholder="Truck, driver, load #, city, customer"
           aria-label="Search the board" className="h-7 w-72" />
-        <Button type="submit" size="sm" variant="outline">Search</Button>
+        <Button type="submit" size="sm" variant="outline">Go</Button>
         {term && <Link href={start !== today ? `/dispatch?start=${start}` : "/dispatch"} className="text-muted-foreground hover:underline">Clear</Link>}
       </form>
 

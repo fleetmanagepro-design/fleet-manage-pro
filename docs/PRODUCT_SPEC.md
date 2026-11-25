@@ -332,6 +332,11 @@ Each list also has its own search box (same rule: every word must match), kept i
 - **Dispatch board:** a truck row stays when the truck or its driver matches (with all its loads) or one of its
   loads matches (only those loads); unassigned loads are filtered too. The search stays when changing weeks.
 
+**Date pickers (decision of 11/25/2026):**
+- **Loads:** "Pickup from / to" (any day, month and year, company time). The same day in both fields gives that day's
+  pickups; a reversed range is swapped.
+- **Dispatch board:** "Week starting" opens the 7-day board at any chosen day within 5 years. The search is kept.
+
 Results are grouped loads → drivers → trucks → trailers → customers. Arrow keys and Enter open a result. Each role finds
 only what it may see (e.g. viewers find no drivers).
 

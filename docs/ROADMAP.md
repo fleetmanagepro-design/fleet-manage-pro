@@ -148,6 +148,10 @@ Status of the MVP build. Updated at the end of every task.
 - The loads search runs in the database, so it finds older loads too. The board's narrowing is `filterBoard()`, with
   unit tests.
 
+### Date pickers (11/25/2026)
+- Loads list: pickup date range filter, done in the database.
+- Dispatch board: "Week starting" date field (range widened to ±5 years).
+
 ## Open questions for the owner (asked 11/11/2026, answer pending)
 1. **Team loads (two owner-operators on one load):** how is the load value split between them, e.g. 50/50 before the
    company fee, or another split? Today each driver is paid on their own rule from the full load value (2 × 88%).
