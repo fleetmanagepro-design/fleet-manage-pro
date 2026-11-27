@@ -2,6 +2,7 @@ import { LogOut, Plus } from "lucide-react";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand";
 import { NavLinks, type NavGroup, type NavLinkItem } from "@/components/nav-links";
+import { ThemeSwitch } from "@/components/theme-switch";
 import { requireOrg } from "@/lib/auth";
 import type { Permission } from "@/lib/permissions";
 import { signOut } from "@/modules/accounts/actions";
@@ -61,6 +62,7 @@ export async function AppSidebar() {
         <Link href="/onboarding" className="flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm text-sidebar-muted hover:bg-sidebar-accent/60 hover:text-white">
           <Plus aria-hidden className="size-4" /> New organization
         </Link>
+        <div className="px-3 pt-1"><ThemeSwitch /></div>
         <div className="grid gap-1 px-3 pt-1">
           <span className="truncate text-xs text-sidebar-muted" title={user.email}>{user.email}</span>
           <form action={signOut}>
