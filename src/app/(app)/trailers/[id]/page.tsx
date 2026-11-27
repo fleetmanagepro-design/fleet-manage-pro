@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackLink } from "@/components/back-link";
 import { DocumentsSection } from "@/modules/documents/components/documents-section";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -64,7 +65,7 @@ async function TrailerDetail({ params, searchParams }: Pick<PageProps<"/trailers
     <div className="grid max-w-5xl gap-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="grid gap-1">
-          <Link href="/trailers" className="text-sm text-muted-foreground hover:underline">← Trailers</Link>
+          <BackLink fallback="/trailers" />
           <h1 className="flex flex-wrap items-center gap-3 text-2xl font-semibold tracking-tight">
             Trailer {trailer.unit_number}
             <AssetStatusBadge status={trailer.status} archived={archived} />
