@@ -5,7 +5,7 @@ import { z } from "zod";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { requireOrg } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { AddContactForm, CustomerArchiveForm, RemoveContactButton } from "@/modules/customers/components/customer-controls";
 import { CustomerStatusBadge } from "@/modules/customers/components/status-badge";
 import { CUSTOMER_TYPE_LABELS } from "@/modules/customers/labels";
@@ -24,11 +24,11 @@ export default function CustomerPage({ params }: PageProps<"/customers/[id]">) {
 }
 
 async function CustomerDetail({ params }: Pick<PageProps<"/customers/[id]">, "params">) {
-  const { active } = await requireOrg();
+  const { active } = await requirePermission("customers.view");
   const id = z.uuid().safeParse((await params).id);
   const customer = id.success ? await getCustomer(active.organizationId, id.data) : null;
   if (!customer) notFound();
-  const editable = canEditCustomers(active.role);
+  const editable = canEditCustomers(active.permissions);
   const archived = !!customer.archived_at;
   const address = [customer.address_line1, [customer.city, customer.state].filter(Boolean).join(", "), customer.zip]
     .filter(Boolean)

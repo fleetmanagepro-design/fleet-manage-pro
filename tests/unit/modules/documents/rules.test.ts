@@ -1,3 +1,4 @@
+import { toPermissionSet } from "@/lib/permissions";
 import { describe, expect, it } from "vitest";
 import { canAddDocuments, canArchiveDocuments, canViewDocuments, documentPath, fileProblem, safeFileName } from "@/modules/documents/rules";
 import { registerDocumentSchema } from "@/modules/documents/schemas";
@@ -32,15 +33,25 @@ describe("file names and paths", () => {
   });
 });
 
-describe("who sees and adds documents (temporary rules)", () => {
-  it("driver documents: not for viewers; truck and trailer: everyone sees, viewers don't add", () => {
-    expect(canViewDocuments("viewer", "driver")).toBe(false);
-    expect(canViewDocuments("dispatcher", "driver")).toBe(true);
-    expect(canViewDocuments("viewer", "truck")).toBe(true);
-    expect(canAddDocuments("viewer", "truck")).toBe(false);
-    expect(canAddDocuments("maintenance", "trailer")).toBe(true);
-    expect(canArchiveDocuments("admin")).toBe(true);
-    expect(canArchiveDocuments("dispatcher")).toBe(false);
+describe("who sees, adds and removes documents", () => {
+  const viewer = toPermissionSet(["loads.view", "customers.view", "fleet.view"]);
+  const dispatcher = toPermissionSet(["fleet.view", "drivers.view", "documents.add"]);
+  const remover = toPermissionSet(["fleet.view", "documents.remove"]);
+
+  it("seeing follows the entity: drivers need drivers.view, trucks and trailers fleet.view", () => {
+    expect(canViewDocuments(viewer, "driver")).toBe(false);
+    expect(canViewDocuments(dispatcher, "driver")).toBe(true);
+    expect(canViewDocuments(viewer, "truck")).toBe(true);
+    expect(canViewDocuments(toPermissionSet(["drivers.view"]), "trailer")).toBe(false);
+  });
+
+  it("adding and removing need their permission and seeing the entity", () => {
+    expect(canAddDocuments(viewer, "truck")).toBe(false);
+    expect(canAddDocuments(dispatcher, "trailer")).toBe(true);
+    expect(canAddDocuments(toPermissionSet(["documents.add"]), "truck")).toBe(false);
+    expect(canArchiveDocuments(remover, "truck")).toBe(true);
+    expect(canArchiveDocuments(remover, "driver")).toBe(false);
+    expect(canArchiveDocuments(dispatcher, "truck")).toBe(false);
   });
 });
 

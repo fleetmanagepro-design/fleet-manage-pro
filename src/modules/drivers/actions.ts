@@ -9,7 +9,6 @@ import { authorizeAction } from "@/lib/auth";
 import { todayIn } from "@/lib/dates";
 import { checkbox } from "@/lib/form-fields";
 import { createClient } from "@/lib/supabase/server";
-import { DRIVER_EDITORS } from "./permissions";
 import { finalizeBlockers } from "./calculations";
 import { deductionSchema, deletePayRuleSchema, driverSchema, endDeductionSchema, finalizeStatementSchema, payRuleSchema, voidStatementSchema } from "./schemas";
 import { getDriverWeekStatement } from "./statement-queries";
@@ -69,7 +68,7 @@ function driverDbError(action: string, error: PostgrestError, formData: FormData
 }
 
 export async function createDriver(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(DRIVER_EDITORS);
+  const ctx = await authorizeAction("drivers.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = driverSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return validationError(parsed.error, formData);
@@ -86,7 +85,7 @@ export async function createDriver(_prev: ActionState, formData: FormData): Prom
 }
 
 export async function updateDriver(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(DRIVER_EDITORS);
+  const ctx = await authorizeAction("drivers.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const id = z.uuid().safeParse(formData.get("id"));
   if (!id.success) return errorState(UNEXPECTED);
@@ -107,7 +106,7 @@ export async function updateDriver(_prev: ActionState, formData: FormData): Prom
 }
 
 export async function setDriverArchived(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(DRIVER_EDITORS);
+  const ctx = await authorizeAction("drivers.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = z.object({ id: z.uuid(), archive: checkbox }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) return errorState(UNEXPECTED);
@@ -130,7 +129,7 @@ export async function setDriverArchived(_prev: ActionState, formData: FormData):
 }
 
 export async function addPayRule(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(DRIVER_EDITORS);
+  const ctx = await authorizeAction("pay.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = payRuleSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return validationError(parsed.error, formData);
@@ -163,7 +162,7 @@ export async function addPayRule(_prev: ActionState, formData: FormData): Promis
 }
 
 export async function deletePayRule(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(DRIVER_EDITORS);
+  const ctx = await authorizeAction("pay.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = deletePayRuleSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return errorState(UNEXPECTED);
@@ -183,7 +182,7 @@ export async function deletePayRule(_prev: ActionState, formData: FormData): Pro
 }
 
 export async function addDeduction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(DRIVER_EDITORS);
+  const ctx = await authorizeAction("pay.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = deductionSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return validationError(parsed.error, formData);
@@ -208,7 +207,7 @@ export async function addDeduction(_prev: ActionState, formData: FormData): Prom
 }
 
 export async function endDeduction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(DRIVER_EDITORS);
+  const ctx = await authorizeAction("pay.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = endDeductionSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return errorState(UNEXPECTED);
@@ -231,7 +230,7 @@ export async function endDeduction(_prev: ActionState, formData: FormData): Prom
  * never taken from the form — and stored as an immutable snapshot (0004d).
  */
 export async function finalizeStatement(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(DRIVER_EDITORS);
+  const ctx = await authorizeAction("pay.finalize");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = finalizeStatementSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return errorState(UNEXPECTED);
@@ -263,7 +262,7 @@ export async function finalizeStatement(_prev: ActionState, formData: FormData):
 }
 
 export async function voidStatement(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(DRIVER_EDITORS);
+  const ctx = await authorizeAction("pay.finalize");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = voidStatementSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return validationError(parsed.error, formData);

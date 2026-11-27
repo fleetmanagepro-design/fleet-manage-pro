@@ -1,9 +1,8 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { z } from "zod";
-import { requireOrgRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { DriverForm } from "@/modules/drivers/components/driver-form";
-import { DRIVER_EDITORS } from "@/modules/drivers/permissions";
 import { getDriver, listAssignableTrailers, listAssignableTrucks } from "@/modules/drivers/queries";
 import { PageLoading, SectionCard } from "@/modules/fleet/components/asset-page";
 
@@ -18,7 +17,7 @@ export default function EditDriverPage({ params }: PageProps<"/drivers/[id]/edit
 }
 
 async function EditDriver({ params }: Pick<PageProps<"/drivers/[id]/edit">, "params">) {
-  const { active } = await requireOrgRole(DRIVER_EDITORS);
+  const { active } = await requirePermission("drivers.edit");
   const id = z.uuid().safeParse((await params).id);
   const driver = id.success ? await getDriver(active.organizationId, id.data) : null;
   if (!driver) notFound();

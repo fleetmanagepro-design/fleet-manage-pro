@@ -25,7 +25,7 @@ select throws_ok($$ select * from public.list_organization_members('a0000000-000
 select pg_temp.logout();
 
 select pg_temp.login('10000000-0000-4000-8000-000000000003'); -- Org A dispatcher
-select is((select count(*)::int from public.list_organization_members('a0000000-0000-4000-8000-000000000001')), 6,
+select is((select count(*)::int from public.list_organization_members('a0000000-0000-4000-8000-000000000001')), 8,
   'Org A member lists Org A members');
 select results_eq(
   $$ select email, first_name, role::text from public.list_organization_members('a0000000-0000-4000-8000-000000000001')

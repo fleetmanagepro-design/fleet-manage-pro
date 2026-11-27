@@ -1,9 +1,8 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { z } from "zod";
-import { requireOrgRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { CustomerForm } from "@/modules/customers/components/customer-form";
-import { CUSTOMER_EDITORS } from "@/modules/customers/permissions";
 import { getCustomer } from "@/modules/customers/queries";
 import { PageLoading, SectionCard } from "@/modules/fleet/components/asset-page";
 
@@ -18,7 +17,7 @@ export default function EditCustomerPage({ params }: PageProps<"/customers/[id]/
 }
 
 async function EditCustomer({ params }: Pick<PageProps<"/customers/[id]/edit">, "params">) {
-  const { active } = await requireOrgRole(CUSTOMER_EDITORS);
+  const { active } = await requirePermission("customers.edit");
   const id = z.uuid().safeParse((await params).id);
   const customer = id.success ? await getCustomer(active.organizationId, id.data) : null;
   if (!customer) notFound();

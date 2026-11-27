@@ -4,11 +4,10 @@ import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { requireOrgRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { addDays, formatCalendarDate, mondayOf, todayIn } from "@/lib/dates";
 import { formatCents } from "@/lib/money";
 import { DRIVER_TYPE_LABELS } from "@/modules/drivers/labels";
-import { DRIVER_EDITORS } from "@/modules/drivers/permissions";
 import { type WeekRow, listWeekStatements } from "@/modules/drivers/statement-queries";
 import { pickPayWeek } from "@/modules/drivers/statement-week";
 import { PageLoading } from "@/modules/fleet/components/asset-page";
@@ -31,7 +30,7 @@ function StatusBadge({ row }: { row: WeekRow }) {
 }
 
 async function Statements({ searchParams }: Pick<PageProps<"/statements">, "searchParams">) {
-  const { active } = await requireOrgRole(DRIVER_EDITORS);
+  const { active } = await requirePermission("pay.view");
   const today = todayIn(active.timezone);
   const week = pickPayWeek((await searchParams).week, today);
   const rows = await listWeekStatements(active.organizationId, week, active.timezone);

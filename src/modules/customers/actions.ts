@@ -8,7 +8,6 @@ import { type ActionState, errorState, formValues, validationError } from "@/lib
 import { authorizeAction } from "@/lib/auth";
 import { checkbox } from "@/lib/form-fields";
 import { createClient } from "@/lib/supabase/server";
-import { CUSTOMER_EDITORS } from "./permissions";
 import { contactSchema, customerSchema, removeContactSchema } from "./schemas";
 
 const NO_PERMISSION = "You don't have permission to do that.";
@@ -49,7 +48,7 @@ function columns(c: z.infer<typeof customerSchema>) {
 }
 
 export async function createCustomer(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(CUSTOMER_EDITORS);
+  const ctx = await authorizeAction("customers.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = customerSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return validationError(parsed.error, formData);
@@ -66,7 +65,7 @@ export async function createCustomer(_prev: ActionState, formData: FormData): Pr
 }
 
 export async function updateCustomer(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(CUSTOMER_EDITORS);
+  const ctx = await authorizeAction("customers.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const id = z.uuid().safeParse(formData.get("id"));
   if (!id.success) return errorState(UNEXPECTED);
@@ -87,7 +86,7 @@ export async function updateCustomer(_prev: ActionState, formData: FormData): Pr
 }
 
 export async function setCustomerArchived(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(CUSTOMER_EDITORS);
+  const ctx = await authorizeAction("customers.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = z.object({ id: z.uuid(), archive: checkbox }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) return errorState(UNEXPECTED);
@@ -110,7 +109,7 @@ export async function setCustomerArchived(_prev: ActionState, formData: FormData
 }
 
 export async function addContact(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(CUSTOMER_EDITORS);
+  const ctx = await authorizeAction("customers.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = contactSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return validationError(parsed.error, formData);
@@ -132,7 +131,7 @@ export async function addContact(_prev: ActionState, formData: FormData): Promis
 }
 
 export async function removeContact(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(CUSTOMER_EDITORS);
+  const ctx = await authorizeAction("customers.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = removeContactSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return errorState(UNEXPECTED);

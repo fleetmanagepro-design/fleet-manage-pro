@@ -5,7 +5,7 @@ import { z } from "zod";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { requireOrg } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { formatMiles } from "@/lib/miles";
 import { formatCents } from "@/lib/money";
 import { formatInZone, utcToZonedLocal } from "@/lib/zoned-time";
@@ -20,7 +20,7 @@ import { type LoadDetail, getLoad, listLoadDriverItems, listLoadEvents, listPayR
 import { AddDriverItemForm, RemoveDriverItemButton } from "@/modules/dispatch/components/driver-items";
 import { driverLoadPay } from "@/modules/drivers/pay";
 import { describePayRule, ruleInEffect } from "@/modules/drivers/pay-rules";
-import { canViewPay } from "@/modules/drivers/permissions";
+import { canEditPay, canViewPay } from "@/modules/drivers/permissions";
 import { formatCalendarDate, mondayOf, todayIn } from "@/lib/dates";
 import { loadPayDay } from "@/modules/drivers/calculations";
 import { canEditLoads } from "@/modules/dispatch/status";
@@ -38,12 +38,12 @@ export default function LoadPage({ params }: PageProps<"/loads/[id]">) {
 }
 
 async function LoadDetailPage({ params }: Pick<PageProps<"/loads/[id]">, "params">) {
-  const { active } = await requireOrg();
+  const { active } = await requirePermission("loads.view");
   const id = z.uuid().safeParse((await params).id);
   const load = id.success ? await getLoad(active.organizationId, id.data) : null;
   if (!load) notFound();
 
-  const editable = canEditLoads(active.role) && load.status !== "invoiced" && load.status !== "paid";
+  const editable = canEditLoads(active.permissions) && load.status !== "invoiced" && load.status !== "paid";
   const revenue = loadRevenueCents(load, load.accessorials);
   const miles = totalMiles(load);
   const rpm = revenuePerMileCents(revenue, miles);
@@ -153,7 +153,7 @@ async function LoadDetailPage({ params }: Pick<PageProps<"/loads/[id]">, "params
           <SectionCard title="Profitability">
             <Suspense fallback={<PageLoading />}>
               <Profitability load={load} organizationId={active.organizationId} timezone={active.timezone}
-                showPay={canViewPay(active.role)} canEditExtras={editable || active.role === "accounting"}
+                showPay={canViewPay(active.permissions)} canEditExtras={editable || canEditPay(active.permissions)}
                 revenue={revenue} miles={miles} rpm={rpm} emptyPct={emptyPct} />
             </Suspense>
           </SectionCard>

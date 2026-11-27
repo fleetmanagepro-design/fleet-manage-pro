@@ -1,10 +1,10 @@
-import type { OrgRole } from "@/modules/accounts/permissions";
+import type { PermissionSet } from "@/lib/permissions";
 
-/** Drivers and pay (DATABASE_SCHEMA.md §5); RLS enforces the same. */
-export const DRIVER_READERS = ["owner", "admin", "accounting", "dispatcher", "maintenance"] as const satisfies readonly OrgRole[];
-export const DRIVER_EDITORS = ["owner", "admin", "accounting"] as const satisfies readonly OrgRole[];
-
-export const canViewDrivers = (role: OrgRole) => (DRIVER_READERS as readonly OrgRole[]).includes(role);
-export const canEditDrivers = (role: OrgRole) => (DRIVER_EDITORS as readonly OrgRole[]).includes(role);
-/** Pay is visible only to those who manage it; dispatchers and maintenance never see it. */
-export const canViewPay = canEditDrivers;
+/** Drivers and pay (PRODUCT_SPEC.md §4.1 permissions); RLS enforces the same. */
+export const canViewDrivers = (p: PermissionSet) => p.has("drivers.view");
+export const canEditDrivers = (p: PermissionSet) => p.has("drivers.edit");
+export const canViewPay = (p: PermissionSet) => p.has("pay.view");
+export const canEditPay = (p: PermissionSet) => p.has("pay.edit");
+export const canFinalizeStatements = (p: PermissionSet) => p.has("pay.finalize");
+/** Driver pay and contribution on the dashboard (needs pay.view to load the numbers). */
+export const canSeeDashboardPay = (p: PermissionSet) => p.has("dashboard.pay") && p.has("pay.view");

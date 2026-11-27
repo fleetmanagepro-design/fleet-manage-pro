@@ -5,7 +5,7 @@ import { z } from "zod";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { requireOrgRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { addDays, formatCalendarDate, todayIn } from "@/lib/dates";
 import { formatCents } from "@/lib/money";
 import { formatInZone } from "@/lib/zoned-time";
@@ -14,7 +14,6 @@ import { finalizeBlockers } from "@/modules/drivers/calculations";
 import { StatementTable } from "@/modules/drivers/components/statement";
 import { FinalizeStatementForm, PrintButton, VoidStatementForm } from "@/modules/drivers/components/statement-actions";
 import { DRIVER_TYPE_LABELS } from "@/modules/drivers/labels";
-import { DRIVER_EDITORS } from "@/modules/drivers/permissions";
 import { payWeekSchema } from "@/modules/drivers/schemas";
 import { getDriverWeekStatement } from "@/modules/drivers/statement-queries";
 import { PageLoading } from "@/modules/fleet/components/asset-page";
@@ -30,7 +29,7 @@ export default function StatementPage({ params }: PageProps<"/statements/[driver
 }
 
 async function StatementDetail({ params }: Pick<PageProps<"/statements/[driverId]/[week]">, "params">) {
-  const { active } = await requireOrgRole(DRIVER_EDITORS);
+  const { active } = await requirePermission("pay.view");
   const p = await params;
   const driverId = z.uuid().safeParse(p.driverId);
   const week = payWeekSchema.safeParse(p.week);

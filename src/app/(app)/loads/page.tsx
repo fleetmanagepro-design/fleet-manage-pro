@@ -7,7 +7,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { requireOrg } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { formatMiles } from "@/lib/miles";
 import { formatCents } from "@/lib/money";
 import { formatInZone } from "@/lib/zoned-time";
@@ -43,7 +43,7 @@ function StopCell({ stop }: { stop?: LoadStop }) {
 }
 
 async function Loads({ searchParams }: Pick<PageProps<"/loads">, "searchParams">) {
-  const { active } = await requireOrg();
+  const { active } = await requirePermission("loads.view");
   const sp = await searchParams;
   const status = LOAD_STATUSES.includes(sp.status as LoadStatus) ? (sp.status as LoadStatus) : undefined;
   const term = searchTerm(sp.q);
@@ -56,7 +56,7 @@ async function Loads({ searchParams }: Pick<PageProps<"/loads">, "searchParams">
     <div className="grid max-w-7xl gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">Loads</h1>
-        {canEditLoads(active.role) && <Link href="/loads/new" className={buttonVariants()}>New load</Link>}
+        {canEditLoads(active.permissions) && <Link href="/loads/new" className={buttonVariants()}>New load</Link>}
       </div>
       <form method="get" role="search" className="flex flex-wrap items-center gap-3 text-sm">
         <Input name="q" type="search" defaultValue={term ?? ""} placeholder="Load #, pickup #, PO, city, customer"

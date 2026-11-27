@@ -1,7 +1,6 @@
 import { Suspense } from "react";
-import { requireOrgRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { CustomerForm } from "@/modules/customers/components/customer-form";
-import { CUSTOMER_EDITORS } from "@/modules/customers/permissions";
 import { PageLoading, SectionCard } from "@/modules/fleet/components/asset-page";
 
 export const metadata = { title: "Add customer · Fleet Manage Pro" };
@@ -15,7 +14,7 @@ export default function NewCustomerPage() {
 }
 
 async function NewCustomer() {
-  await requireOrgRole(CUSTOMER_EDITORS);
+  await requirePermission("customers.edit");
   return (
     <div className="grid max-w-3xl gap-4">
       <h1 className="text-2xl font-semibold tracking-tight">Add customer</h1>

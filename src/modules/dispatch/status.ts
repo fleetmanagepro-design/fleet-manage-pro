@@ -1,13 +1,12 @@
-import type { OrgRole } from "@/modules/accounts/permissions";
+import type { PermissionSet } from "@/lib/permissions";
 import type { LoadStatus } from "./labels";
 
 /** Mirrors change_load_status() in 0004_loads so the UI only offers what the database allows. */
 const FLOW: LoadStatus[] = ["planned", "dispatched", "at_pickup", "in_transit", "delivered"];
 
-export const DISPATCH_EDITORS = ["owner", "admin", "dispatcher"] as const satisfies readonly OrgRole[];
-export const canEditLoads = (role: OrgRole) => (DISPATCH_EDITORS as readonly OrgRole[]).includes(role);
-/** Overlapping truck/driver assignments: warn; only owner/admin may override (PRODUCT_SPEC §4.4). */
-export const canOverrideOverlap = (role: OrgRole) => role === "owner" || role === "admin";
+export const canEditLoads = (p: PermissionSet) => p.has("loads.edit");
+/** Overlapping truck/driver assignments: warn; overriding needs its own permission (PRODUCT_SPEC §4.4). */
+export const canOverrideOverlap = (p: PermissionSet) => p.has("loads.override");
 
 export const isOpen = (s: LoadStatus) => s === "planned" || s === "dispatched" || s === "at_pickup" || s === "in_transit";
 

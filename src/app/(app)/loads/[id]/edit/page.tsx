@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { z } from "zod";
-import { requireOrgRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { todayIn } from "@/lib/dates";
 import { LoadForm } from "@/modules/dispatch/components/load-form";
 import { loadToDraft } from "@/modules/dispatch/draft";
 import { getLoad, loadFormOptions } from "@/modules/dispatch/queries";
-import { DISPATCH_EDITORS, canOverrideOverlap } from "@/modules/dispatch/status";
+import { canOverrideOverlap } from "@/modules/dispatch/status";
 import { PageLoading, SectionCard } from "@/modules/fleet/components/asset-page";
 
 export const metadata = { title: "Edit load · Fleet Manage Pro" };
@@ -20,7 +20,7 @@ export default function EditLoadPage({ params }: PageProps<"/loads/[id]/edit">) 
 }
 
 async function EditLoad({ params }: Pick<PageProps<"/loads/[id]/edit">, "params">) {
-  const { active } = await requireOrgRole(DISPATCH_EDITORS);
+  const { active } = await requirePermission("loads.edit");
   const id = z.uuid().safeParse((await params).id);
   const load = id.success ? await getLoad(active.organizationId, id.data) : null;
   if (!load) notFound();
@@ -35,7 +35,7 @@ async function EditLoad({ params }: Pick<PageProps<"/loads/[id]/edit">, "params"
       ) : (
         <SectionCard title="Load">
           <LoadForm draft={loadToDraft(load)} options={options} orgTimezone={active.timezone}
-            today={todayIn(active.timezone)} canOverride={canOverrideOverlap(active.role)} />
+            today={todayIn(active.timezone)} canOverride={canOverrideOverlap(active.permissions)} />
         </SectionCard>
       )}
     </div>

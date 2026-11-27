@@ -16,7 +16,7 @@ import { RevenueChart } from "@/modules/analytics/components/revenue-chart";
 import { OPEN_STATUSES, deliveredLoads, describeDue, expiringItems, openLoads } from "@/modules/analytics/queries";
 import { LoadStatusBadge } from "@/modules/dispatch/components/status-badge";
 import { LOAD_STATUS_LABELS } from "@/modules/dispatch/labels";
-import { canViewDrivers, canViewPay } from "@/modules/drivers/permissions";
+import { canSeeDashboardPay, canViewDrivers } from "@/modules/drivers/permissions";
 
 export const metadata = { title: "Dashboard · Fleet Manage Pro" };
 
@@ -47,11 +47,11 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/dashboard">, "search
   const tz = active.timezone;
   const today = todayIn(tz);
   const period = dashboardPeriod(sp.period, sp.from, sp.to, today);
-  const showPay = canViewPay(active.role);
+  const showPay = canSeeDashboardPay(active.permissions);
   const [delivered, open, expiring] = await Promise.all([
     deliveredLoads(active.organizationId, period, tz, showPay),
     openLoads(active.organizationId),
-    expiringItems(active.organizationId, today, canViewDrivers(active.role)),
+    expiringItems(active.organizationId, today, canViewDrivers(active.permissions)),
   ]);
   const s = summarize(delivered, period);
   const { top, bottom } = topAndBottom(s.trucks);

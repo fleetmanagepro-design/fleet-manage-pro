@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { z } from "zod";
 import { buttonVariants } from "@/components/ui/button";
-import { requireOrg } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { formatCalendarDate, todayIn } from "@/lib/dates";
 import { formatMiles } from "@/lib/miles";
 import { formatCents } from "@/lib/money";
@@ -50,12 +50,12 @@ const NOT_BUILT: Record<string, string> = {
 };
 
 async function TruckDetail({ params, searchParams }: Pick<PageProps<"/trucks/[id]">, "params" | "searchParams">) {
-  const { active } = await requireOrg();
+  const { active } = await requirePermission("fleet.view");
   const id = z.uuid().safeParse((await params).id);
   const truck = id.success ? await getTruck(active.organizationId, id.data) : null;
   if (!truck) notFound();
   const tab = parseTab((await searchParams).tab);
-  const role = active.role;
+  const perms = active.permissions;
   const sold = truck.status === "sold";
   const archived = !!truck.archived_at;
   const today = todayIn(active.timezone);
@@ -72,7 +72,7 @@ async function TruckDetail({ params, searchParams }: Pick<PageProps<"/trucks/[id
           </h1>
           <p className="text-sm text-muted-foreground">{[truck.year, truck.make, truck.model].filter(Boolean).join(" ")}</p>
         </div>
-        {canEditAssets(role) && (
+        {canEditAssets(perms) && (
           <div className="flex items-start gap-2">
             {!sold && !archived && (
               <Link href={`${basePath}/edit`} className={buttonVariants({ variant: "outline" })}>Edit</Link>
@@ -87,7 +87,7 @@ async function TruckDetail({ params, searchParams }: Pick<PageProps<"/trucks/[id
       {tab === "documents" ? (
         <SectionCard title="Documents" description="PDF, JPG or PNG. Files are private to your company.">
           <Suspense fallback={<PageLoading />}>
-            <DocumentsSection organizationId={active.organizationId} role={role} entity="truck" entityId={truck.id}
+            <DocumentsSection organizationId={active.organizationId} permissions={perms} entity="truck" entityId={truck.id}
               timeZone={active.timezone} today={today} readOnly={archived} />
           </Suspense>
         </SectionCard>
@@ -120,16 +120,16 @@ async function TruckDetail({ params, searchParams }: Pick<PageProps<"/trucks/[id
             <SectionCard title="Compliance" description="Flagged 30 days before expiry.">
               <ComplianceList items={complianceItems(truck, today)} />
             </SectionCard>
-            {canViewDrivers(role) && (
+            {canViewDrivers(perms) && (
               <SectionCard title="Drivers" description="Drivers who have this as their default truck.">
                 <Suspense fallback={<PageLoading />}>
                   <TruckDrivers organizationId={active.organizationId} truckId={truck.id} />
                 </Suspense>
               </SectionCard>
             )}
-            {canChangeAssetStatus(role) && !archived && (!sold || canSetSold(role)) && (
+            {canChangeAssetStatus(perms) && !archived && (!sold || canSetSold(perms)) && (
               <SectionCard title="Status">
-                <StatusForm kind="truck" id={truck.id} status={truck.status} allowSold={canSetSold(role)} />
+                <StatusForm kind="truck" id={truck.id} status={truck.status} allowSold={canSetSold(perms)} />
               </SectionCard>
             )}
           </div>
@@ -140,8 +140,8 @@ async function TruckDetail({ params, searchParams }: Pick<PageProps<"/trucks/[id
 
           <SectionCard title="Odometer">
             <div className="grid gap-5">
-              {canRecordReadings(role) && !sold && !archived && (
-                <ReadingForm id={truck.id} meterTypes={["odometer"]} today={today} canCorrect={canCorrectReadings(role)} />
+              {canRecordReadings(perms) && !sold && !archived && (
+                <ReadingForm id={truck.id} meterTypes={["odometer"]} today={today} canCorrect={canCorrectReadings(perms)} />
               )}
               <Suspense fallback={<PageLoading />}>
                 <Readings organizationId={active.organizationId} truckId={truck.id} timeZone={active.timezone} />

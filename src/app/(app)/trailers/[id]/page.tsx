@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { z } from "zod";
 import { buttonVariants } from "@/components/ui/button";
-import { requireOrg } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { formatCalendarDate, todayIn } from "@/lib/dates";
 import { formatMiles } from "@/lib/miles";
 import { formatCents } from "@/lib/money";
@@ -48,12 +48,12 @@ const NOT_BUILT: Record<string, string> = {
 };
 
 async function TrailerDetail({ params, searchParams }: Pick<PageProps<"/trailers/[id]">, "params" | "searchParams">) {
-  const { active } = await requireOrg();
+  const { active } = await requirePermission("fleet.view");
   const id = z.uuid().safeParse((await params).id);
   const trailer = id.success ? await getTrailer(active.organizationId, id.data) : null;
   if (!trailer) notFound();
   const tab = parseTab((await searchParams).tab);
-  const role = active.role;
+  const perms = active.permissions;
   const sold = trailer.status === "sold";
   const archived = !!trailer.archived_at;
   const today = todayIn(active.timezone);
@@ -75,7 +75,7 @@ async function TrailerDetail({ params, searchParams }: Pick<PageProps<"/trailers
               .join(" ")}
           </p>
         </div>
-        {canEditAssets(role) && (
+        {canEditAssets(perms) && (
           <div className="flex items-start gap-2">
             {!sold && !archived && (
               <Link href={`${basePath}/edit`} className={buttonVariants({ variant: "outline" })}>Edit</Link>
@@ -90,7 +90,7 @@ async function TrailerDetail({ params, searchParams }: Pick<PageProps<"/trailers
       {tab === "documents" ? (
         <SectionCard title="Documents" description="PDF, JPG or PNG. Files are private to your company.">
           <Suspense fallback={<PageLoading />}>
-            <DocumentsSection organizationId={active.organizationId} role={role} entity="trailer" entityId={trailer.id}
+            <DocumentsSection organizationId={active.organizationId} permissions={perms} entity="trailer" entityId={trailer.id}
               timeZone={active.timezone} today={today} readOnly={archived} />
           </Suspense>
         </SectionCard>
@@ -126,9 +126,9 @@ async function TrailerDetail({ params, searchParams }: Pick<PageProps<"/trailers
             <SectionCard title="Compliance" description="Flagged 30 days before expiry.">
               <ComplianceList items={complianceItems(trailer, today)} />
             </SectionCard>
-            {canChangeAssetStatus(role) && !archived && (!sold || canSetSold(role)) && (
+            {canChangeAssetStatus(perms) && !archived && (!sold || canSetSold(perms)) && (
               <SectionCard title="Status">
-                <StatusForm kind="trailer" id={trailer.id} status={trailer.status} allowSold={canSetSold(role)} />
+                <StatusForm kind="trailer" id={trailer.id} status={trailer.status} allowSold={canSetSold(perms)} />
               </SectionCard>
             )}
           </div>
@@ -141,8 +141,8 @@ async function TrailerDetail({ params, searchParams }: Pick<PageProps<"/trailers
           <SectionCard title={trailer.trailer_type === "reefer" ? "Hubodometer & reefer hours" : "Hubodometer"}
             description="Optional. Trailer miles will mainly come from the loads it moves.">
             <div className="grid gap-5">
-              {canRecordReadings(role) && !sold && !archived && (
-                <ReadingForm id={trailer.id} meterTypes={meterTypes} today={today} canCorrect={canCorrectReadings(role)} />
+              {canRecordReadings(perms) && !sold && !archived && (
+                <ReadingForm id={trailer.id} meterTypes={meterTypes} today={today} canCorrect={canCorrectReadings(perms)} />
               )}
               <Suspense fallback={<PageLoading />}>
                 <Readings organizationId={active.organizationId} trailerId={trailer.id} timeZone={active.timezone} />

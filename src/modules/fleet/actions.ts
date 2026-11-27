@@ -8,7 +8,7 @@ import { type ActionState, errorState, validationError } from "@/lib/action-stat
 import { authorizeAction } from "@/lib/auth";
 import { todayIn } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
-import { ASSET_EDITORS, STATUS_EDITORS, canCorrectReadings, canSetSold } from "./permissions";
+import { canCorrectReadings, canSetSold } from "./permissions";
 import {
   archiveSchema,
   changeStatusSchema,
@@ -115,7 +115,7 @@ function trailerColumns(t: z.infer<typeof trailerSchema>) {
 // ---------------------------------------------------------------------------
 
 export async function createTruck(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(ASSET_EDITORS);
+  const ctx = await authorizeAction("fleet.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = createTruckSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return validationError(parsed.error, formData);
@@ -137,7 +137,7 @@ export async function createTruck(_prev: ActionState, formData: FormData): Promi
 }
 
 export async function updateTruck(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(ASSET_EDITORS);
+  const ctx = await authorizeAction("fleet.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const id = z.uuid().safeParse(formData.get("id"));
   const parsed = truckSchema.safeParse(Object.fromEntries(formData));
@@ -158,7 +158,7 @@ export async function updateTruck(_prev: ActionState, formData: FormData): Promi
 }
 
 export async function createTrailer(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(ASSET_EDITORS);
+  const ctx = await authorizeAction("fleet.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = createTrailerSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return validationError(parsed.error, formData);
@@ -180,7 +180,7 @@ export async function createTrailer(_prev: ActionState, formData: FormData): Pro
 }
 
 export async function updateTrailer(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(ASSET_EDITORS);
+  const ctx = await authorizeAction("fleet.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const id = z.uuid().safeParse(formData.get("id"));
   const parsed = trailerSchema.safeParse(Object.fromEntries(formData));
@@ -210,12 +210,12 @@ export async function updateTrailer(_prev: ActionState, formData: FormData): Pro
 // ---------------------------------------------------------------------------
 
 export async function changeAssetStatus(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(STATUS_EDITORS);
+  const ctx = await authorizeAction(["fleet.edit", "fleet.status"]);
   if (!ctx) return errorState(NO_PERMISSION);
   const kind = kindSchema.safeParse(formData.get("kind"));
   const parsed = changeStatusSchema.safeParse(Object.fromEntries(formData));
   if (!kind.success || !parsed.success) return errorState("Choose a valid status.");
-  if (parsed.data.status === "sold" && !canSetSold(ctx.active.role)) {
+  if (parsed.data.status === "sold" && !canSetSold(ctx.active.permissions)) {
     return errorState("Only an owner or admin can mark an asset sold.");
   }
 
@@ -235,7 +235,7 @@ export async function changeAssetStatus(_prev: ActionState, formData: FormData):
 }
 
 export async function setAssetArchived(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(ASSET_EDITORS);
+  const ctx = await authorizeAction("fleet.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const kind = kindSchema.safeParse(formData.get("kind"));
   const parsed = archiveSchema.safeParse(Object.fromEntries(formData));
@@ -262,13 +262,13 @@ export async function setAssetArchived(_prev: ActionState, formData: FormData): 
 }
 
 export async function recordReading(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(ASSET_EDITORS);
+  const ctx = await authorizeAction("fleet.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = recordReadingSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return validationError(parsed.error, formData);
   const r = parsed.data;
 
-  if (r.isCorrection && !canCorrectReadings(ctx.active.role)) {
+  if (r.isCorrection && !canCorrectReadings(ctx.active.permissions)) {
     return errorState("Only an owner or admin can correct a reading.", formData);
   }
   if (r.readOn > todayIn(ctx.active.timezone)) {
