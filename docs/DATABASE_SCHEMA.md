@@ -18,7 +18,7 @@ PostgreSQL on Supabase. This document is the design; the actual SQL lives in `su
 ## 2. Tenancy and access
 
 ```sql
-create type org_role as enum ('owner','admin','dispatcher','maintenance','accounting','viewer');
+create type org_role as enum ('owner','admin','fleet_director','fleet_manager','dispatcher','maintenance','accounting','viewer');
 
 create table organizations (
   id uuid primary key default gen_random_uuid(),
@@ -51,6 +51,45 @@ create table invitations (
   accepted_at timestamptz
 );
 ```
+
+### Roles and permissions (`0009b_permissions`, 11/27/2026)
+
+```sql
+create table permissions (            -- fixed catalog, readable by every signed-in user
+  key text primary key,               -- e.g. 'loads.edit', 'pay.view'
+  area text not null, label text not null, description text,
+  sort_order int not null unique,
+  requires text[] not null default '{}'   -- e.g. pay.edit requires pay.view
+);
+
+create table org_roles (              -- per organization: 8 built-in roles + the company's own
+  id uuid primary key,
+  organization_id uuid not null references organizations(id),
+  system_key org_role,                -- set for built-in roles, null for custom ones
+  name text not null,                 -- unique per org, ignoring case
+  description text,
+  permissions text[] not null default '{}',  -- validated against the catalog; Owner keeps '{}' and allows all
+  unique (organization_id, id), unique (organization_id, system_key)
+);
+
+create table member_roles (           -- a member has one or more roles
+  organization_id uuid not null, user_id uuid not null, role_id uuid not null,
+  assigned_by uuid, created_at timestamptz,
+  primary key (organization_id, user_id, role_id),
+  foreign key (organization_id, user_id) references organization_members on delete cascade,
+  foreign key (organization_id, role_id) references org_roles (organization_id, id)
+);
+```
+
+- Built-in roles are created by a trigger when an organization is created; `system_role_permissions(role)` holds
+  their defaults. Built-in roles can't be deleted; the Owner role can't be changed.
+- **Transition:** `organization_members.role` and `invitations.role` still carry one built-in role; a trigger mirrors
+  the member's role into `member_roles`. They are replaced when the Roles screen ships (multiple roles per member).
+- `has_permission(org, key)` — true if any of the user's roles allows it (Owner: always). Every RLS policy and
+  security definer function uses it; `has_org_role` is no longer used and will be dropped.
+- `my_permissions(org)` — the signed-in user's permissions (the app shows and hides by this).
+- `can_grant(org, perms, grants_owner)` — has `members.manage`, holds every permission in `perms`, and is an owner if
+  ownership is granted. `can_manage_member(org, user)` = can grant everything that member has.
 
 ### Helper functions (used by RLS)
 
@@ -216,6 +255,9 @@ Implement as SQL views (with `security_invoker = true` so RLS applies):
 Business formulas must match `PRODUCT_SPEC.md §3`; the TypeScript `calculations.ts` and SQL functions are tested against the same fixture data so they cannot drift.
 
 ## 5. Role access matrix (summary)
+Since 0009b the database checks permissions, not roles (§2 "Roles and permissions"); this table shows what the
+built-in roles get. Fleet Director and Fleet Manager: see PRODUCT_SPEC.md §1 and §4.1.
+
 | Area | owner | admin | dispatcher | maintenance | accounting | viewer |
 |---|---|---|---|---|---|---|
 | Org settings, users | RW | RW (no billing) | – | – | – | – |

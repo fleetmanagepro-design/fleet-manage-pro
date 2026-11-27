@@ -14,6 +14,8 @@ export const ORG_ROLES = [
 export const ROLE_LABELS: Record<OrgRole, string> = {
   owner: "Owner",
   admin: "Admin",
+  fleet_director: "Fleet Director",
+  fleet_manager: "Fleet Manager",
   dispatcher: "Dispatcher",
   maintenance: "Maintenance",
   accounting: "Accounting",

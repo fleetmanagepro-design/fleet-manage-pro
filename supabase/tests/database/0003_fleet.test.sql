@@ -77,11 +77,11 @@ select throws_ok($$ insert into public.trucks (organization_id, unit_number, vin
 select lives_ok($$ update public.trucks set status = 'in_shop' where id = (select a_truck from ids) $$,
   'dispatcher can change truck status');
 select throws_ok($$ update public.trucks set plate = 'NEW1' where id = (select a_truck from ids) $$,
-  '42501', 'Dispatchers can only change the status', 'dispatcher cannot change other truck fields');
+  '42501', 'You can only change the status', 'dispatcher cannot change other truck fields');
 select throws_ok($$ update public.trucks set archived_at = now() where id = (select a_truck from ids) $$,
-  '42501', 'Dispatchers can only change the status', 'dispatcher cannot archive');
+  '42501', 'You can only change the status', 'dispatcher cannot archive');
 select throws_ok($$ update public.trucks set status = 'sold' where id = (select a_truck from ids) $$,
-  '42501', 'Only an owner or admin can change a sold status', 'dispatcher cannot mark sold');
+  '42501', 'You don''t have permission to change a sold status', 'dispatcher cannot mark sold');
 select lives_ok($$ update public.trailers set status = 'out_of_service' where id = (select a_dry_van from ids) $$,
   'dispatcher can change trailer status');
 select throws_ok($$ insert into public.odometer_readings (organization_id, asset_type, truck_id, reading, reading_type)
@@ -116,7 +116,7 @@ select lives_ok($$ update public.trucks set annual_inspection_valid_months = 6 w
 select throws_ok($$ update public.trucks set current_odometer = 1 where unit_number = '201' $$,
   '42501', null, 'current odometer is not directly writable');
 select throws_ok($$ update public.trucks set status = 'sold' where unit_number = '201' $$,
-  '42501', 'Only an owner or admin can change a sold status', 'maintenance cannot mark sold');
+  '42501', 'You don''t have permission to change a sold status', 'maintenance cannot mark sold');
 select throws_ok($$ delete from public.trucks where unit_number = '201' $$,
   '42501', null, 'trucks cannot be deleted');
 update public.trucks set archived_at = now() where unit_number = '201';
@@ -145,7 +145,7 @@ select throws_ok($$ insert into public.odometer_readings (organization_id, asset
   'P0001', null, 'a lower reading is rejected');
 select throws_ok($$ insert into public.odometer_readings (organization_id, asset_type, truck_id, reading, reading_type, is_correction, note)
                     values ('a0000000-0000-4000-8000-000000000001', 'truck', (select a_truck from ids), 330000, 'odometer', true, 'typo') $$,
-  '42501', 'Only an owner or admin can correct a reading', 'maintenance cannot correct a reading');
+  '42501', 'You don''t have permission to correct a reading', 'maintenance cannot correct a reading');
 select throws_ok($$ insert into public.odometer_readings (organization_id, asset_type, trailer_id, reading, reading_type)
                     values ('a0000000-0000-4000-8000-000000000001', 'trailer', (select a_dry_van from ids), 10, 'reefer_hours') $$,
   '23514', null, 'reefer hours cannot be recorded for a dry van');
