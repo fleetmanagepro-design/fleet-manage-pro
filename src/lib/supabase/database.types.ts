@@ -279,14 +279,14 @@ isOneToOne: false
                   ]
                 },"invitations": {
                   Row: {
-                    "accepted_at": string | null,"accepted_by": string | null,"created_at": string,"email": string,"expires_at": string,"id": string,"invited_by": string | null,"organization_id": string,"role": Database["public"]['Enums']["org_role"],"token_hash": string
+                    "accepted_at": string | null,"accepted_by": string | null,"created_at": string,"email": string,"expires_at": string,"id": string,"invited_by": string | null,"organization_id": string,"role_ids": (string)[],"token_hash": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "accepted_at"?: string | null,"accepted_by"?: string | null,"created_at"?: string,"email": string,"expires_at"?: string,"id"?: string,"invited_by"?: string | null,"organization_id": string,"role": Database["public"]['Enums']["org_role"],"token_hash": string
+                    "accepted_at"?: string | null,"accepted_by"?: string | null,"created_at"?: string,"email": string,"expires_at"?: string,"id"?: string,"invited_by"?: string | null,"organization_id": string,"role_ids"?: (string)[],"token_hash": string
                   }
                   Update: {
-                    "accepted_at"?: string | null,"accepted_by"?: string | null,"created_at"?: string,"email"?: string,"expires_at"?: string,"id"?: string,"invited_by"?: string | null,"organization_id"?: string,"role"?: Database["public"]['Enums']["org_role"],"token_hash"?: string
+                    "accepted_at"?: string | null,"accepted_by"?: string | null,"created_at"?: string,"email"?: string,"expires_at"?: string,"id"?: string,"invited_by"?: string | null,"organization_id"?: string,"role_ids"?: (string)[],"token_hash"?: string
                   }
                   Relationships: [
                     {
@@ -577,14 +577,14 @@ isOneToOne: false
                   ]
                 },"organization_members": {
                   Row: {
-                    "created_at": string,"organization_id": string,"role": Database["public"]['Enums']["org_role"],"user_id": string
+                    "created_at": string,"organization_id": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"organization_id": string,"role": Database["public"]['Enums']["org_role"],"user_id": string
+                    "created_at"?: string,"organization_id": string,"user_id": string
                   }
                   Update: {
-                    "created_at"?: string,"organization_id"?: string,"role"?: Database["public"]['Enums']["org_role"],"user_id"?: string
+                    "created_at"?: string,"organization_id"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -701,8 +701,8 @@ isOneToOne: false
 "can_grant":
 { Args: { "grants_owner": boolean,"org": string,"perms": (string)[] }; Returns: boolean
                            },
-"can_grant_system_role":
-{ Args: { "org": string,"p_role": Database["public"]['Enums']["org_role"] }; Returns: boolean
+"can_grant_roles":
+{ Args: { "org": string,"p_role_ids": (string)[] }; Returns: boolean
                            },
 "can_manage_member":
 { Args: { "org": string,"p_user": string }; Returns: boolean
@@ -713,19 +713,25 @@ isOneToOne: false
 "change_load_status":
 { Args: { "p_deadhead_miles"?: number,"p_delivered_at"?: string,"p_load": string,"p_loaded_miles"?: number,"p_reason"?: string,"p_to": Database["public"]['Enums']["load_status"] }; Returns: undefined
                            },
+"create_invitation":
+{ Args: { "p_email": string,"p_org": string,"p_role_ids": (string)[],"p_token_hash": string }; Returns: string
+                           },
 "create_organization":
 { Args: { "p_address_line1"?: string,"p_city"?: string,"p_mc_number"?: string,"p_name": string,"p_state"?: string,"p_timezone"?: string,"p_usdot_number"?: string,"p_zip"?: string }; Returns: string
+                           },
+"create_role":
+{ Args: { "p_description": string,"p_name": string,"p_org": string,"p_permissions": (string)[] }; Returns: string
+                           },
+"delete_role":
+{ Args: { "p_role": string }; Returns: undefined
                            },
 "finalize_driver_statement":
 { Args: { "p_driver": string,"p_header": Json,"p_lines": Json,"p_org": string,"p_week": string }; Returns: string
                            },
 "get_invitation_preview":
 { Args: { "p_token": string }; Returns: {
-              "email": string,"organization_name": string,"role": Database["public"]['Enums']["org_role"],"status": string
+              "email": string,"organization_name": string,"role_names": (string)[],"status": string
             }[]
-                           },
-"has_org_role":
-{ Args: { "org": string,"roles": (Database["public"]['Enums']["org_role"])[] }; Returns: boolean
                            },
 "has_permission":
 { Args: { "org": string,"perm": string }; Returns: boolean
@@ -738,7 +744,7 @@ isOneToOne: false
                            },
 "list_organization_members":
 { Args: { "p_org": string }; Returns: {
-              "email": string,"first_name": string,"joined_at": string,"last_name": string,"role": Database["public"]['Enums']["org_role"],"user_id": string
+              "email": string,"first_name": string,"is_owner": boolean,"joined_at": string,"last_name": string,"role_ids": (string)[],"user_id": string
             }[]
                            },
 "load_is_open":
@@ -762,8 +768,17 @@ isOneToOne: false
 "record_load_override":
 { Args: { "p_load": string,"p_reason": string }; Returns: undefined
                            },
+"reset_role":
+{ Args: { "p_role": string }; Returns: undefined
+                           },
+"roles_permissions":
+{ Args: { "p_org": string,"p_role_ids": (string)[] }; Returns: (string)[]
+                           },
 "save_load":
 { Args: { "p_driver_ids": (string)[],"p_load": Json,"p_stops": Json }; Returns: string
+                           },
+"set_member_roles":
+{ Args: { "p_org": string,"p_role_ids": (string)[],"p_user": string }; Returns: undefined
                            },
 "system_role_name":
 { Args: { "p_role": Database["public"]['Enums']["org_role"] }; Returns: string
@@ -773,6 +788,9 @@ isOneToOne: false
                            },
 "try_uuid":
 { Args: { "p": string }; Returns: string
+                           },
+"update_role":
+{ Args: { "p_description": string,"p_name": string,"p_permissions": (string)[],"p_role": string }; Returns: undefined
                            },
 "void_driver_statement":
 { Args: { "p_reason": string,"p_statement": string }; Returns: undefined

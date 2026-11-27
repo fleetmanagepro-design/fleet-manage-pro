@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { US_STATE_CODES, US_TIME_ZONES } from "@/lib/us";
-import { ORG_ROLES } from "./permissions";
+import { PERMISSIONS } from "@/lib/permissions";
 
 const email = z
   .string()
@@ -81,11 +81,20 @@ export const createOrganizationSchema = z.object({
   }),
 });
 
-const role = z.enum(ORG_ROLES, { error: "Choose a role" });
+const roleIds = z.array(z.uuid({ error: "Choose a role" })).min(1, { error: "Choose at least one role" }).max(20);
 
-export const inviteMemberSchema = z.object({ email, role });
+export const inviteMemberSchema = z.object({ email, roleIds });
 
-export const changeMemberRoleSchema = z.object({ userId: z.uuid(), role });
+export const setMemberRolesSchema = z.object({ userId: z.uuid(), roleIds });
+
+/** A role the company makes or edits (PRODUCT_SPEC.md §4.1). */
+export const roleSchema = z.object({
+  name: z.string().trim().min(1, { error: "Enter a name" }).max(60, { error: "Up to 60 characters" }),
+  description: z.string().trim().max(300, { error: "Up to 300 characters" }).optional(),
+  permissions: z.array(z.enum(PERMISSIONS, { error: "Unknown permission" })).max(PERMISSIONS.length),
+});
+
+export const roleIdSchema = z.object({ roleId: z.uuid() });
 
 export const removeMemberSchema = z.object({ userId: z.uuid() });
 

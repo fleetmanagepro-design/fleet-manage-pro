@@ -4,6 +4,8 @@ import {
   ORG_ROLES,
   assignableRoles,
   canGrantRole,
+  canGrantRoles,
+  canManageMember,
   canManageMembers,
   rolePermissions,
   sortRoles,
@@ -14,11 +16,11 @@ import {
 // Built-in roles as 0009b creates them (a subset is enough for these rules).
 const ALL_BUT_OWNER = PERMISSIONS;
 const ROLES: RoleDef[] = [
-  { key: "owner", name: "Owner", permissions: [] },
-  { key: "admin", name: "Admin", permissions: ALL_BUT_OWNER },
-  { key: "fleet_director", name: "Fleet Director", permissions: ["members.manage", "loads.view", "loads.edit", "pay.view"] },
-  { key: "fleet_manager", name: "Fleet Manager", permissions: ["loads.view", "loads.edit"] },
-  { key: "viewer", name: "Viewer", permissions: ["loads.view"] },
+  { id: "owner", key: "owner", name: "Owner", permissions: [] },
+  { id: "admin", key: "admin", name: "Admin", permissions: ALL_BUT_OWNER },
+  { id: "fleet_director", key: "fleet_director", name: "Fleet Director", permissions: ["members.manage", "loads.view", "loads.edit", "pay.view"] },
+  { id: "fleet_manager", key: "fleet_manager", name: "Fleet Manager", permissions: ["loads.view", "loads.edit"] },
+  { id: "viewer", key: "viewer", name: "Viewer", permissions: ["loads.view"] },
 ];
 const role = (key: RoleDef["key"]) => ROLES.find((r) => r.key === key)!;
 const actor = (key: RoleDef["key"]): Actor => ({ permissions: toPermissionSet(rolePermissions(role(key))), isOwner: key === "owner" });
@@ -58,12 +60,23 @@ describe("member management", () => {
     expect(assignableRoles(actor("fleet_director"), ROLES).map((r) => r.key)).toEqual(["fleet_director", "fleet_manager", "viewer"]);
   });
 
+  it("several roles at once need every permission of each", () => {
+    const custom: RoleDef = { id: "c", key: null, name: "Payroll", permissions: ["pay.view", "drivers.view"] };
+    expect(canGrantRoles(actor("fleet_director"), [role("fleet_manager"), role("viewer")])).toBe(true);
+    expect(canGrantRoles(actor("fleet_director"), [role("fleet_manager"), custom])).toBe(false);
+    expect(canGrantRoles(actor("admin"), [role("fleet_manager"), custom])).toBe(true);
+    expect(canManageMember(actor("fleet_director"), [role("admin")])).toBe(false);
+  });
+
   it("the owner role allows the whole catalog", () => {
     expect(rolePermissions(role("owner"))).toEqual(PERMISSIONS);
   });
 
   it("lists roles in the app's order", () => {
-    expect(sortRoles([role("viewer"), role("owner"), role("fleet_manager")]).map((r) => r.key)).toEqual(["owner", "fleet_manager", "viewer"]);
+    const zed: RoleDef = { id: "z", key: null, name: "Zed", permissions: [] };
+    const alpha: RoleDef = { id: "a", key: null, name: "Alpha", permissions: [] };
+    expect(sortRoles([zed, role("viewer"), alpha, role("owner"), role("fleet_manager")]).map((r) => r.name))
+      .toEqual(["Owner", "Fleet Manager", "Viewer", "Alpha", "Zed"]);
     expect(ORG_ROLES).toHaveLength(8);
   });
 });

@@ -33,10 +33,9 @@ create table organizations (
   updated_at timestamptz not null default now()
 );
 
-create table organization_members (
+create table organization_members (     -- roles: member_roles (0009c)
   organization_id uuid not null references organizations(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
-  role org_role not null,
   created_at timestamptz not null default now(),
   primary key (organization_id, user_id)
 );
@@ -45,7 +44,7 @@ create table invitations (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references organizations(id) on delete cascade,
   email text not null,
-  role org_role not null,
+  role_ids uuid[] not null,               -- one or more org_roles (0009c)
   token_hash text not null,
   expires_at timestamptz not null,
   accepted_at timestamptz
@@ -83,10 +82,15 @@ create table member_roles (           -- a member has one or more roles
 
 - Built-in roles are created by a trigger when an organization is created; `system_role_permissions(role)` holds
   their defaults. Built-in roles can't be deleted; the Owner role can't be changed.
-- **Transition:** `organization_members.role` and `invitations.role` still carry one built-in role; a trigger mirrors
-  the member's role into `member_roles`. They are replaced when the Roles screen ships (multiple roles per member).
+- Since `0009c_roles_screen`, `member_roles` is the only record of roles: `organization_members.role`,
+  `invitations.role` and `has_org_role` are gone; invitations carry `role_ids uuid[]` (one or more). The "at least one
+  owner" guard is a trigger on `member_roles`.
+- Writes go only through security definer functions, which check `members.manage` and that nobody gives a
+  permission they don't have: `create_role`, `update_role` (built-in roles keep their name; Owner can't be edited),
+  `reset_role` (built-in: back to `system_role_permissions`), `delete_role` (custom, unused), `set_member_roles`,
+  `create_invitation`; `accept_invitation` gives a new member the invitation's roles.
 - `has_permission(org, key)` — true if any of the user's roles allows it (Owner: always). Every RLS policy and
-  security definer function uses it; `has_org_role` is no longer used and will be dropped.
+  security definer function uses it.
 - `my_permissions(org)` — the signed-in user's permissions (the app shows and hides by this).
 - `can_grant(org, perms, grants_owner)` — has `members.manage`, holds every permission in `perms`, and is an owner if
   ownership is granted. `can_manage_member(org, user)` = can grant everything that member has.

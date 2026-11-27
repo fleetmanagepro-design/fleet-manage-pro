@@ -56,8 +56,10 @@ values
    '815 County Rd 12', 'Kearney', 'NE', '68847', 'America/Chicago',
    '20000000-0000-4000-8000-000000000001');
 
-insert into public.organization_members (organization_id, user_id, role) values
-  ('a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', 'owner'),
+-- One built-in role per seeded member (member_roles holds roles since 0009c).
+with seed_members (organization_id, user_id, role) as (
+  values
+  ('a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', 'owner'::public.org_role),
   ('a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000002', 'admin'),
   ('a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000003', 'dispatcher'),
   ('a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000004', 'maintenance'),
@@ -65,7 +67,16 @@ insert into public.organization_members (organization_id, user_id, role) values
   ('a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000006', 'viewer'),
   ('a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000007', 'fleet_director'),
   ('a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000008', 'fleet_manager'),
-  ('b0000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001', 'owner');
+  ('b0000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001', 'owner')
+), m as (
+  insert into public.organization_members (organization_id, user_id)
+  select organization_id::uuid, user_id::uuid from seed_members
+  returning organization_id, user_id
+)
+insert into public.member_roles (organization_id, user_id, role_id)
+select s.organization_id::uuid, s.user_id::uuid, r.id
+from seed_members s
+join public.org_roles r on r.organization_id = s.organization_id::uuid and r.system_key = s.role;
 
 -- ---------------------------------------------------------------------------
 -- Fleet (0003): Lakeside 12 trucks / 18 trailers, Prairie Haul 3 / 4.

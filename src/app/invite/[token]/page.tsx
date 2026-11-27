@@ -5,7 +5,6 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSessionContext } from "@/lib/auth";
 import { AcceptInvitationForm } from "@/modules/accounts/components/accept-invitation-form";
-import { ROLE_LABELS } from "@/modules/accounts/permissions";
 import { getInvitationPreview } from "@/modules/accounts/queries";
 
 export const metadata = { title: "Invitation · Fleet Manage Pro" };
@@ -77,7 +76,7 @@ async function Invitation({ params }: Pick<PageProps<"/invite/[token]">, "params
       <CardHeader>
         <CardTitle>Join {invitation.organizationName}</CardTitle>
         <CardDescription>
-          You&apos;ve been invited as <strong>{ROLE_LABELS[invitation.role]}</strong>.
+          You&apos;ve been invited as <strong>{invitation.roleNames.join(", ")}</strong>.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">

@@ -1,21 +1,50 @@
 import "server-only";
+import { PERMISSIONS, type Permission } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
-import { sortRoles, type OrgRole, type RoleDef } from "./permissions";
+import { sortRoles, type RoleDef } from "./permissions";
+import type { CatalogEntry } from "./roles";
 
-/** The organization's built-in roles with their permissions (custom roles come with the Roles screen). */
-export async function listRoles(organizationId: string): Promise<RoleDef[]> {
+export type RoleRow = RoleDef & { description: string | null; memberCount: number };
+
+/** The organization's roles (built-in first) with how many members have each. */
+export async function listRoles(organizationId: string): Promise<RoleRow[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("org_roles")
-    .select("system_key, name, permissions")
-    .eq("organization_id", organizationId)
-    .not("system_key", "is", null);
-  if (error) {
-    console.error("listRoles failed", { organizationId, error });
+  const [{ data, error }, { data: assigned, error: assignedError }] = await Promise.all([
+    supabase.from("org_roles").select("id, system_key, name, description, permissions").eq("organization_id", organizationId),
+    supabase.from("member_roles").select("role_id").eq("organization_id", organizationId),
+  ]);
+  if (error || assignedError) {
+    console.error("listRoles failed", { organizationId, error: error ?? assignedError });
     throw new Error("Could not load roles.");
   }
+  const counts = new Map<string, number>();
+  for (const a of assigned ?? []) counts.set(a.role_id, (counts.get(a.role_id) ?? 0) + 1);
   return sortRoles(
-    (data ?? []).flatMap((r) => (r.system_key ? [{ key: r.system_key, name: r.name, permissions: r.permissions }] : [])),
+    (data ?? []).map((r) => ({
+      id: r.id,
+      key: r.system_key,
+      name: r.name,
+      description: r.description,
+      permissions: r.permissions,
+      memberCount: counts.get(r.id) ?? 0,
+    })),
+  );
+}
+
+/** The permission catalog, in display order (only keys this version of the app knows). */
+export async function permissionCatalog(): Promise<CatalogEntry[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("permissions")
+    .select("key, area, label, description, requires")
+    .order("sort_order");
+  if (error) {
+    console.error("permissionCatalog failed", { error });
+    throw new Error("Could not load permissions.");
+  }
+  const known = (k: string): k is Permission => (PERMISSIONS as readonly string[]).includes(k);
+  return (data ?? []).flatMap((p) =>
+    known(p.key) ? [{ key: p.key, area: p.area, label: p.label, description: p.description, requires: p.requires.filter(known) }] : [],
   );
 }
 
@@ -23,7 +52,8 @@ export type MemberRow = {
   userId: string;
   email: string;
   name: string | null;
-  role: OrgRole;
+  roleIds: string[];
+  isOwner: boolean;
   joinedAt: string;
 };
 
@@ -38,7 +68,8 @@ export async function listMembers(organizationId: string): Promise<MemberRow[]> 
     userId: m.user_id,
     email: m.email,
     name: [m.first_name, m.last_name].filter(Boolean).join(" ") || null,
-    role: m.role,
+    roleIds: m.role_ids,
+    isOwner: m.is_owner,
     joinedAt: m.joined_at,
   }));
 }
@@ -46,7 +77,7 @@ export async function listMembers(organizationId: string): Promise<MemberRow[]> 
 export type InvitationRow = {
   id: string;
   email: string;
-  role: OrgRole;
+  roleIds: string[];
   expiresAt: string;
   createdAt: string;
   expired: boolean;
@@ -57,7 +88,7 @@ export async function listOpenInvitations(organizationId: string): Promise<Invit
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("invitations")
-    .select("id, email, role, expires_at, created_at")
+    .select("id, email, role_ids, expires_at, created_at")
     .eq("organization_id", organizationId)
     .is("accepted_at", null)
     .order("created_at", { ascending: false });
@@ -69,7 +100,7 @@ export async function listOpenInvitations(organizationId: string): Promise<Invit
   return (data ?? []).map((i) => ({
     id: i.id,
     email: i.email,
-    role: i.role,
+    roleIds: i.role_ids,
     expiresAt: i.expires_at,
     createdAt: i.created_at,
     expired: new Date(i.expires_at).getTime() <= now,
@@ -78,7 +109,7 @@ export async function listOpenInvitations(organizationId: string): Promise<Invit
 
 export type InvitationPreview = {
   organizationName: string;
-  role: OrgRole;
+  roleNames: string[];
   email: string;
   status: "pending" | "accepted" | "expired";
 };
@@ -94,7 +125,7 @@ export async function getInvitationPreview(token: string): Promise<InvitationPre
   if (!row) return null;
   return {
     organizationName: row.organization_name,
-    role: row.role,
+    roleNames: row.role_names,
     email: row.email,
     status: row.status as InvitationPreview["status"],
   };
