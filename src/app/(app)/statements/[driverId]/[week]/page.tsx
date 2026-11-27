@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackLink } from "@/components/back-link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { z } from "zod";
@@ -57,7 +58,7 @@ async function StatementDetail({ params }: Pick<PageProps<"/statements/[driverId
     <div className="grid max-w-4xl gap-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="grid gap-1">
-          <Link href={`/statements?week=${w}`} className="text-sm text-muted-foreground hover:underline print:hidden">← Driver pay</Link>
+          <BackLink fallback={`/statements?week=${w}`} className="print:hidden" />
           <span className="hidden text-sm font-medium print:block">{active.organizationName}</span>
           <h1 className="flex flex-wrap items-center gap-3 text-2xl font-semibold tracking-tight">
             Pay statement · {s.driver.first_name} {s.driver.last_name}

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
+import { NavigationTracker } from "@/components/back-link";
 
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
@@ -9,6 +10,9 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
           <AppSidebar />
         </Suspense>
       </aside>
+      <Suspense fallback={null}>
+        <NavigationTracker />
+      </Suspense>
       <main className="flex-1 p-4 print:p-0 md:p-8">{children}</main>
     </div>
   );

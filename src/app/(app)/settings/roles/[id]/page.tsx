@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { BackLink } from "@/components/back-link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { requirePermission } from "@/lib/auth";
@@ -33,7 +33,7 @@ async function Role({ params }: { params: Promise<{ id: string }> }) {
   return (
     <div className="grid max-w-3xl gap-4">
       <div className="grid gap-1">
-        <Link href="/settings/roles" className="text-sm text-muted-foreground hover:underline">← Roles</Link>
+        <BackLink fallback="/settings/roles" />
         <h1 className="text-2xl font-semibold tracking-tight">{role.name}</h1>
         <p className="text-sm text-muted-foreground">
           {builtIn ? "Built-in role" : "Made by your company"} · {role.memberCount} {role.memberCount === 1 ? "member" : "members"}

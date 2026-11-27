@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackLink } from "@/components/back-link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { z } from "zod";
@@ -55,7 +56,7 @@ async function LoadDetailPage({ params }: Pick<PageProps<"/loads/[id]">, "params
     <div className="grid max-w-6xl gap-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="grid gap-1">
-          <Link href="/loads" className="text-sm text-muted-foreground hover:underline">← Loads</Link>
+          <BackLink fallback="/loads" />
           <h1 className="flex flex-wrap items-center gap-3 text-2xl font-semibold tracking-tight">
             Load {load.load_number}
             <LoadStatusBadge status={load.status} />
