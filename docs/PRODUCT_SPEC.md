@@ -20,10 +20,16 @@ Most small-carrier tools track loads well but treat costs as an afterthought. Fl
 |---|---|---|
 | Owner | Company owner | Everything, incl. billing, users, all financials |
 | Admin | Office manager | Everything except billing and deleting the company |
+| Fleet Director | Runs the fleet day to day | Members, loads, customers, trucks, trailers, drivers, driver pay and statements, documents, pay on the dashboard; not company settings or the audit log |
+| Fleet Manager | Fleet / operations manager | Loads and dispatch, trucks and trailers, drivers, adding documents; sees customers; no pay, no members |
 | Dispatcher | Dispatch staff | Loads, drivers, trucks, trailers; sees load revenue, not company P&L |
 | Maintenance | Shop / fleet manager | Trucks, trailers, maintenance, tires, related expenses |
 | Accounting | Bookkeeper | Expenses, invoices, payments, reports |
 | Viewer | Investor / partner | Read-only dashboards and reports |
+
+A role is a set of permissions (decided 11/27/2026). A member can have one or more roles and may do whatever any of
+them allows. Besides the built-in roles above, the company can create its own roles by ticking permissions
+(see §4.1 "Roles and permissions").
 
 Drivers do not log in during MVP (driver app is Phase 2).
 
@@ -152,6 +158,24 @@ Each module lists screens, key fields, business rules and **acceptance criteria 
 - Only an Owner can grant the Owner role (invite an owner or promote a member). Admins can invite and manage every other role, but cannot change or remove an Owner.
 - An organization must always have at least one Owner: the last Owner cannot be demoted, removed or leave.
 - Invitations expire after 7 days, are single-use, and can only be accepted by a signed-in user whose verified email matches the invitation. Accepting an invitation to an org the user already belongs to keeps their current role.
+
+**Roles and permissions** (decided 11/27/2026)
+- Permissions (fixed list): manage members and roles · edit company settings and see the audit log · view loads ·
+  create/edit loads and dispatch · override an overlapping assignment · view / edit customers · view trucks and trailers ·
+  add/edit trucks and trailers · change their status · mark them sold · correct meter readings · view / edit drivers ·
+  view driver pay, deductions and statements · edit pay rules and deductions · finalize/void statements · add documents ·
+  remove documents · see driver pay and contribution on the dashboard.
+- Some permissions need another one (editing needs viewing; pay needs viewing drivers); a role must include both.
+- Built-in roles: Owner, Admin, Fleet Director, Fleet Manager, Dispatcher, Maintenance, Accounting, Viewer. Their
+  permissions can be edited (with "reset to default") except Owner, which allows everything and can't be changed.
+  Built-in roles can't be deleted; a role the company made can be deleted while nobody has it.
+- Anyone with "manage members and roles" manages members and roles, but can never give a permission they don't have
+  themselves, and can only change or remove members whose permissions they fully have. The Owner role stays owner-only.
+- Fleet Director / Fleet Manager permissions follow the table approved 11/27/2026: Fleet Director gets members, loads
+  (with override), customers (edit), trucks/trailers (add, edit, status), drivers, driver pay and statements, documents
+  (add and remove) and pay on the dashboard; Fleet Manager gets loads, customers (view), trucks/trailers (add, edit,
+  status), drivers and adding documents. Neither may mark assets sold or correct readings, or edit company settings;
+  the owner can tick these for them.
 
 **AC**
 - A user from Org A cannot see, query or modify any record of Org B (verified by automated tests per table).
@@ -329,7 +353,7 @@ Upload PDF/JPG/PNG (max 20 MB) to Supabase Storage; link to load, truck, trailer
 - **Files.** PDF, JPG and PNG only (no HEIC), up to 20 MB. Optional expiry date: expired or due within 30 days is
   flagged in the list.
 - **Who.** For now, a document is seen by whoever sees the driver, truck or trailer. Everyone but viewers adds documents.
-  Owner/admin remove them, which archives the record and keeps the file. Final roles are decided with the users work
+  Those with "remove documents" remove them, which archives the record and keeps the file. Final roles are decided with the users work
   (owner's decision).
 
 ### 4.12a Global search (decision of 11/25/2026)

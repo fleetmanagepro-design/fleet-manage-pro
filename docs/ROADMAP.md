@@ -159,6 +159,14 @@ Status of the MVP build. Updated at the end of every task.
 - Calculations in `src/modules/analytics/calculations.ts` with unit tests.
 - Costs, profit, CPM, receivables and maintenance cards follow their modules.
 
+### Roles and permissions, part A: database (11/27/2026)
+- `0009a_fleet_roles_enum`, `0009b_permissions`: permission catalog, roles per organization (8 built-in, incl. Fleet
+  Director and Fleet Manager), roles per member (one or more), `has_permission()`; every RLS policy and function
+  rewritten from role lists to permissions.
+- Existing members keep exactly the rights they had (pgTAP compares every built-in role with the old role lists).
+- Nobody can give a permission they don't have; members can only be changed by someone who has all their permissions.
+- The app still uses one role per member until parts B and C.
+
 ## Open questions for the owner (asked 11/11/2026, answer pending)
 1. **Team loads (two owner-operators on one load):** how is the load value split between them, e.g. 50/50 before the
    company fee, or another split? Today each driver is paid on their own rule from the full load value (2 × 88%).
@@ -197,6 +205,14 @@ The owner will go back through the app from the start to correct and add things;
 
 ## Next
 
+### Roles and permissions, part B: app on permissions
+Nav, pages, buttons and server actions check permissions (`my_permissions`) instead of role names; Fleet Director and
+Fleet Manager can be chosen on the Members screen and in invitations.
+
+### Roles and permissions, part C: Roles screen
+Roles page: create a role, tick permissions, edit built-in roles (reset to default), delete unused custom roles;
+several roles per member on the Members screen and in invitations; drop `organization_members.role`/`has_org_role`.
+
 ### Task 5 — Expenses (`0005_expenses`) — postponed by the owner (11/25/2026)
 Categories, expenses (load-direct, equipment, overhead), fuel, recurring costs; void instead of delete; contribution on the
 load page then includes load-direct expenses.
@@ -205,4 +221,4 @@ load page then includes load-direct expenses.
 6. `0006_maintenance` — work orders, PM, tires
 7. `0007_invoicing` — invoices, payments, aging
 8. `0008_documents_alerts` — documents, alerts, CSV import
-9. `0009_reporting` — views/functions, dashboard, reports
+9. `0010_reporting` — views/functions, dashboard, reports
