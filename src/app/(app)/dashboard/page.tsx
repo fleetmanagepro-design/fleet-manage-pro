@@ -1,3 +1,4 @@
+import { CircleOff, DollarSign, Gauge, type LucideIcon, PackageCheck, Route, TrendingUp, Wallet } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -28,12 +29,19 @@ export default function DashboardPage({ searchParams }: PageProps<"/dashboard">)
   );
 }
 
-function Tile({ label, value, sub, href, testId }: { label: string; value: string; sub?: string; href?: string; testId: string }) {
+function Tile({ label, value, sub, href, testId, icon: Icon, accent = false }: {
+  label: string; value: string; sub?: string; href?: string; testId: string; icon: LucideIcon; accent?: boolean;
+}) {
   const body = (
-    <Card className={cn("h-full gap-1 py-4", href && "transition-colors hover:bg-muted/40")}>
-      <CardContent className="grid gap-1 px-4">
-        <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</span>
-        <span className="text-xl font-semibold tracking-tight whitespace-nowrap tabular-nums" data-testid={testId}>{value}</span>
+    <Card className={cn("relative h-full gap-1 py-4", href && "transition-shadow hover:shadow-md", accent && "border-t-2 border-t-gold")}>
+      <CardContent className="grid gap-1.5 px-4">
+        <span className="flex items-center justify-between gap-2">
+          <span className="text-[11px] font-semibold tracking-[0.06em] text-muted-foreground uppercase">{label}</span>
+          <span className={cn("grid size-7 place-items-center rounded-md", accent ? "bg-gold-soft text-[var(--tone-gold-fg)]" : "bg-secondary text-primary")}>
+            <Icon aria-hidden className="size-3.5" />
+          </span>
+        </span>
+        <span className="text-2xl font-semibold tracking-tight whitespace-nowrap text-foreground tabular-nums" data-testid={testId}>{value}</span>
         {sub && <span className="text-xs text-muted-foreground">{sub}</span>}
       </CardContent>
     </Card>
@@ -71,10 +79,10 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/dashboard">, "search
             {PERIOD_LABELS[period.key]} · {period.label} · delivered loads, company time
           </p>
         </div>
-        <nav aria-label="Period" className="flex flex-wrap items-center gap-1">
+        <nav aria-label="Period" className="flex flex-wrap items-center gap-0.5 rounded-lg border bg-card p-1 shadow-xs">
           {PERIODS.filter((p) => p !== "custom").map((p) => (
             <Link key={p} href={p === "month" ? "/dashboard" : `/dashboard?period=${p}`} aria-current={period.key === p ? "page" : undefined}
-              className={buttonVariants({ variant: period.key === p ? "default" : "outline", size: "sm" })}>
+              className={buttonVariants({ variant: period.key === p ? "default" : "ghost", size: "sm" })}>
               {PERIOD_LABELS[p]}
             </Link>
           ))}
@@ -90,17 +98,17 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/dashboard">, "search
       </form>
 
       <div className={cn("grid grid-cols-2 gap-3 md:grid-cols-4", showPay ? "2xl:grid-cols-7" : "xl:grid-cols-5")}>
-        <Tile label="Revenue" value={formatCents(s.revenueCents)} sub="load value delivered" href={loadsHref} testId="tile-revenue" />
-        <Tile label="Loads delivered" value={String(s.loadsDelivered)} href={loadsHref} testId="tile-loads" />
-        <Tile label="Total miles" value={formatMiles(s.miles)} sub={`${formatMiles(s.loadedMiles)} loaded`} testId="tile-miles" />
-        <Tile label="RPM" value={s.rpmCents === null ? "—" : `${formatCents(s.rpmCents)}/mi`} sub="revenue per mile" testId="tile-rpm" />
-        <Tile label="Empty miles" value={s.emptyPercent === null ? "—" : `${s.emptyPercent}%`} sub="deadhead share" testId="tile-empty" />
+        <Tile label="Revenue" value={formatCents(s.revenueCents)} sub="load value delivered" href={loadsHref} testId="tile-revenue" icon={DollarSign} accent />
+        <Tile label="Loads delivered" value={String(s.loadsDelivered)} href={loadsHref} testId="tile-loads" icon={PackageCheck} />
+        <Tile label="Total miles" value={formatMiles(s.miles)} sub={`${formatMiles(s.loadedMiles)} loaded`} testId="tile-miles" icon={Route} />
+        <Tile label="RPM" value={s.rpmCents === null ? "—" : `${formatCents(s.rpmCents)}/mi`} sub="revenue per mile" testId="tile-rpm" icon={Gauge} />
+        <Tile label="Empty miles" value={s.emptyPercent === null ? "—" : `${s.emptyPercent}%`} sub="deadhead share" testId="tile-empty" icon={CircleOff} />
         {showPay && (
           <>
             <Tile label="Driver pay" value={s.driverPayCents === null ? "—" : formatCents(s.driverPayCents)}
-              sub={s.driverPayCents === null ? "a load's driver has no pay rule" : "on these loads"} href="/statements" testId="tile-pay" />
+              sub={s.driverPayCents === null ? "a load's driver has no pay rule" : "on these loads"} href="/statements" testId="tile-pay" icon={Wallet} />
             <Tile label="Contribution" value={s.contributionCents === null ? "—" : formatCents(s.contributionCents)}
-              sub="revenue − driver pay" testId="tile-contribution" />
+              sub="revenue − driver pay" testId="tile-contribution" icon={TrendingUp} accent />
           </>
         )}
       </div>

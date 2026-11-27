@@ -1,17 +1,17 @@
-import { Badge } from "@/components/ui/badge";
+import { StatusPill, type Tone } from "@/components/status-pill";
 import { DRIVER_STATUS_LABELS, type DriverStatus } from "../labels";
 
-const VARIANT: Record<DriverStatus, "default" | "secondary" | "outline"> = {
-  active: "default",
-  inactive: "secondary",
-  terminated: "outline",
+const TONE: Record<DriverStatus, Tone> = {
+  active: "green",
+  inactive: "neutral",
+  terminated: "red",
 };
 
 export function DriverStatusBadge({ status, archived }: { status: DriverStatus; archived?: boolean }) {
   return (
     <span className="inline-flex gap-1">
-      <Badge variant={VARIANT[status]}>{DRIVER_STATUS_LABELS[status]}</Badge>
-      {archived && <Badge variant="outline">Archived</Badge>}
+      <StatusPill tone={TONE[status]}>{DRIVER_STATUS_LABELS[status]}</StatusPill>
+      {archived && <StatusPill tone="neutral">Archived</StatusPill>}
     </span>
   );
 }
