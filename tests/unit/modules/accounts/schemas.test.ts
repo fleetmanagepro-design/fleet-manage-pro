@@ -3,6 +3,7 @@ import {
   createOrganizationSchema,
   inviteMemberSchema,
   resetPasswordSchema,
+  roleSchema,
   signUpSchema,
 } from "@/modules/accounts/schemas";
 
@@ -68,9 +69,20 @@ describe("resetPasswordSchema", () => {
 });
 
 describe("inviteMemberSchema", () => {
-  it("accepts valid roles only", () => {
-    expect(inviteMemberSchema.safeParse({ email: "a@b.co", role: "dispatcher" }).success).toBe(true);
-    expect(inviteMemberSchema.safeParse({ email: "a@b.co", role: "superuser" }).success).toBe(false);
-    expect(inviteMemberSchema.safeParse({ email: "not-an-email", role: "viewer" }).success).toBe(false);
+  const ROLE = "5b0f9a52-3c1e-4c7d-9f4e-2a6b8c0d1e2f";
+  it("needs an email and one or more role ids", () => {
+    expect(inviteMemberSchema.safeParse({ email: "a@b.co", roleIds: [ROLE] }).success).toBe(true);
+    expect(inviteMemberSchema.safeParse({ email: "a@b.co", roleIds: [] }).success).toBe(false);
+    expect(inviteMemberSchema.safeParse({ email: "a@b.co", roleIds: ["dispatcher"] }).success).toBe(false);
+    expect(inviteMemberSchema.safeParse({ email: "not-an-email", roleIds: [ROLE] }).success).toBe(false);
+  });
+});
+
+describe("roleSchema", () => {
+  it("needs a name and known permissions only", () => {
+    expect(roleSchema.safeParse({ name: " Night dispatch ", permissions: ["loads.view"] }).data?.name).toBe("Night dispatch");
+    expect(roleSchema.safeParse({ name: "", permissions: [] }).success).toBe(false);
+    expect(roleSchema.safeParse({ name: "X", permissions: ["loads.fly"] }).success).toBe(false);
+    expect(roleSchema.safeParse({ name: "x".repeat(61), permissions: [] }).success).toBe(false);
   });
 });

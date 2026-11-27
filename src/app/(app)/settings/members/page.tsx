@@ -5,12 +5,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { requirePermission } from "@/lib/auth";
 import { formatDate } from "@/lib/dates";
 import { InviteMemberForm } from "@/modules/accounts/components/invite-member-form";
+import Link from "next/link";
 import {
-  ChangeRoleForm,
+  MemberRolesForm,
   RemoveMemberForm,
   RevokeInvitationForm,
 } from "@/modules/accounts/components/member-actions";
-import { ROLE_LABELS, assignableRoles, type Actor } from "@/modules/accounts/permissions";
+import type { RoleChoice } from "@/modules/accounts/components/role-checkboxes";
+import { canGrantRole, canManageMember, type Actor } from "@/modules/accounts/permissions";
 import { listMembers, listOpenInvitations, listRoles } from "@/modules/accounts/queries";
 
 export const metadata = { title: "Members · Fleet Manage Pro" };
@@ -30,14 +32,21 @@ async function Members() {
     listOpenInvitations(active.organizationId),
     listRoles(active.organizationId),
   ]);
-  const actor: Actor = { permissions: active.permissions, isOwner: active.role === "owner" };
-  const roles = assignableRoles(actor, roleDefs).map((r) => r.key);
-  // Can the actor give (and so manage) this role? Unknown roles are left alone.
-  const grantable = (key: string) => roles.some((r) => r === key);
+  const actor: Actor = { permissions: active.permissions, isOwner: active.isOwner };
+  const choices: RoleChoice[] = roleDefs.map((r) => ({ id: r.id, name: r.name, grantable: canGrantRole(actor, r) }));
+  const byId = new Map(roleDefs.map((r) => [r.id, r]));
+  const rolesOf = (ids: string[]) => ids.flatMap((id) => byId.get(id) ?? []);
+  const names = (ids: string[]) => rolesOf(ids).map((r) => r.name).join(", ") || "No role";
+  // Members and invitations can be changed only by someone who could give all of their roles.
+  const manages = (ids: string[]) => canManageMember(actor, rolesOf(ids));
+  const defaultRoleId = choices.find((c) => c.grantable && byId.get(c.id)?.key === "dispatcher")?.id;
 
   return (
     <div className="grid max-w-4xl gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Members</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight">Members</h1>
+        <Link href="/settings/roles" className="text-sm underline-offset-4 hover:underline">Roles and permissions</Link>
+      </div>
 
       <Card>
         <CardHeader>
@@ -45,7 +54,7 @@ async function Members() {
           <CardDescription>They&apos;ll get an email with a link that is valid for 7 days.</CardDescription>
         </CardHeader>
         <CardContent>
-          <InviteMemberForm roles={roles} />
+          <InviteMemberForm roles={choices} defaultRoleId={defaultRoleId} />
         </CardContent>
       </Card>
 
@@ -58,7 +67,7 @@ async function Members() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Role</TableHead>
+                <TableHead>Roles</TableHead>
                 <TableHead>Joined</TableHead>
                 <TableHead className="text-right">
                   <span className="sr-only">Actions</span>
@@ -68,7 +77,7 @@ async function Members() {
             <TableBody>
               {members.map((m) => {
                 const isSelf = m.userId === user.id;
-                const manageable = grantable(m.role);
+                const manageable = manages(m.roleIds);
                 const label = m.name ?? m.email;
                 return (
                   <TableRow key={m.userId} data-testid={`member-${m.email}`}>
@@ -80,9 +89,11 @@ async function Members() {
                     </TableCell>
                     <TableCell>
                       {manageable ? (
-                        <ChangeRoleForm userId={m.userId} role={m.role} roles={roles} label={label} />
+                        <MemberRolesForm userId={m.userId} label={label} roles={choices} current={m.roleIds} />
                       ) : (
-                        <Badge variant="secondary">{ROLE_LABELS[m.role]}</Badge>
+                        <div className="flex flex-wrap gap-1">
+                          {rolesOf(m.roleIds).map((r) => <Badge key={r.id} variant="secondary">{r.name}</Badge>)}
+                        </div>
                       )}
                     </TableCell>
                     <TableCell>{formatDate(m.joinedAt, active.timezone)}</TableCell>
@@ -109,7 +120,7 @@ async function Members() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
+                  <TableHead>Roles</TableHead>
                   <TableHead>Expires</TableHead>
                   <TableHead className="text-right">
                     <span className="sr-only">Actions</span>
@@ -118,11 +129,11 @@ async function Members() {
               </TableHeader>
               <TableBody>
                 {invitations.map((i) => {
-                  const canRevoke = grantable(i.role);
+                  const canRevoke = manages(i.roleIds);
                   return (
                     <TableRow key={i.id} data-testid={`invitation-${i.email}`}>
                       <TableCell>{i.email}</TableCell>
-                      <TableCell>{ROLE_LABELS[i.role]}</TableCell>
+                      <TableCell>{names(i.roleIds)}</TableCell>
                       <TableCell>
                         {i.expired ? <Badge variant="destructive">Expired</Badge> : formatDate(i.expiresAt, active.timezone)}
                       </TableCell>

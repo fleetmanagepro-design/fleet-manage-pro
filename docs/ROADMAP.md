@@ -174,6 +174,14 @@ Status of the MVP build. Updated at the end of every task.
   permissions the person fully has (Owner only by an owner); members with more rights can't be changed or removed.
 - Seed: a Fleet Director and a Fleet Manager in Lakeside (`director@` / `fleetmanager@lakesidefreight.test`).
 
+### Roles and permissions, part C: Roles screen (11/27/2026)
+- `0009c_roles_screen`: roles live only in `member_roles` (old single-role columns and `has_org_role` dropped);
+  functions to create, edit, reset and delete roles, set a member's roles and invite with several roles.
+- Settings → Roles: list with member counts, "Create role" with permission checkboxes grouped by area (ticking one
+  ticks what it needs; permissions you don't have are greyed out), edit built-in roles with "Reset to default",
+  delete a company role once nobody has it.
+- Members: each member's roles can be changed (one or more); invitations give one or more roles.
+
 ## Open questions for the owner (asked 11/11/2026, answer pending)
 1. **Team loads (two owner-operators on one load):** how is the load value split between them, e.g. 50/50 before the
    company fee, or another split? Today each driver is paid on their own rule from the full load value (2 × 88%).
@@ -212,9 +220,6 @@ The owner will go back through the app from the start to correct and add things;
 
 ## Next
 
-### Roles and permissions, part C: Roles screen
-Roles page: create a role, tick permissions, edit built-in roles (reset to default), delete unused custom roles;
-several roles per member on the Members screen and in invitations; drop `organization_members.role`/`has_org_role`.
 
 ### Task 5 — Expenses (`0005_expenses`) — postponed by the owner (11/25/2026)
 Categories, expenses (load-direct, equipment, overhead), fuel, recurring costs; void instead of delete; contribution on the

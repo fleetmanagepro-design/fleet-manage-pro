@@ -5,12 +5,11 @@ import { FormField } from "@/components/form-field";
 import { FormMessage } from "@/components/form-message";
 import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { initialActionState } from "@/lib/action-state";
 import { inviteMember } from "../actions";
-import { ROLE_LABELS, type OrgRole } from "../permissions";
+import { RoleCheckboxes, type RoleChoice } from "./role-checkboxes";
 
-export function InviteMemberForm({ roles }: { roles: OrgRole[] }) {
+export function InviteMemberForm({ roles, defaultRoleId }: { roles: RoleChoice[]; defaultRoleId?: string }) {
   const [state, action] = useActionState(inviteMember, initialActionState);
   const e = state.fieldErrors ?? {};
   const link = state.status === "success" ? state.data?.inviteLink : undefined;
@@ -25,17 +24,16 @@ export function InviteMemberForm({ roles }: { roles: OrgRole[] }) {
           <Input id="invite-link" readOnly value={link} onFocus={(ev) => ev.currentTarget.select()} />
         </div>
       )}
-      <div className="grid gap-3 sm:grid-cols-[1fr_12rem_auto] sm:items-end">
-        <FormField id="email" label="Email" type="email" autoComplete="off" required
-          key={state.status === "success" ? state.message : "form"}
-          defaultValue={state.status === "error" ? state.values?.email : undefined} errors={e.email} />
-        <FormField id="role" label="Role" errors={e.role}>
-          <NativeSelect id="role" name="role" defaultValue={state.values?.role ?? "dispatcher"} className="w-full">
-            {roles.map((r) => (
-              <NativeSelectOption key={r} value={r}>{ROLE_LABELS[r]}</NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </FormField>
+      <FormField id="email" label="Email" type="email" autoComplete="off" required
+        key={state.status === "success" ? state.message : "form"}
+        defaultValue={state.status === "error" ? state.values?.email : undefined} errors={e.email} />
+      <fieldset className="grid gap-2" aria-describedby={e.roleIds?.length ? "roleIds-error" : undefined}>
+        <legend className="mb-1 text-sm font-medium">Roles</legend>
+        <RoleCheckboxes roles={roles} idPrefix="invite-role" key={state.status === "success" ? state.message : "roles"}
+          checked={state.values?.roleIds ? state.values.roleIds.split(",") : defaultRoleId ? [defaultRoleId] : []} />
+        {e.roleIds?.length ? <p id="roleIds-error" className="text-xs text-destructive">{e.roleIds[0]}</p> : null}
+      </fieldset>
+      <div>
         <SubmitButton pendingLabel="Sending…">Send invite</SubmitButton>
       </div>
     </form>

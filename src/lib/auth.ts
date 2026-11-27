@@ -5,7 +5,7 @@ import { connection } from "next/server";
 import { cache } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import type { OrgRole } from "@/modules/accounts/permissions";
+import { sortRoles, type OrgRole } from "@/modules/accounts/permissions";
 import { hasAny, toPermissionSet, type Permission, type PermissionSet } from "@/lib/permissions";
 
 /** Cookie holding the organization the user is working in. Always re-validated. */
@@ -16,7 +16,10 @@ export type Membership = {
   organizationName: string;
   /** IANA time zone used to display dates for this organization. */
   timezone: string;
-  role: OrgRole;
+  /** Names of the member's roles here, in the app's order (custom roles last). */
+  roleNames: string[];
+  /** Holds the Owner role (only owners make owners). */
+  isOwner: boolean;
 };
 
 /** The organization the user is working in, with what they may do there. */
@@ -45,23 +48,35 @@ export const getSessionContext = cache(async (): Promise<SessionContext | null> 
   } = await supabase.auth.getUser();
   if (userError || !user) return null;
 
-  const { data, error } = await supabase
-    .from("organization_members")
-    .select("organization_id, role, organizations ( name, timezone )")
-    .eq("user_id", user.id);
+  const [{ data, error }, { data: roleRows, error: rolesError }] = await Promise.all([
+    supabase.from("organization_members").select("organization_id, organizations ( name, timezone )").eq("user_id", user.id),
+    supabase.from("member_roles").select("organization_id, org_roles ( name, system_key )").eq("user_id", user.id),
+  ]);
 
-  if (error) {
-    console.error("getSessionContext: failed to load memberships", { userId: user.id, error });
+  if (error || rolesError) {
+    console.error("getSessionContext: failed to load memberships", { userId: user.id, error: error ?? rolesError });
     throw new Error("Could not load your organizations. Please try again.");
   }
 
+  const rolesByOrg = new Map<string, { name: string; key: OrgRole | null }[]>();
+  for (const r of roleRows ?? []) {
+    if (!r.org_roles) continue;
+    const list = rolesByOrg.get(r.organization_id) ?? [];
+    list.push({ name: r.org_roles.name, key: r.org_roles.system_key });
+    rolesByOrg.set(r.organization_id, list);
+  }
+
   const memberships: Membership[] = (data ?? [])
-    .map((m) => ({
-      organizationId: m.organization_id,
-      organizationName: m.organizations?.name ?? "",
-      timezone: m.organizations?.timezone ?? "America/Chicago",
-      role: m.role,
-    }))
+    .map((m) => {
+      const roles = sortRoles(rolesByOrg.get(m.organization_id) ?? []);
+      return {
+        organizationId: m.organization_id,
+        organizationName: m.organizations?.name ?? "",
+        timezone: m.organizations?.timezone ?? "America/Chicago",
+        roleNames: roles.map((r) => r.name),
+        isOwner: roles.some((r) => r.key === "owner"),
+      };
+    })
     .sort((a, b) => a.organizationName.localeCompare(b.organizationName));
 
   const preferred = (await cookies()).get(ACTIVE_ORG_COOKIE)?.value;

@@ -45,7 +45,8 @@ test("owner signs up, creates an organization, invites a dispatcher who joins", 
   // Invite a dispatcher
   await page.getByRole("link", { name: "Members" }).click();
   await page.getByLabel("Email", { exact: true }).fill(dispatcherEmail);
-  await page.getByLabel("Role", { exact: true }).selectOption("dispatcher");
+  const inviteRoles = page.getByRole("group", { name: "Roles", exact: true });
+  await expect(inviteRoles.getByLabel("Dispatcher")).toBeChecked(); // the default
   await page.getByRole("button", { name: "Send invite" }).click();
   await expect(page.getByText(`Invitation sent to ${dispatcherEmail}.`)).toBeVisible();
   await expect(page.getByTestId(`invitation-${dispatcherEmail}`)).toContainText("Dispatcher");
@@ -55,7 +56,8 @@ test("owner signs up, creates an organization, invites a dispatcher who joins", 
   // Revoking an invitation removes it
   const extraEmail = `extra-${id}@example.test`;
   await page.getByLabel("Email", { exact: true }).fill(extraEmail);
-  await page.getByLabel("Role", { exact: true }).selectOption("viewer");
+  await inviteRoles.getByLabel("Dispatcher").uncheck();
+  await inviteRoles.getByLabel("Viewer").check();
   await page.getByRole("button", { name: "Send invite" }).click();
   await expect(page.getByTestId(`invitation-${extraEmail}`)).toBeVisible();
   await page.getByRole("button", { name: `Revoke invitation for ${extraEmail}` }).click();
@@ -63,8 +65,10 @@ test("owner signs up, creates an organization, invites a dispatcher who joins", 
 
   // The only owner cannot step down
   const ownerRow = page.getByTestId(`member-${ownerEmail}`);
-  await ownerRow.getByRole("combobox").selectOption("admin");
-  await ownerRow.getByRole("button", { name: "Save" }).click();
+  await ownerRow.getByLabel(/^Change roles for/).click();
+  await ownerRow.getByLabel("Owner", { exact: true }).uncheck();
+  await ownerRow.getByLabel("Admin", { exact: true }).check();
+  await ownerRow.getByRole("button", { name: "Save roles" }).click();
   await expect(ownerRow.getByText("An organization must have at least one owner.")).toBeVisible();
 
   // Owner signs out; invitee opens the link and creates an account from it

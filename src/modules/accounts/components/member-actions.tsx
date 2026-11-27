@@ -2,30 +2,36 @@
 
 import { useActionState } from "react";
 import { SubmitButton } from "@/components/submit-button";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { initialActionState } from "@/lib/action-state";
-import { changeMemberRole, removeMember, revokeInvitation } from "../actions";
-import { ROLE_LABELS, type OrgRole } from "../permissions";
+import { removeMember, revokeInvitation, setMemberRoles } from "../actions";
+import { RoleCheckboxes, type RoleChoice } from "./role-checkboxes";
 
 function InlineError({ message }: { message?: string }) {
   return message ? <p role="alert" className="text-xs text-destructive">{message}</p> : null;
 }
 
-export function ChangeRoleForm({ userId, role, roles, label }: { userId: string; role: OrgRole; roles: OrgRole[]; label: string }) {
-  const [state, action] = useActionState(changeMemberRole, initialActionState);
+/** The member's roles, with a form to change them (one or more). */
+export function MemberRolesForm({ userId, label, roles, current }: { userId: string; label: string; roles: RoleChoice[]; current: string[] }) {
+  const [state, action] = useActionState(setMemberRoles, initialActionState);
+  const names = roles.filter((r) => current.includes(r.id)).map((r) => r.name).join(", ");
   return (
-    <form action={action} className="grid gap-1">
-      <div className="flex items-center gap-2">
+    <details className="group text-sm">
+      <summary className="cursor-pointer list-none" aria-label={`Change roles for ${label}`}>
+        <span>{names || "No role"}</span>{" "}
+        <span className="text-xs text-muted-foreground underline group-open:hidden">Change</span>
+      </summary>
+      <form action={action} className="mt-2 grid gap-2 rounded-md border p-3">
         <input type="hidden" name="userId" value={userId} />
-        <NativeSelect name="role" defaultValue={role} size="sm" className="min-w-32" aria-label={`Role for ${label}`}>
-          {roles.map((r) => (
-            <NativeSelectOption key={r} value={r}>{ROLE_LABELS[r]}</NativeSelectOption>
-          ))}
-        </NativeSelect>
-        <SubmitButton size="sm" variant="outline" pendingLabel="Saving…">Save</SubmitButton>
-      </div>
+        <fieldset className="grid gap-2">
+          <legend className="sr-only">Roles for {label}</legend>
+          <RoleCheckboxes roles={roles} checked={current} idPrefix={`roles-${userId}`} />
+        </fieldset>
+        <div>
+          <SubmitButton size="sm" variant="outline" pendingLabel="Saving…">Save roles</SubmitButton>
+        </div>
+      </form>
       <InlineError message={state.status === "error" ? state.message : undefined} />
-    </form>
+    </details>
   );
 }
 

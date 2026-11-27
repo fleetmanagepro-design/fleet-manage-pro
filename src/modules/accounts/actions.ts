@@ -15,17 +15,20 @@ import { publicEnv } from "@/lib/env";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { createClient } from "@/lib/supabase/server";
 import { generateToken, hashToken } from "@/lib/tokens";
-import { ROLE_LABELS, canGrantRole, type Actor, type OrgRole } from "./permissions";
-import { listRoles } from "./queries";
+import { hasAll } from "@/lib/permissions";
+import { canGrantRoles, canManageMember, type Actor } from "./permissions";
+import { listMembers, listRoles } from "./queries";
 import {
   acceptInvitationSchema,
-  changeMemberRoleSchema,
   createOrganizationSchema,
   forgotPasswordSchema,
   inviteMemberSchema,
   removeMemberSchema,
   resetPasswordSchema,
   revokeInvitationSchema,
+  roleIdSchema,
+  roleSchema,
+  setMemberRolesSchema,
   signInSchema,
   signUpSchema,
   switchOrganizationSchema,
@@ -198,26 +201,52 @@ export async function switchOrganization(formData: FormData): Promise<void> {
 // Members & invitations ("manage members and roles"; nobody gives what they don't have)
 // ---------------------------------------------------------------------------
 
-/** May the signed-in user give `role` in their active organization? The database checks the same (can_grant). */
-async function mayGrant(ctx: OrgContext, role: OrgRole): Promise<boolean> {
+const ROLES_PATH = "/settings/roles";
+const CANNOT_GRANT = "You can't give a role with permissions you don't have.";
+
+const actorOf = (ctx: OrgContext): Actor => ({ permissions: ctx.active.permissions, isOwner: ctx.active.isOwner });
+
+/** The organization's roles with these ids, or null if any isn't one of them. */
+async function rolesById(ctx: OrgContext, ids: readonly string[]) {
   const roles = await listRoles(ctx.active.organizationId);
-  const def = roles.find((r) => r.key === role);
-  const actor: Actor = { permissions: ctx.active.permissions, isOwner: ctx.active.role === "owner" };
-  return !!def && canGrantRole(actor, def);
+  const picked = ids.map((id) => roles.find((r) => r.id === id));
+  return picked.every((r) => r !== undefined) ? (picked as typeof roles) : null;
+}
+
+/** Form data with the repeated `name` fields as an array. */
+function withList(formData: FormData, name: string) {
+  return { ...Object.fromEntries(formData), [name]: formData.getAll(name).map(String) };
+}
+
+/** Map errors from the role functions (0009c) to user-facing text. */
+function roleError(error: PostgrestError): string {
+  if (error.hint === "last_owner") return "An organization must have at least one owner.";
+  if (error.hint === "cannot_grant") return CANNOT_GRANT;
+  if (error.hint === "permission_requires" || error.hint === "role_in_use" || error.hint === "system_role" ||
+      error.hint === "owner_role" || error.hint === "no_roles") return error.message;
+  if (error.code === "23505") return "A role with this name already exists.";
+  if (error.code === "42501") return NO_PERMISSION;
+  return UNEXPECTED;
 }
 
 export async function inviteMember(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const ctx = await authorizeAction("members.manage");
   if (!ctx) return errorState(NO_PERMISSION);
 
-  const parsed = inviteMemberSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return validationError(parsed.error, formData);
-  const { email, role } = parsed.data;
+  const parsed = inviteMemberSchema.safeParse(withList(formData, "roleIds"));
+  if (!parsed.success) {
+    const failed = validationError(parsed.error, formData);
+    return { ...failed, values: { ...failed.values, roleIds: formData.getAll("roleIds").map(String).join(",") } };
+  }
+  const { email, roleIds } = parsed.data;
   const org = ctx.active;
+  const values = { email, roleIds: roleIds.join(",") };
 
-  if (!(await mayGrant(ctx, role))) {
-    const why = role === "owner" ? "Only an owner can invite another owner." : "You can't give a role with permissions you don't have.";
-    return { ...validationErrorFor("role", why), values: { email, role } };
+  const roles = await rolesById(ctx, roleIds);
+  if (!roles) return { ...validationErrorFor("roleIds", "Choose a valid role."), values };
+  if (!canGrantRoles(actorOf(ctx), roles)) {
+    const why = roles.some((r) => r.key === "owner") && !org.isOwner ? "Only an owner can invite another owner." : CANNOT_GRANT;
+    return { ...validationErrorFor("roleIds", why), values };
   }
 
   const supabase = await createClient();
@@ -229,26 +258,25 @@ export async function inviteMember(_prev: ActionState, formData: FormData): Prom
     return errorState(UNEXPECTED, formData);
   }
   if (members?.some((m) => m.email.toLowerCase() === email)) {
-    return { ...validationErrorFor("email", "This person is already a member."), values: { email, role } };
+    return { ...validationErrorFor("email", "This person is already a member."), values };
   }
 
   const token = generateToken();
-  const { error } = await supabase.from("invitations").insert({
-    organization_id: org.organizationId,
-    email,
-    role,
-    token_hash: hashToken(token),
-    invited_by: ctx.user.id,
+  const { error } = await supabase.rpc("create_invitation", {
+    p_org: org.organizationId,
+    p_email: email,
+    p_role_ids: roleIds,
+    p_token_hash: hashToken(token),
   });
   if (error) {
     if (error.code === "23505") {
       return {
         ...validationErrorFor("email", "An invitation is already pending for this email. Revoke it to send a new one."),
-        values: { email, role },
+        values,
       };
     }
     logError("inviteMember.insert", error, { organizationId: org.organizationId });
-    return errorState(error.code === "42501" ? NO_PERMISSION : UNEXPECTED, formData);
+    return errorState(roleError(error), formData);
   }
   revalidatePath(MEMBERS_PATH);
 
@@ -257,7 +285,7 @@ export async function inviteMember(_prev: ActionState, formData: FormData): Prom
     [ctx.user.user_metadata?.first_name, ctx.user.user_metadata?.last_name].filter(Boolean).join(" ") ||
     ctx.user.email ||
     "A colleague";
-  const roleLabel = ROLE_LABELS[role];
+  const roleLabel = roles.map((r) => r.name).join(", ");
 
   try {
     await sendEmail({
@@ -315,38 +343,33 @@ export async function revokeInvitation(_prev: ActionState, formData: FormData): 
   return { status: "success", message: "Invitation revoked." };
 }
 
-export async function changeMemberRole(_prev: ActionState, formData: FormData): Promise<ActionState> {
+/** Give a member exactly the ticked roles (one or more). */
+export async function setMemberRoles(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const ctx = await authorizeAction("members.manage");
   if (!ctx) return errorState(NO_PERMISSION);
-  const parsed = changeMemberRoleSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return errorState("Choose a valid role.");
-  const { userId, role } = parsed.data;
-  if (!(await mayGrant(ctx, role))) {
-    return errorState(role === "owner" ? "Only an owner can make someone an owner." : "You can't give a role with permissions you don't have.");
+  const parsed = setMemberRolesSchema.safeParse(withList(formData, "roleIds"));
+  if (!parsed.success) return errorState("Choose at least one role.");
+  const { userId, roleIds } = parsed.data;
+
+  const roles = await rolesById(ctx, roleIds);
+  if (!roles) return errorState("Choose a valid role.");
+  if (!canGrantRoles(actorOf(ctx), roles)) {
+    return errorState(roles.some((r) => r.key === "owner") && !ctx.active.isOwner ? "Only an owner can make someone an owner." : CANNOT_GRANT);
   }
 
   const supabase = await createClient();
-  const { data: target } = await supabase
-    .from("organization_members")
-    .select("role")
-    .eq("organization_id", ctx.active.organizationId)
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (!target || !(await mayGrant(ctx, target.role))) return errorState(NO_PERMISSION);
-
-  const { data, error } = await supabase
-    .from("organization_members")
-    .update({ role })
-    .eq("organization_id", ctx.active.organizationId)
-    .eq("user_id", userId)
-    .select("user_id");
+  const { error } = await supabase.rpc("set_member_roles", {
+    p_org: ctx.active.organizationId,
+    p_user: userId,
+    p_role_ids: roleIds,
+  });
   if (error) {
-    if (error.hint !== "last_owner") logError("changeMemberRole", error);
-    return errorState(membershipError(error));
+    if (error.hint !== "last_owner") logError("setMemberRoles", error);
+    return errorState(roleError(error));
   }
-  if (!data?.length) return errorState(NO_PERMISSION);
   revalidatePath(MEMBERS_PATH);
-  return { status: "success", message: "Role updated." };
+  revalidatePath(ROLES_PATH);
+  return { status: "success", message: "Roles updated." };
 }
 
 export async function removeMember(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -356,19 +379,15 @@ export async function removeMember(_prev: ActionState, formData: FormData): Prom
   if (!parsed.success) return errorState(UNEXPECTED);
   const { userId } = parsed.data;
   const isSelf = userId === ctx.user.id;
+  const supabase = await createClient();
 
   if (!isSelf) {
-    const supabase = await createClient();
-    const { data: target } = await supabase
-      .from("organization_members")
-      .select("role")
-      .eq("organization_id", ctx.active.organizationId)
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (!target || !(await mayGrant(ctx, target.role))) return errorState(NO_PERMISSION);
+    const members = await listMembers(ctx.active.organizationId);
+    const target = members.find((m) => m.userId === userId);
+    const roles = target ? await rolesById(ctx, target.roleIds) : null;
+    if (!roles || !canManageMember(actorOf(ctx), roles)) return errorState(NO_PERMISSION);
   }
 
-  const supabase = await createClient();
   const { data, error } = await supabase
     .from("organization_members")
     .delete()
@@ -387,6 +406,99 @@ export async function removeMember(_prev: ActionState, formData: FormData): Prom
   }
   revalidatePath(MEMBERS_PATH);
   return { status: "success", message: "Member removed." };
+}
+
+// ---------------------------------------------------------------------------
+// Roles: the company's own, and editing the built-in ones (0009c)
+// ---------------------------------------------------------------------------
+
+function parseRole(formData: FormData) {
+  return roleSchema.safeParse({
+    name: formData.get("name") ?? "",
+    description: formData.get("description") ?? undefined,
+    permissions: formData.getAll("permissions").map(String),
+  });
+}
+
+export async function createRole(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const ctx = await authorizeAction("members.manage");
+  if (!ctx) return errorState(NO_PERMISSION);
+  const parsed = parseRole(formData);
+  if (!parsed.success) return validationError(parsed.error, formData);
+  const { name, description, permissions } = parsed.data;
+  if (!hasAll(ctx.active.permissions, permissions)) return errorState("You can't give permissions you don't have.", formData);
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("create_role", {
+    p_org: ctx.active.organizationId,
+    p_name: name,
+    p_description: description ?? "",
+    p_permissions: permissions,
+  });
+  if (error) {
+    if (error.code === "23505") return { ...validationErrorFor("name", "A role with this name already exists."), values: { name, description: description ?? "" } };
+    logError("createRole", error);
+    return errorState(roleError(error), formData);
+  }
+  revalidatePath(ROLES_PATH);
+  redirect(`${ROLES_PATH}/${data}`);
+}
+
+export async function updateRole(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const ctx = await authorizeAction("members.manage");
+  if (!ctx) return errorState(NO_PERMISSION);
+  const id = roleIdSchema.safeParse(Object.fromEntries(formData));
+  const parsed = parseRole(formData);
+  if (!id.success) return errorState(UNEXPECTED);
+  if (!parsed.success) return validationError(parsed.error, formData);
+  const { name, description, permissions } = parsed.data;
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_role", {
+    p_role: id.data.roleId,
+    p_name: name,
+    p_description: description ?? "",
+    p_permissions: permissions,
+  });
+  if (error) {
+    if (error.code === "23505") return { ...validationErrorFor("name", "A role with this name already exists."), values: { name, description: description ?? "" } };
+    logError("updateRole", error);
+    return errorState(roleError(error), formData);
+  }
+  revalidatePath(ROLES_PATH);
+  revalidatePath(MEMBERS_PATH);
+  return { status: "success", message: "Role saved." };
+}
+
+export async function resetRole(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const ctx = await authorizeAction("members.manage");
+  if (!ctx) return errorState(NO_PERMISSION);
+  const id = roleIdSchema.safeParse(Object.fromEntries(formData));
+  if (!id.success) return errorState(UNEXPECTED);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("reset_role", { p_role: id.data.roleId });
+  if (error) {
+    logError("resetRole", error);
+    return errorState(roleError(error));
+  }
+  revalidatePath(ROLES_PATH);
+  revalidatePath(MEMBERS_PATH);
+  return { status: "success", message: "Role reset to its default permissions." };
+}
+
+export async function deleteRole(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const ctx = await authorizeAction("members.manage");
+  if (!ctx) return errorState(NO_PERMISSION);
+  const id = roleIdSchema.safeParse(Object.fromEntries(formData));
+  if (!id.success) return errorState(UNEXPECTED);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_role", { p_role: id.data.roleId });
+  if (error) {
+    if (error.hint !== "role_in_use") logError("deleteRole", error);
+    return errorState(roleError(error));
+  }
+  revalidatePath(ROLES_PATH);
+  redirect(ROLES_PATH);
 }
 
 // ---------------------------------------------------------------------------

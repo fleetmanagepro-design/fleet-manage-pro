@@ -5,7 +5,6 @@ import { requireOrg } from "@/lib/auth";
 import { signOut } from "@/modules/accounts/actions";
 import { OrganizationSwitcher } from "@/modules/accounts/components/organization-switcher";
 import type { Permission } from "@/lib/permissions";
-import { ROLE_LABELS } from "@/modules/accounts/permissions";
 import { GlobalSearch } from "@/modules/search/components/global-search";
 
 /** `needs`: the permission that opens the page; none = every member. */
@@ -22,6 +21,7 @@ const NAV: NavItem[] = [
   { href: "/drivers", label: "Drivers", needs: "drivers.view" },
   { href: "/statements", label: "Driver pay", needs: "pay.view" },
   { href: "/settings/members", label: "Members", needs: "members.manage" },
+  { href: "/settings/roles", label: "Roles", needs: "members.manage" },
 ];
 
 export async function AppSidebar() {
@@ -31,7 +31,7 @@ export async function AppSidebar() {
       <div className="grid gap-1">
         <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Fleet Manage Pro</span>
         <span className="font-semibold" data-testid="active-org">{active.organizationName}</span>
-        <span className="text-xs text-muted-foreground" data-testid="active-role">{ROLE_LABELS[active.role]}</span>
+        <span className="text-xs text-muted-foreground" data-testid="active-role">{active.roleNames.join(", ")}</span>
       </div>
       <OrganizationSwitcher memberships={memberships} activeId={active.organizationId} />
       <GlobalSearch />

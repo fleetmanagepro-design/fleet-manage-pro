@@ -25,38 +25,47 @@ export const ROLE_LABELS: Record<OrgRole, string> = {
   viewer: "Viewer",
 };
 
-/** A built-in role as the organization has it (its permissions come from `org_roles`). */
-export type RoleDef = { key: OrgRole; name: string; permissions: readonly string[] };
+/** A role of the organization: built-in (`key` set) or made by the company (`key` null). */
+export type RoleDef = {
+  id: string;
+  key: OrgRole | null;
+  name: string;
+  description?: string | null;
+  permissions: readonly string[];
+};
 
 /** Who is acting: their permissions, and whether they are an owner (only owners grant ownership). */
 export type Actor = { permissions: PermissionSet; isOwner: boolean };
 
 /** Everything a role allows; Owner allows the whole catalog. */
-export function rolePermissions(role: RoleDef): readonly string[] {
+export function rolePermissions(role: Pick<RoleDef, "key" | "permissions">): readonly string[] {
   return role.key === "owner" ? PERMISSIONS : role.permissions;
 }
 
 export const canManageMembers = (p: PermissionSet) => p.has("members.manage");
 
 /**
- * May `actor` give this role? They need "manage members and roles" and every permission the role has;
- * only an owner can make an owner (PRODUCT_SPEC.md §4.1). Mirrors can_grant() in 0009b.
+ * May `actor` give these roles together? They need "manage members and roles" and every permission the
+ * roles allow; only an owner can give Owner (PRODUCT_SPEC.md §4.1). Mirrors can_grant_roles() in 0009c.
  */
-export function canGrantRole(actor: Actor, role: RoleDef): boolean {
+export function canGrantRoles(actor: Actor, roles: readonly Pick<RoleDef, "key" | "permissions">[]): boolean {
   if (!canManageMembers(actor.permissions)) return false;
-  if (role.key === "owner" && !actor.isOwner) return false;
-  return hasAll(actor.permissions, rolePermissions(role));
+  if (roles.some((r) => r.key === "owner") && !actor.isOwner) return false;
+  return roles.every((r) => hasAll(actor.permissions, rolePermissions(r)));
 }
 
-/** The roles `actor` may give, in catalog order. */
-export function assignableRoles(actor: Actor, roles: readonly RoleDef[]): RoleDef[] {
+export const canGrantRole = (actor: Actor, role: Pick<RoleDef, "key" | "permissions">) => canGrantRoles(actor, [role]);
+
+/** The roles `actor` may give. */
+export function assignableRoles<T extends Pick<RoleDef, "key" | "permissions">>(actor: Actor, roles: readonly T[]): T[] {
   return roles.filter((r) => canGrantRole(actor, r));
 }
 
-/** May `actor` change or remove a member who has `target`? Only if they could give that role. */
-export const canManageMember = canGrantRole;
+/** May `actor` change or remove a member who has `memberRoles`? Only if they could give all of them. */
+export const canManageMember = canGrantRoles;
 
-/** Built-in roles in the order the app lists them. */
-export function sortRoles<T extends { key: OrgRole }>(roles: readonly T[]): T[] {
-  return [...roles].sort((a, b) => ORG_ROLES.indexOf(a.key) - ORG_ROLES.indexOf(b.key));
+/** Built-in roles first, in the app's order; then the company's roles by name. */
+export function sortRoles<T extends { key: OrgRole | null; name: string }>(roles: readonly T[]): T[] {
+  const rank = (r: T) => (r.key ? ORG_ROLES.indexOf(r.key) : ORG_ROLES.length);
+  return [...roles].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
 }
