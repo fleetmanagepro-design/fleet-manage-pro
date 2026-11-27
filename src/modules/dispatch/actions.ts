@@ -20,7 +20,7 @@ import {
   removeAccessorialSchema,
   removeDriverItemSchema,
 } from "./schemas";
-import { DISPATCH_EDITORS, canOverrideOverlap } from "./status";
+import { canOverrideOverlap } from "./status";
 
 const NO_PERMISSION = "You don't have permission to do that.";
 const UNEXPECTED = "Something went wrong. Please try again.";
@@ -55,7 +55,7 @@ function dbError(action: string, error: PostgrestError): ActionState {
 }
 
 export async function saveLoad(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(DISPATCH_EDITORS);
+  const ctx = await authorizeAction("loads.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = loadFormSchema.safeParse(nestedFormValues(formData));
   if (!parsed.success) return validationError(parsed.error, formData);
@@ -83,7 +83,7 @@ export async function saveLoad(_prev: ActionState, formData: FormData): Promise<
   );
   if (conflicts.length) {
     const list = conflicts.map((c) => `load ${c.loadNumber} (same ${c.reason})`).join(", ");
-    if (!canOverrideOverlap(ctx.active.role)) {
+    if (!canOverrideOverlap(ctx.active.permissions)) {
       return { status: "error", message: `The truck or a driver is already on ${list} at that time. Ask an owner or admin to override, or change the assignment.` };
     }
     if (!l.overrideReason) {
@@ -133,7 +133,7 @@ export async function saveLoad(_prev: ActionState, formData: FormData): Promise<
 }
 
 export async function changeLoadStatus(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(DISPATCH_EDITORS);
+  const ctx = await authorizeAction("loads.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = changeStatusSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return validationError(parsed.error, formData);
@@ -155,7 +155,7 @@ export async function changeLoadStatus(_prev: ActionState, formData: FormData): 
 }
 
 export async function addAccessorial(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(DISPATCH_EDITORS);
+  const ctx = await authorizeAction("loads.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = accessorialSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return validationError(parsed.error, formData);
@@ -176,7 +176,7 @@ export async function addAccessorial(_prev: ActionState, formData: FormData): Pr
 }
 
 export async function removeAccessorial(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(DISPATCH_EDITORS);
+  const ctx = await authorizeAction("loads.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = removeAccessorialSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return errorState(UNEXPECTED);
@@ -196,7 +196,7 @@ export async function removeAccessorial(_prev: ActionState, formData: FormData):
 
 /** Assign truck/trailer/drivers from the dispatch board (same overlap rule as the load form). */
 export async function assignLoad(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(DISPATCH_EDITORS);
+  const ctx = await authorizeAction("loads.edit");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = assignLoadSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return validationError(parsed.error, formData);
@@ -212,7 +212,7 @@ export async function assignLoad(_prev: ActionState, formData: FormData): Promis
   );
   if (conflicts.length) {
     const list = conflicts.map((c) => `load ${c.loadNumber} (same ${c.reason})`).join(", ");
-    if (!canOverrideOverlap(ctx.active.role)) {
+    if (!canOverrideOverlap(ctx.active.permissions)) {
       return { status: "error", message: `Already on ${list} at that time. Ask an owner or admin to override.` };
     }
     if (!a.overrideReason) {
@@ -247,10 +247,9 @@ export async function assignLoad(_prev: ActionState, formData: FormData): Promis
 }
 
 /** Who records driver extras on a load (e.g. "unloaded the trailer"): dispatch and pay people. */
-const DRIVER_ITEM_EDITORS = ["owner", "admin", "dispatcher", "accounting"] as const;
 
 export async function addDriverItem(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(DRIVER_ITEM_EDITORS);
+  const ctx = await authorizeAction(["loads.edit", "pay.edit"]);
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = driverItemSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return validationError(parsed.error, formData);
@@ -269,7 +268,7 @@ export async function addDriverItem(_prev: ActionState, formData: FormData): Pro
 }
 
 export async function removeDriverItem(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(DRIVER_ITEM_EDITORS);
+  const ctx = await authorizeAction(["loads.edit", "pay.edit"]);
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = removeDriverItemSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return errorState(UNEXPECTED);
@@ -285,7 +284,7 @@ export async function removeDriverItem(_prev: ActionState, formData: FormData): 
 
 /** ZIP → city, state, time zone for the stop form. Null when unknown or not allowed. */
 export async function lookupZipCode(zip: string): Promise<ZipInfo | null> {
-  const ctx = await authorizeAction(DISPATCH_EDITORS);
+  const ctx = await authorizeAction("loads.edit");
   const z = typeof zip === "string" ? zip5(zip) : null;
   if (!ctx || !z) return null;
   try {

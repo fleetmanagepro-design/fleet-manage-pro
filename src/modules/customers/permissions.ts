@@ -1,5 +1,4 @@
-import type { OrgRole } from "@/modules/accounts/permissions";
+import type { PermissionSet } from "@/lib/permissions";
 
-/** Customers (DATABASE_SCHEMA.md §5): everyone reads; these roles edit. RLS enforces the same. */
-export const CUSTOMER_EDITORS = ["owner", "admin", "dispatcher", "accounting"] as const satisfies readonly OrgRole[];
-export const canEditCustomers = (role: OrgRole) => (CUSTOMER_EDITORS as readonly OrgRole[]).includes(role);
+/** Customers (PRODUCT_SPEC.md §4.1 permissions); RLS enforces the same. */
+export const canEditCustomers = (p: PermissionSet) => p.has("customers.edit");

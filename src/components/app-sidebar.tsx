@@ -4,23 +4,24 @@ import { Separator } from "@/components/ui/separator";
 import { requireOrg } from "@/lib/auth";
 import { signOut } from "@/modules/accounts/actions";
 import { OrganizationSwitcher } from "@/modules/accounts/components/organization-switcher";
-import { ROLE_LABELS, canManageMembers, type OrgRole } from "@/modules/accounts/permissions";
-import { canViewDrivers, canViewPay } from "@/modules/drivers/permissions";
+import type { Permission } from "@/lib/permissions";
+import { ROLE_LABELS } from "@/modules/accounts/permissions";
 import { GlobalSearch } from "@/modules/search/components/global-search";
 
-type NavItem = { href: string; label: string; visible: (role: OrgRole) => boolean };
+/** `needs`: the permission that opens the page; none = every member. */
+type NavItem = { href: string; label: string; needs?: Permission };
 
 /** Only modules that exist are listed; more appear as they are built. */
 const NAV: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", visible: () => true },
-  { href: "/dispatch", label: "Dispatch board", visible: () => true },
-  { href: "/loads", label: "Loads", visible: () => true },
-  { href: "/customers", label: "Customers", visible: () => true },
-  { href: "/trucks", label: "Trucks", visible: () => true },
-  { href: "/trailers", label: "Trailers", visible: () => true },
-  { href: "/drivers", label: "Drivers", visible: canViewDrivers },
-  { href: "/statements", label: "Driver pay", visible: canViewPay },
-  { href: "/settings/members", label: "Members", visible: canManageMembers },
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/dispatch", label: "Dispatch board", needs: "loads.view" },
+  { href: "/loads", label: "Loads", needs: "loads.view" },
+  { href: "/customers", label: "Customers", needs: "customers.view" },
+  { href: "/trucks", label: "Trucks", needs: "fleet.view" },
+  { href: "/trailers", label: "Trailers", needs: "fleet.view" },
+  { href: "/drivers", label: "Drivers", needs: "drivers.view" },
+  { href: "/statements", label: "Driver pay", needs: "pay.view" },
+  { href: "/settings/members", label: "Members", needs: "members.manage" },
 ];
 
 export async function AppSidebar() {
@@ -35,7 +36,7 @@ export async function AppSidebar() {
       <OrganizationSwitcher memberships={memberships} activeId={active.organizationId} />
       <GlobalSearch />
       <nav aria-label="Main" className="flex flex-row flex-wrap gap-1 md:flex-col">
-        {NAV.filter((item) => item.visible(active.role)).map((item) => (
+        {NAV.filter((item) => !item.needs || active.permissions.has(item.needs)).map((item) => (
           <Link key={item.href} href={item.href} className="rounded-md px-2 py-1.5 text-sm hover:bg-muted">
             {item.label}
           </Link>

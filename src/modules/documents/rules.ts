@@ -1,4 +1,4 @@
-import type { OrgRole } from "@/modules/accounts/permissions";
+import type { PermissionSet } from "@/lib/permissions";
 
 /**
  * Documents on drivers, trucks and trailers (decision of 11/23/2026; PRODUCT_SPEC §4.12).
@@ -52,8 +52,9 @@ export function safeFileName(name: string): string {
 export const documentPath = (organizationId: string, entity: DocumentEntity, documentId: string, fileName: string) =>
   `${organizationId}/${entity}/${documentId}/${safeFileName(fileName)}`;
 
-const VIEWERS_OF_DRIVERS: readonly OrgRole[] = ["owner", "admin", "accounting", "dispatcher", "maintenance"];
-export const canViewDocuments = (role: OrgRole, entity: DocumentEntity) => entity === "driver" ? VIEWERS_OF_DRIVERS.includes(role) : true;
-/** Everyone but viewers, for now: roles get their final shape with the users work (owner's decision). */
-export const canAddDocuments = (role: OrgRole, entity: DocumentEntity) => canViewDocuments(role, entity) && role !== "viewer";
-export const canArchiveDocuments = (role: OrgRole) => role === "owner" || role === "admin";
+/** Seeing follows the entity (drivers / trucks and trailers); adding and removing are permissions. Mirrors 0009b. */
+export const canViewDocuments = (p: PermissionSet, entity: DocumentEntity) =>
+  p.has(entity === "driver" ? "drivers.view" : "fleet.view");
+export const canAddDocuments = (p: PermissionSet, entity: DocumentEntity) => canViewDocuments(p, entity) && p.has("documents.add");
+export const canArchiveDocuments = (p: PermissionSet, entity: DocumentEntity) =>
+  canViewDocuments(p, entity) && p.has("documents.remove");

@@ -4,7 +4,7 @@ import { searchTerm } from "@/lib/text-search";
 import { Suspense } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { requireOrg } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { formatCalendarDate, todayIn } from "@/lib/dates";
 import { formatCents } from "@/lib/money";
 import { formatInZone, zonedLocalToUtc } from "@/lib/zoned-time";
@@ -28,7 +28,7 @@ export default function DispatchPage({ searchParams }: PageProps<"/dispatch">) {
 }
 
 async function Board({ searchParams }: Pick<PageProps<"/dispatch">, "searchParams">) {
-  const { active } = await requireOrg();
+  const { active } = await requirePermission("loads.view");
   const sp = await searchParams;
   const tz = active.timezone;
   const today = todayIn(tz);
@@ -36,7 +36,7 @@ async function Board({ searchParams }: Pick<PageProps<"/dispatch">, "searchParam
   const days = boardDays(start);
   const fromIso = zonedLocalToUtc(`${days[0]}T00:00`, tz);
   const toIso = zonedLocalToUtc(`${addDays(days[days.length - 1], 1)}T00:00`, tz);
-  const editable = canEditLoads(active.role);
+  const editable = canEditLoads(active.permissions);
   const term = searchTerm(sp.q);
   const keepQ = term ? `&q=${encodeURIComponent(term)}` : "";
   const [all, options] = await Promise.all([
@@ -107,7 +107,7 @@ async function Board({ searchParams }: Pick<PageProps<"/dispatch">, "searchParam
                     </div>
                     {options && (
                       <AssignForm loadId={l.id} loadNumber={l.load_number} options={options} today={today}
-                        canOverride={canOverrideOverlap(active.role)} />
+                        canOverride={canOverrideOverlap(active.permissions)} />
                     )}
                   </li>
                 );

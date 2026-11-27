@@ -1,10 +1,9 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { z } from "zod";
-import { requireOrgRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { PageLoading, SectionCard } from "@/modules/fleet/components/asset-page";
 import { TrailerForm } from "@/modules/fleet/components/asset-forms";
-import { ASSET_EDITORS } from "@/modules/fleet/permissions";
 import { getTrailer } from "@/modules/fleet/queries";
 
 export const metadata = { title: "Edit trailer · Fleet Manage Pro" };
@@ -18,7 +17,7 @@ export default function EditTrailerPage({ params }: PageProps<"/trailers/[id]/ed
 }
 
 async function EditTrailer({ params }: Pick<PageProps<"/trailers/[id]/edit">, "params">) {
-  const { active } = await requireOrgRole(ASSET_EDITORS);
+  const { active } = await requirePermission("fleet.edit");
   const id = z.uuid().safeParse((await params).id);
   const trailer = id.success ? await getTrailer(active.organizationId, id.data) : null;
   if (!trailer) notFound();

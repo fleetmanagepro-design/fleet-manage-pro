@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { requireOrg } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { CustomerStatusBadge } from "@/modules/customers/components/status-badge";
 import {
   CUSTOMER_STATUSES,
@@ -31,7 +31,7 @@ export default function CustomersPage({ searchParams }: PageProps<"/customers">)
 }
 
 async function Customers({ searchParams }: Pick<PageProps<"/customers">, "searchParams">) {
-  const { active } = await requireOrg();
+  const { active } = await requirePermission("customers.view");
   const sp = await searchParams;
   const search = sanitizeSearch(sp.q);
   const type = CUSTOMER_TYPES.includes(sp.type as CustomerType) ? (sp.type as CustomerType) : undefined;
@@ -44,7 +44,7 @@ async function Customers({ searchParams }: Pick<PageProps<"/customers">, "search
     <div className="grid max-w-6xl gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">Customers</h1>
-        {canEditCustomers(active.role) && <Link href="/customers/new" className={buttonVariants()}>Add customer</Link>}
+        {canEditCustomers(active.permissions) && <Link href="/customers/new" className={buttonVariants()}>Add customer</Link>}
       </div>
       <form method="get" role="search" className="flex flex-wrap items-center gap-3 text-sm">
         <Input name="q" defaultValue={search} placeholder="Search name or MC number" aria-label="Search customers" className="h-7 w-64" />

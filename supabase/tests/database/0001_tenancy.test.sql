@@ -100,7 +100,7 @@ select is((select name from public.organizations where id = 'a0000000-0000-4000-
 -- Roles inside Org A
 -- =============================================================================
 select pg_temp.login('10000000-0000-4000-8000-000000000006'); -- viewer
-select is((select count(*)::int from public.organization_members), 6, 'viewer sees own org members');
+select is((select count(*)::int from public.organization_members), 8, 'viewer sees own org members');
 select is((select count(*)::int from public.audit_logs), 0, 'viewer cannot read audit logs');
 select is((select count(*)::int from public.invitations), 0, 'viewer cannot read invitations');
 update public.organizations set name = 'Viewer edit' where id = 'a0000000-0000-4000-8000-000000000001';

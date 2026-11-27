@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { formatCalendarDate, formatDate } from "@/lib/dates";
 import { expiryItem } from "@/lib/expiry";
-import type { OrgRole } from "@/modules/accounts/permissions";
+import type { PermissionSet } from "@/lib/permissions";
 import { listDocuments } from "../queries";
 import { DOC_TYPE_LABELS, type DocumentEntity, canAddDocuments, canArchiveDocuments, canViewDocuments } from "../rules";
 import { ArchiveDocumentButton, OpenDocumentButton } from "./document-buttons";
@@ -10,10 +10,10 @@ import { DocumentUpload } from "./document-upload";
 const size = (bytes: number) => (bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`);
 
 /** Documents of one driver, truck or trailer: list (open, remove) and upload. */
-export async function DocumentsSection({ organizationId, role, entity, entityId, timeZone, today, readOnly = false }: {
-  organizationId: string; role: OrgRole; entity: DocumentEntity; entityId: string; timeZone: string; today: string; readOnly?: boolean;
+export async function DocumentsSection({ organizationId, permissions, entity, entityId, timeZone, today, readOnly = false }: {
+  organizationId: string; permissions: PermissionSet; entity: DocumentEntity; entityId: string; timeZone: string; today: string; readOnly?: boolean;
 }) {
-  if (!canViewDocuments(role, entity)) return null;
+  if (!canViewDocuments(permissions, entity)) return null;
   const docs = await listDocuments(organizationId, entity, entityId);
   return (
     <div className="grid gap-4">
@@ -39,14 +39,14 @@ export async function DocumentsSection({ organizationId, role, entity, entityId,
                 </div>
                 <div className="flex items-start gap-1">
                   <OpenDocumentButton id={d.id} fileName={d.file_name} />
-                  {canArchiveDocuments(role) && !readOnly && <ArchiveDocumentButton id={d.id} fileName={d.file_name} />}
+                  {canArchiveDocuments(permissions, entity) && !readOnly && <ArchiveDocumentButton id={d.id} fileName={d.file_name} />}
                 </div>
               </li>
             );
           })}
         </ul>
       )}
-      {canAddDocuments(role, entity) && !readOnly && (
+      {canAddDocuments(permissions, entity) && !readOnly && (
         <div className="border-t pt-4">
           <DocumentUpload organizationId={organizationId} entity={entity} entityId={entityId} />
         </div>

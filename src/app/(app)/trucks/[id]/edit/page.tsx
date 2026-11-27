@@ -1,10 +1,9 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { z } from "zod";
-import { requireOrgRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { PageLoading, SectionCard } from "@/modules/fleet/components/asset-page";
 import { TruckForm } from "@/modules/fleet/components/asset-forms";
-import { ASSET_EDITORS } from "@/modules/fleet/permissions";
 import { getTruck } from "@/modules/fleet/queries";
 
 export const metadata = { title: "Edit truck · Fleet Manage Pro" };
@@ -18,7 +17,7 @@ export default function EditTruckPage({ params }: PageProps<"/trucks/[id]/edit">
 }
 
 async function EditTruck({ params }: Pick<PageProps<"/trucks/[id]/edit">, "params">) {
-  const { active } = await requireOrgRole(ASSET_EDITORS);
+  const { active } = await requirePermission("fleet.edit");
   const id = z.uuid().safeParse((await params).id);
   const truck = id.success ? await getTruck(active.organizationId, id.data) : null;
   if (!truck) notFound();

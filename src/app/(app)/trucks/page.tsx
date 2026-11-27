@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { requireOrg } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { todayIn } from "@/lib/dates";
 import { formatMiles } from "@/lib/miles";
 import { complianceItems } from "@/modules/fleet/compliance";
@@ -24,7 +24,7 @@ export default function TrucksPage({ searchParams }: PageProps<"/trucks">) {
 }
 
 async function Trucks({ searchParams }: Pick<PageProps<"/trucks">, "searchParams">) {
-  const { active } = await requireOrg();
+  const { active } = await requirePermission("fleet.view");
   const sp = await searchParams;
   const status = parseStatusFilter(sp.status);
   const includeArchived = sp.archived === "1";
@@ -37,7 +37,7 @@ async function Trucks({ searchParams }: Pick<PageProps<"/trucks">, "searchParams
     <div className="grid max-w-6xl gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">Trucks</h1>
-        {canEditAssets(active.role) && (
+        {canEditAssets(active.permissions) && (
           <Link href="/trucks/new" className={buttonVariants()}>Add truck</Link>
         )}
       </div>

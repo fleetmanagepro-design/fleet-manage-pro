@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { requireOrg } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { todayIn } from "@/lib/dates";
 import { formatMiles } from "@/lib/miles";
 import { complianceItems } from "@/modules/fleet/compliance";
@@ -25,7 +25,7 @@ export default function TrailersPage({ searchParams }: PageProps<"/trailers">) {
 }
 
 async function Trailers({ searchParams }: Pick<PageProps<"/trailers">, "searchParams">) {
-  const { active } = await requireOrg();
+  const { active } = await requirePermission("fleet.view");
   const sp = await searchParams;
   const status = parseStatusFilter(sp.status);
   const includeArchived = sp.archived === "1";
@@ -38,7 +38,7 @@ async function Trailers({ searchParams }: Pick<PageProps<"/trailers">, "searchPa
     <div className="grid max-w-6xl gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">Trailers</h1>
-        {canEditAssets(active.role) && (
+        {canEditAssets(active.permissions) && (
           <Link href="/trailers/new" className={buttonVariants()}>Add trailer</Link>
         )}
       </div>

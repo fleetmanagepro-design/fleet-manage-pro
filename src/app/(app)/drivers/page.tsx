@@ -5,12 +5,12 @@ import { ComplianceSummary } from "@/components/expiry-badges";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { requireOrgRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { formatCalendarDate, todayIn } from "@/lib/dates";
 import { driverCompliance } from "@/modules/drivers/compliance";
 import { DriverStatusBadge } from "@/modules/drivers/components/status-badge";
 import { DRIVER_STATUSES, DRIVER_STATUS_LABELS, DRIVER_TYPE_LABELS, type DriverStatus } from "@/modules/drivers/labels";
-import { DRIVER_READERS, canEditDrivers } from "@/modules/drivers/permissions";
+import { canEditDrivers } from "@/modules/drivers/permissions";
 import { listDrivers } from "@/modules/drivers/queries";
 import { ListFilters, PageLoading } from "@/modules/fleet/components/asset-page";
 
@@ -27,7 +27,7 @@ export default function DriversPage({ searchParams }: PageProps<"/drivers">) {
 }
 
 async function Drivers({ searchParams }: Pick<PageProps<"/drivers">, "searchParams">) {
-  const { active } = await requireOrgRole(DRIVER_READERS);
+  const { active } = await requirePermission("drivers.view");
   const sp = await searchParams;
   const status = DRIVER_STATUSES.includes(sp.status as DriverStatus) ? (sp.status as DriverStatus) : undefined;
   const includeArchived = sp.archived === "1";
@@ -40,7 +40,7 @@ async function Drivers({ searchParams }: Pick<PageProps<"/drivers">, "searchPara
     <div className="grid max-w-6xl gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">Drivers</h1>
-        {canEditDrivers(active.role) && <Link href="/drivers/new" className={buttonVariants()}>Add driver</Link>}
+        {canEditDrivers(active.permissions) && <Link href="/drivers/new" className={buttonVariants()}>Add driver</Link>}
       </div>
       <ListFilters status={status} includeArchived={includeArchived} statusOptions={STATUS_OPTIONS} search={term} searchPlaceholder="Name, phone, CDL #, truck" />
       <Card>

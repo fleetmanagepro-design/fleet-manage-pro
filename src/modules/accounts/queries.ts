@@ -1,6 +1,23 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import type { OrgRole } from "./permissions";
+import { sortRoles, type OrgRole, type RoleDef } from "./permissions";
+
+/** The organization's built-in roles with their permissions (custom roles come with the Roles screen). */
+export async function listRoles(organizationId: string): Promise<RoleDef[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("org_roles")
+    .select("system_key, name, permissions")
+    .eq("organization_id", organizationId)
+    .not("system_key", "is", null);
+  if (error) {
+    console.error("listRoles failed", { organizationId, error });
+    throw new Error("Could not load roles.");
+  }
+  return sortRoles(
+    (data ?? []).flatMap((r) => (r.system_key ? [{ key: r.system_key, name: r.name, permissions: r.permissions }] : [])),
+  );
+}
 
 export type MemberRow = {
   userId: string;

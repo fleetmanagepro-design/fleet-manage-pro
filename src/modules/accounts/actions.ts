@@ -9,13 +9,14 @@ import {
   errorState,
   validationError,
 } from "@/lib/action-state";
-import { ACTIVE_ORG_COOKIE, authorizeAction, getSessionContext } from "@/lib/auth";
+import { ACTIVE_ORG_COOKIE, authorizeAction, getSessionContext, type OrgContext } from "@/lib/auth";
 import { EmailNotConfiguredError, escapeHtml, sendEmail } from "@/lib/email";
 import { publicEnv } from "@/lib/env";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { createClient } from "@/lib/supabase/server";
 import { generateToken, hashToken } from "@/lib/tokens";
-import { ROLE_LABELS, assignableRoles, canManageMember } from "./permissions";
+import { ROLE_LABELS, canGrantRole, type Actor, type OrgRole } from "./permissions";
+import { listRoles } from "./queries";
 import {
   acceptInvitationSchema,
   changeMemberRoleSchema,
@@ -194,11 +195,19 @@ export async function switchOrganization(formData: FormData): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Members & invitations (owner/admin)
+// Members & invitations ("manage members and roles"; nobody gives what they don't have)
 // ---------------------------------------------------------------------------
 
+/** May the signed-in user give `role` in their active organization? The database checks the same (can_grant). */
+async function mayGrant(ctx: OrgContext, role: OrgRole): Promise<boolean> {
+  const roles = await listRoles(ctx.active.organizationId);
+  const def = roles.find((r) => r.key === role);
+  const actor: Actor = { permissions: ctx.active.permissions, isOwner: ctx.active.role === "owner" };
+  return !!def && canGrantRole(actor, def);
+}
+
 export async function inviteMember(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(["owner", "admin"]);
+  const ctx = await authorizeAction("members.manage");
   if (!ctx) return errorState(NO_PERMISSION);
 
   const parsed = inviteMemberSchema.safeParse(Object.fromEntries(formData));
@@ -206,8 +215,9 @@ export async function inviteMember(_prev: ActionState, formData: FormData): Prom
   const { email, role } = parsed.data;
   const org = ctx.active;
 
-  if (!assignableRoles(org.role).includes(role)) {
-    return { ...validationErrorFor("role", "Only an owner can invite another owner."), values: { email, role } };
+  if (!(await mayGrant(ctx, role))) {
+    const why = role === "owner" ? "Only an owner can invite another owner." : "You can't give a role with permissions you don't have.";
+    return { ...validationErrorFor("role", why), values: { email, role } };
   }
 
   const supabase = await createClient();
@@ -284,7 +294,7 @@ export async function inviteMember(_prev: ActionState, formData: FormData): Prom
 }
 
 export async function revokeInvitation(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(["owner", "admin"]);
+  const ctx = await authorizeAction("members.manage");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = revokeInvitationSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return errorState(UNEXPECTED);
@@ -306,16 +316,24 @@ export async function revokeInvitation(_prev: ActionState, formData: FormData): 
 }
 
 export async function changeMemberRole(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(["owner", "admin"]);
+  const ctx = await authorizeAction("members.manage");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = changeMemberRoleSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return errorState("Choose a valid role.");
   const { userId, role } = parsed.data;
-  if (!assignableRoles(ctx.active.role).includes(role)) {
-    return errorState("Only an owner can make someone an owner.");
+  if (!(await mayGrant(ctx, role))) {
+    return errorState(role === "owner" ? "Only an owner can make someone an owner." : "You can't give a role with permissions you don't have.");
   }
 
   const supabase = await createClient();
+  const { data: target } = await supabase
+    .from("organization_members")
+    .select("role")
+    .eq("organization_id", ctx.active.organizationId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!target || !(await mayGrant(ctx, target.role))) return errorState(NO_PERMISSION);
+
   const { data, error } = await supabase
     .from("organization_members")
     .update({ role })
@@ -347,7 +365,7 @@ export async function removeMember(_prev: ActionState, formData: FormData): Prom
       .eq("organization_id", ctx.active.organizationId)
       .eq("user_id", userId)
       .maybeSingle();
-    if (!target || !canManageMember(ctx.active.role, target.role)) return errorState(NO_PERMISSION);
+    if (!target || !(await mayGrant(ctx, target.role))) return errorState(NO_PERMISSION);
   }
 
   const supabase = await createClient();

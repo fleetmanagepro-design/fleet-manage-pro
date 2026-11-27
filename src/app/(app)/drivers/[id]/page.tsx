@@ -7,7 +7,7 @@ import { ComplianceList } from "@/components/expiry-badges";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { requireOrgRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { addDays, formatCalendarDate, mondayOf, todayIn } from "@/lib/dates";
 import { driverCompliance, isBlockedFromDriving } from "@/modules/drivers/compliance";
 import {
@@ -20,7 +20,7 @@ import {
 import { DriverStatusBadge } from "@/modules/drivers/components/status-badge";
 import { DRIVER_TYPE_LABELS } from "@/modules/drivers/labels";
 import { describeExtras, describePayRule, isRuleLocked, ruleInEffect } from "@/modules/drivers/pay-rules";
-import { DRIVER_READERS, canEditDrivers, canViewPay } from "@/modules/drivers/permissions";
+import { canEditDrivers, canViewPay } from "@/modules/drivers/permissions";
 import { getDriver, listDeductions, listPayRules } from "@/modules/drivers/queries";
 import { listDriverStatements } from "@/modules/drivers/statement-queries";
 import { describeDeduction } from "@/modules/drivers/calculations";
@@ -38,7 +38,7 @@ export default function DriverPage({ params }: PageProps<"/drivers/[id]">) {
 }
 
 async function DriverDetail({ params }: Pick<PageProps<"/drivers/[id]">, "params">) {
-  const { active } = await requireOrgRole(DRIVER_READERS);
+  const { active } = await requirePermission("drivers.view");
   const id = z.uuid().safeParse((await params).id);
   const driver = id.success ? await getDriver(active.organizationId, id.data) : null;
   if (!driver) notFound();
@@ -46,7 +46,7 @@ async function DriverDetail({ params }: Pick<PageProps<"/drivers/[id]">, "params
   const compliance = driverCompliance(driver, today);
   const archived = !!driver.archived_at;
   const name = `${driver.first_name} ${driver.last_name}`;
-  const editable = canEditDrivers(active.role);
+  const editable = canEditDrivers(active.permissions);
 
   return (
     <div className="grid max-w-5xl gap-5">
@@ -100,7 +100,7 @@ async function DriverDetail({ params }: Pick<PageProps<"/drivers/[id]">, "params
           </div>
         </SectionCard>
 
-        {canViewPay(active.role) && (
+        {canViewPay(active.permissions) && (
           <SectionCard title="Pay" description="A raise is a new rule with a start date. Rules already in effect are kept as history.">
             <Suspense fallback={<PageLoading />}>
               <PayRules organizationId={active.organizationId} driverId={driver.id} today={today} editable={editable && !archived}
@@ -109,7 +109,7 @@ async function DriverDetail({ params }: Pick<PageProps<"/drivers/[id]">, "params
           </SectionCard>
         )}
 
-        {canViewPay(active.role) && (
+        {canViewPay(active.permissions) && (
           <SectionCard title="Deductions" description="Taken off every weekly statement while active: % of the week's gross or a fixed amount per week.">
             <Suspense fallback={<PageLoading />}>
               <Deductions organizationId={active.organizationId} driverId={driver.id} today={today} editable={editable && !archived} />
@@ -119,12 +119,12 @@ async function DriverDetail({ params }: Pick<PageProps<"/drivers/[id]">, "params
 
         <SectionCard title="Documents" description="CDL, medical card, MVR and other files. PDF, JPG or PNG; private to your company.">
           <Suspense fallback={<PageLoading />}>
-            <DocumentsSection organizationId={active.organizationId} role={active.role} entity="driver" entityId={driver.id}
+            <DocumentsSection organizationId={active.organizationId} permissions={active.permissions} entity="driver" entityId={driver.id}
               timeZone={active.timezone} today={today} readOnly={archived} />
           </Suspense>
         </SectionCard>
 
-        {canViewPay(active.role) && (
+        {canViewPay(active.permissions) && (
           <SectionCard title="Pay statements" description="Weekly, Monday–Sunday; loads count in the week they were picked up.">
             <Suspense fallback={<PageLoading />}>
               <Statements organizationId={active.organizationId} driverId={driver.id} today={today} />

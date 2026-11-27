@@ -1,6 +1,6 @@
 -- Roles and permissions (migration 0009). Run: npm run test:db
 -- Relies on supabase/seed.sql: Org A (Lakeside) owner ..01, admin ..02, dispatcher ..03, maintenance ..04,
--- accounting ..05, viewer ..06; Org B (Prairie Haul) owner 2000..01.
+-- accounting ..05, viewer ..06, fleet director ..07, fleet manager ..08; Org B (Prairie Haul) owner 2000..01.
 begin;
 create extension if not exists pgtap with schema extensions;
 select no_plan();
@@ -14,17 +14,7 @@ create function pg_temp.logout() returns void language sql as $$
   select set_config('request.jwt.claims', '', true);
 $$;
 
--- A Fleet Director (..07) and a Fleet Manager (..08) in Org A.
-insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
-  created_at, updated_at, confirmation_token, recovery_token, email_change_token_new, email_change)
-values
-  ('00000000-0000-0000-0000-000000000000', '10000000-0000-4000-8000-000000000007', 'authenticated',
-   'authenticated', 'director@example.test', '', now(), now(), now(), '', '', '', ''),
-  ('00000000-0000-0000-0000-000000000000', '10000000-0000-4000-8000-000000000008', 'authenticated',
-   'authenticated', 'manager@example.test', '', now(), now(), now(), '', '', '', '');
-insert into public.organization_members (organization_id, user_id, role) values
-  ('a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000007', 'fleet_director'),
-  ('a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000008', 'fleet_manager');
+-- Seeded: Fleet Director ..07 and Fleet Manager ..08 in Org A.
 
 -- =============================================================================
 -- Built-in roles and the move from one role per member

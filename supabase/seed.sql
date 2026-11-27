@@ -18,6 +18,8 @@ with seed_users (id, email, first_name, last_name) as (
     ('10000000-0000-4000-8000-000000000004'::uuid, 'shop@lakesidefreight.test',        'Ray',    'Kowalski'),
     ('10000000-0000-4000-8000-000000000005'::uuid, 'accounting@lakesidefreight.test',  'Janet',  'Hughes'),
     ('10000000-0000-4000-8000-000000000006'::uuid, 'viewer@lakesidefreight.test',      'Tom',    'Becker'),
+    ('10000000-0000-4000-8000-000000000007'::uuid, 'director@lakesidefreight.test',    'Grace',  'Holloway'),
+    ('10000000-0000-4000-8000-000000000008'::uuid, 'fleetmanager@lakesidefreight.test','Victor', 'Salas'),
     ('20000000-0000-4000-8000-000000000001'::uuid, 'owner@prairiehaul.test',           'Sarah',  'Mendez')
 )
 insert into auth.users (
@@ -61,6 +63,8 @@ insert into public.organization_members (organization_id, user_id, role) values
   ('a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000004', 'maintenance'),
   ('a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000005', 'accounting'),
   ('a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000006', 'viewer'),
+  ('a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000007', 'fleet_director'),
+  ('a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000008', 'fleet_manager'),
   ('b0000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001', 'owner');
 
 -- ---------------------------------------------------------------------------

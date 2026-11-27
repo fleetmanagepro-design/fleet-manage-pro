@@ -167,6 +167,13 @@ Status of the MVP build. Updated at the end of every task.
 - Nobody can give a permission they don't have; members can only be changed by someone who has all their permissions.
 - The app still uses one role per member until parts B and C.
 
+### Roles and permissions, part B: app on permissions (11/27/2026)
+- The menu, pages, buttons and server actions check permissions (`my_permissions()`, `src/lib/permissions.ts`)
+  instead of role names; list and detail pages need their "view" permission.
+- Fleet Director and Fleet Manager can be chosen on Members and in invitations. The roles offered are only those whose
+  permissions the person fully has (Owner only by an owner); members with more rights can't be changed or removed.
+- Seed: a Fleet Director and a Fleet Manager in Lakeside (`director@` / `fleetmanager@lakesidefreight.test`).
+
 ## Open questions for the owner (asked 11/11/2026, answer pending)
 1. **Team loads (two owner-operators on one load):** how is the load value split between them, e.g. 50/50 before the
    company fee, or another split? Today each driver is paid on their own rule from the full load value (2 × 88%).
@@ -204,10 +211,6 @@ The owner will go back through the app from the start to correct and add things;
 - Compliance expirations are shown on assets; the alert center and daily email digest come with Task 8.
 
 ## Next
-
-### Roles and permissions, part B: app on permissions
-Nav, pages, buttons and server actions check permissions (`my_permissions`) instead of role names; Fleet Director and
-Fleet Manager can be chosen on the Members screen and in invitations.
 
 ### Roles and permissions, part C: Roles screen
 Roles page: create a role, tick permissions, edit built-in roles (reset to default), delete unused custom roles;

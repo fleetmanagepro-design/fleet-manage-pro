@@ -26,7 +26,7 @@ export async function registerDocument(input: unknown): Promise<RegisterResult> 
     return { ok: false, message: issue?.message ?? UNEXPECTED, field: issue?.path.join(".") };
   }
   const d = parsed.data;
-  if (!canAddDocuments(ctx.active.role, d.entityType)) return { ok: false, message: NO_PERMISSION };
+  if (!canAddDocuments(ctx.active.permissions, d.entityType)) return { ok: false, message: NO_PERMISSION };
   const path = documentPath(ctx.active.organizationId, d.entityType, d.documentId, d.fileName);
   if (path !== d.storagePath) return { ok: false, message: UNEXPECTED };
 
@@ -75,7 +75,7 @@ export async function documentUrl(id: string): Promise<string | null> {
 }
 
 export async function archiveDocument(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const ctx = await authorizeAction(["owner", "admin"] as const);
+  const ctx = await authorizeAction("documents.remove");
   if (!ctx) return errorState(NO_PERMISSION);
   const parsed = documentIdSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return errorState(UNEXPECTED);

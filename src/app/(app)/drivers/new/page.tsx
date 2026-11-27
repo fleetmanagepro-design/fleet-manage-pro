@@ -1,7 +1,6 @@
 import { Suspense } from "react";
-import { requireOrgRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { DriverForm } from "@/modules/drivers/components/driver-form";
-import { DRIVER_EDITORS } from "@/modules/drivers/permissions";
 import { listAssignableTrailers, listAssignableTrucks } from "@/modules/drivers/queries";
 import { PageLoading, SectionCard } from "@/modules/fleet/components/asset-page";
 
@@ -16,7 +15,7 @@ export default function NewDriverPage() {
 }
 
 async function NewDriver() {
-  const { active } = await requireOrgRole(DRIVER_EDITORS);
+  const { active } = await requirePermission("drivers.edit");
   const [trucks, trailers] = await Promise.all([
     listAssignableTrucks(active.organizationId),
     listAssignableTrailers(active.organizationId),
