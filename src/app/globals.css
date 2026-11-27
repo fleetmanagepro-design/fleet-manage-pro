@@ -39,6 +39,9 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-sidebar-muted: var(--sidebar-muted);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -49,41 +52,53 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --viz-1: #257de0;
-  --viz-1-soft: #cce3fd;
-  --viz-grid: #e5e5e5;
-  --chart-5: oklch(0.269 0 0);
+  /* Fleet Manage Pro: navy + gold (owner's choice, 11/27/2026). Warm white page, white cards. */
+  --background: #faf9f6;
+  --foreground: #0f1b2d;
+  --card: #ffffff;
+  --card-foreground: #0f1b2d;
+  --popover: #ffffff;
+  --popover-foreground: #0f1b2d;
+  --primary: #1e3a8a;
+  --primary-foreground: #ffffff;
+  --secondary: #eef1f7;
+  --secondary-foreground: #1e2a44;
+  --muted: #f2f0eb;
+  --muted-foreground: #5f6675;
+  --accent: #eef1f7;
+  --accent-foreground: #1e2a44;
+  --destructive: #c0392b;
+  --border: #e6e2da;
+  --input: #dcd7cd;
+  --ring: #1e3a8a;
+  --gold: #c9a227;
+  --gold-soft: #f6ecc9;
+  /* status tones: soft background + strong text (WCAG AA on the soft color) */
+  --tone-neutral-bg: #eeece7;  --tone-neutral-fg: #4b5262;
+  --tone-blue-bg: #e3eafb;     --tone-blue-fg: #1e3a8a;
+  --tone-amber-bg: #fbefd2;    --tone-amber-fg: #8a5a00;
+  --tone-green-bg: #ddf1e6;    --tone-green-fg: #116a3b;
+  --tone-red-bg: #fbe3e0;      --tone-red-fg: #a12a1d;
+  --tone-gold-bg: #f6ecc9;     --tone-gold-fg: #7a5d00;
+  --chart-1: #1e3a8a;
+  --chart-2: #3b5bb5;
+  --chart-3: #6f88cf;
+  --chart-4: #c9a227;
+  --chart-5: #5f6675;
+  --viz-1: #2f4fa8;
+  --viz-1-soft: #d7e0f5;
+  --viz-grid: #ebe7df;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* the dark navy sidebar */
+  --sidebar: #0f1b2d;
+  --sidebar-foreground: #d9dfeb;
+  --sidebar-primary: #c9a227;
+  --sidebar-primary-foreground: #0f1b2d;
+  --sidebar-accent: #1b2a44;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #22324f;
+  --sidebar-ring: #c9a227;
+  --sidebar-muted: #8b97ad;
 }
 
 .dark {
@@ -132,5 +147,12 @@
   }
   html {
     @apply font-sans;
+  }
+  h1, h2, h3 {
+    letter-spacing: -0.015em;
+  }
+  /* numbers line up in tables and figures */
+  td, th {
+    font-variant-numeric: tabular-nums;
   }
 }

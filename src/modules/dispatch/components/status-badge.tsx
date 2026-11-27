@@ -1,17 +1,17 @@
-import { Badge } from "@/components/ui/badge";
+import { StatusPill, type Tone } from "@/components/status-pill";
 import { LOAD_STATUS_LABELS, type LoadStatus } from "../labels";
 
-const VARIANT: Record<LoadStatus, "default" | "secondary" | "destructive" | "outline"> = {
-  planned: "outline",
-  dispatched: "secondary",
-  at_pickup: "secondary",
-  in_transit: "secondary",
-  delivered: "default",
-  invoiced: "default",
-  paid: "default",
-  cancelled: "destructive",
+const TONE: Record<LoadStatus, Tone> = {
+  planned: "neutral",
+  dispatched: "blue",
+  at_pickup: "amber",
+  in_transit: "amber",
+  delivered: "green",
+  invoiced: "gold",
+  paid: "gold",
+  cancelled: "red",
 };
 
 export function LoadStatusBadge({ status }: { status: LoadStatus }) {
-  return <Badge variant={VARIANT[status]}>{LOAD_STATUS_LABELS[status]}</Badge>;
+  return <StatusPill tone={TONE[status]}>{LOAD_STATUS_LABELS[status]}</StatusPill>;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { SearchIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -62,8 +63,10 @@ export function GlobalSearch() {
   };
 
   return (
-    <div className="relative">
+    <div className="relative text-foreground">
+      <SearchIcon aria-hidden className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-sidebar-muted" />
       <Input ref={inputRef} type="search" placeholder="Search…  ( / )" aria-label="Search" value={query} autoComplete="off"
+        className="border-sidebar-border bg-sidebar-accent pl-8 text-sidebar-accent-foreground placeholder:text-sidebar-muted focus-visible:border-gold focus-visible:ring-gold/30"
         role="combobox" aria-expanded={open && hasTerm} aria-controls="global-search-results"
         onChange={(ev) => { setQuery(ev.target.value); show(); }}
         onFocus={show}

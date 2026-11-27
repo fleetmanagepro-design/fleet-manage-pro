@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { StatusPill } from "@/components/status-pill";
 import { formatCalendarDate } from "@/lib/dates";
 import { type ExpiryItem, type ExpiryState, worstState } from "@/lib/expiry";
 
@@ -9,13 +9,13 @@ export function ComplianceSummary({ items }: { items: ExpiryItem[] }) {
   const text = urgent.map((i) => i.label).join(", ");
   if (state === "ok") return <span className="text-xs text-muted-foreground">OK</span>;
   if (state === "upcoming") {
-    return <Badge variant="outline" title={text}>Upcoming: {text}</Badge>;
+    return <span title={text}><StatusPill tone="neutral">Upcoming: {text}</StatusPill></span>;
   }
   if (state === "missing") return <span className="text-xs text-muted-foreground">No dates</span>;
   return (
-    <Badge variant={state === "expired" ? "destructive" : "secondary"} title={text}>
-      {state === "expired" ? "Expired" : "Due soon"}: {text}
-    </Badge>
+    <span title={text}>
+      <StatusPill tone={state === "expired" ? "red" : "amber"}>{state === "expired" ? "Expired" : "Due soon"}: {text}</StatusPill>
+    </span>
   );
 }
 
